@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "node",
+        "module": "esnext",
+        "target": "esnext",
+        "outDir": "build-tmp",
+        "rootDir": "src",
+        "sourceMap": true
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "build"
+    ]
+}

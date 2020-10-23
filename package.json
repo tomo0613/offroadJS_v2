@@ -1,0 +1,34 @@
+{
+  "name": "untitled-project",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/"
+  },
+  "version": "1.0.0",
+  "description": "ts-project-starter",
+  "main": "build/main.js",
+  "scripts": {
+    "start": "./runDev.sh",
+    "startTSCompiler": "npx tsc -w",
+    "startDevServer": "rm -rf ./build-tmp/* && WATCH='./build-tmp' node ./devServer/server.js",
+    "build": "npx rollup -c",
+    "lint": "npx eslint src/**",
+    "lint:fix": "npm run lint --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": ":)",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.21.0",
+    "@typescript-eslint/parser": "^2.21.0",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.20.1",
+    "rollup": "^1.32.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-terser": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.26.0",
+    "typescript": "^3.8.3"
+  }
+}
