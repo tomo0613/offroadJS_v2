@@ -18,7 +18,11 @@
   },
   "author": ":)",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "cannon-es": "^0.15.1",
+    "cannon-es-debugger": "0.0.4",
+    "three": "^0.121.1"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.21.0",
     "@typescript-eslint/parser": "^2.21.0",

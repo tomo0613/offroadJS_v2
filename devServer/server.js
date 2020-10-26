@@ -105,7 +105,7 @@ async function serveFile(filePath, response) {
         response.setHeader('Content-Type', getContentTypeByExtension(extension));
 
         if (extension === 'js') {
-            fileContent = resolveImports(fileContent.toString());
+            fileContent = resolveImports(fileContent.toString(), filePath);
         }
     } catch (error) {
         console.error(`can not serve file: ${error.path}`);
