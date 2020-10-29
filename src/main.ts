@@ -1,25 +1,28 @@
 import { AmbientLight, CubeTexture, DirectionalLight, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
-import { SAPBroadphase, Vec3, World } from 'cannon-es';
+import { Quaternion, SAPBroadphase, Vec3, World } from 'cannon-es';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import wireframeRenderer from 'cannon-es-debugger';
 
 import * as utils from './utils';
+import { PlatformBuilder } from './platformBuilder';
 import Vehicle from './vehicle';
 import cameraHandler from './cameraHandler';
 import cfg from './config';
 import inputHandler from './inputHandler';
-import platforms from './platforms';
 
 const worldStep = 1 / 60;
+const AXIS_X = new Vec3(1, 0, 0);
+const AXIS_Y = new Vec3(0, 1, 0);
+const AXIS_Z = new Vec3(0, 0, 1);
 
 (async function init() {
     const scene = new Scene();
 
     const ambientLight = new AmbientLight(0xffffff, 0.5);
-    const sunLight = new DirectionalLight(0xf5f4d3, 0.9);
-    sunLight.position.set(-1, 100, -1).normalize();
-    scene.add(ambientLight);
-    scene.add(sunLight);
+    const sunLight = new DirectionalLight(0xf5f4d3, 0.85);
+    sunLight.position.set(-30, 50, -30);
+    sunLight.castShadow = cfg.renderShadows;
+    scene.add(ambientLight, sunLight);
 
     const world = new World();
     const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
@@ -28,9 +31,9 @@ const worldStep = 1 / 60;
     world.defaultContactMaterial.friction = 0.001;
 
     const renderer = new WebGLRenderer(/* {antialias: true} */);
-    // renderer.gammaOutput = true;
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = cfg.renderShadows;
 
     document.body.appendChild(renderer.domElement);
 
@@ -41,23 +44,43 @@ const worldStep = 1 / 60;
 
     await loadAssets();
 
-    platforms.init(scene, world);
-    platforms.create({
-        width: 15,
-        height: 0.1,
-        length: 15,
-        position: new Vec3(0, 0, 0),
-    });
-    platforms.create({
-        width: 5,
-        height: 0.1,
-        length: 15,
-        position: new Vec3(10, 0, -30),
-    });
-    platforms.createBox({
-        size: 1,
-        mass: 40,
-        position: new Vec3(10, 2, 0),
+    const platformBuilder = new PlatformBuilder(scene, world);
+    // ground
+    platformBuilder.buildBox({ width: 15, height: 0.1, length: 15 });
+
+    platformBuilder.buildBox({ width: 2, height: 0.1, length: 10, position: new Vec3(-3, 10, -25) });
+    const rb = new Quaternion().setFromAxisAngle(AXIS_X, Math.PI / 20);
+    platformBuilder.buildBox({ width: 2, height: 0.1, length: 15, position: new Vec3(-3, 4, -25), rotation: rb });
+
+    platformBuilder.buildRamp({ width: 2, length: 2, position: new Vec3(-5, 0.1, -5) });
+    platformBuilder.buildRamp({ width: 2, length: 2, height: 2, position: new Vec3(-5, 2.1, -9) });
+    platformBuilder.buildBox({ width: 2, height: 4, length: 1, position: new Vec3(-7, 4, -9) });
+    platformBuilder.buildBox({ width: 2, height: 4, length: 1, position: new Vec3(1, 4, -9) });
+
+    platformBuilder.buildBox({ mass: 40, position: new Vec3(5, 3, 0) });
+
+
+    // inputHandler.addKeyPressListener(() => {
+    //     if (inputHandler.isKeyPressed('J')) {
+    //         platformBuilder.platformBodies[id].position.x++;
+    //         platformBuilder.platformMethods[id]();
+    //         platformBuilder.platformBodies[id].aabbNeedsUpdate = true;
+    //     } else if (inputHandler.isKeyPressed('K')) {
+    //         platformBuilder.platformBodies[id].position.x--;
+    //         platformBuilder.platformMethods[id]();
+    //         platformBuilder.platformBodies[id].aabbNeedsUpdate = true;
+    //     }
+    // });
+
+    platformBuilder.buildCylinder({
+        radiusTop: 2,
+        radiusBottom: 2,
+        height: 2,
+        mass: 20,
+        sides: 16,
+        // position: new Vec3(-3, 12, -30),
+        position: new Vec3(-3, 6, -15),
+        rotation: new Quaternion().setFromAxisAngle(AXIS_Z, Math.PI / 2),
     });
 
     wireframeRenderer(scene, world.bodies);
@@ -102,6 +125,10 @@ const worldStep = 1 / 60;
         vehicle.resetPosition();
 
         inputHandler.addKeyPressListener(() => {
+            if (inputHandler.isKeyPressed('R')) {
+                vehicle.resetPosition();
+            }
+
             let engineForce = 0;
             let steeringValue = 0;
 

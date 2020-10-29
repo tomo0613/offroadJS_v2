@@ -24,6 +24,7 @@ module.exports = {
         'import/extensions': [ERROR, 'never'],
         'indent': [ERROR, 4, {SwitchCase: 1}],
         'max-len': [ERROR, 120],
+        'no-dupe-class-members': DISABLED,
         'no-param-reassign': WARNING,
         'no-plusplus': DISABLED,
         'no-continue': DISABLED,

@@ -15,7 +15,7 @@ const nodeModuleResolutions = {
     'cannon-es-debugger': 'cannon-es-debugger/dist/cannon-es-debugger',
 };
 const nodeModulesRegExp = new RegExp(`^(${Object.keys(nodeModuleResolutions).join('|')})`);
-const importRegExp = /(import.+from) ('|")(.+)('|")/g;
+const importRegExp = /(import[\s\S]*?from) ('|")(.+)('|")/g;
 const extensionRegExp = /\.js$/;
 
 function setNodeModulesPath(filePath) {
@@ -26,8 +26,6 @@ function setNodeModulesPath(filePath) {
 
 function resolveImports(fileContentString, filePath) {
     setNodeModulesPath(filePath);
-
-    console.log({ nodeModulesPath });
 
     return fileContentString.replace(importRegExp, alterModuleResolution);
 }

@@ -5,3 +5,31 @@ body {
     color: rgb(212, 212, 212);
     background-color: rgb(55, 56, 54);
 }
+
+.virtualKey {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
+}
+
+.virtualKey#ArrowUp {
+    bottom: 50px;
+    left: 10px;
+}
+.virtualKey#ArrowDown {
+    bottom: 10px;
+    left: 10px;
+}
+.virtualKey#ArrowLeft {
+    bottom: 10px;
+    right: 50px;
+}
+.virtualKey#ArrowRight {
+    bottom: 10px;
+    right: 10px;
+}
+.virtualKey#R {
+    top: 10px;
+    right: 10px;
+}

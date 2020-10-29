@@ -1,3 +1,5 @@
+import { isMobileDevice } from './utils';
+
 const keyPressListeners = new Set<Function>();
 const navigationKeys = [
     ' ',
@@ -53,6 +55,32 @@ onkeydown = onkeyup = (e) => {
 
     keyPressListeners.forEach(invokeCallback);
 };
+
+if (isMobileDevice) {
+    appendVirtualKey('ArrowUp', '↑');
+    appendVirtualKey('ArrowDown', '↓');
+    appendVirtualKey('ArrowLeft', '←');
+    appendVirtualKey('ArrowRight', '→');
+    appendVirtualKey('R', '↺');
+}
+
+function appendVirtualKey(key: string, label: string) {
+    const button = document.createElement('button');
+    button.textContent = label;
+    button.className = 'virtualKey';
+    button.id = key;
+
+    button.addEventListener('mousedown', () => {
+        keysPressed.add(key);
+        keyPressListeners.forEach(invokeCallback);
+    });
+    button.addEventListener('mouseup', () => {
+        keysPressed.delete(key);
+        keyPressListeners.forEach(invokeCallback);
+    });
+
+    document.body.appendChild(button);
+}
 
 function invokeCallback(callback: Function) {
     callback();

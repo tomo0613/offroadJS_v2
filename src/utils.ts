@@ -1,4 +1,4 @@
-import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { ImageLoader } from 'three';
 
 type ResourceType = GLTF | HTMLImageElement;
@@ -9,6 +9,7 @@ export {
     debounce,
     throttle,
     NOP,
+    isMobileDevice,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -97,4 +98,10 @@ function throttle(fnc: Function, timeToWaitBeforeNextCall = 200) {
             }, timeToWaitBeforeNextCall - (now - prevCallTime));
         }
     };
+}
+
+const mobileUserAgentRegExp = /Android|iPhone/i;
+
+function isMobileDevice() {
+    return mobileUserAgentRegExp.test(window.navigator.userAgent);
 }
