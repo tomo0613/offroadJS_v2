@@ -30,7 +30,7 @@ function removeKeyPressListener(listener: Function) {
 }
 
 function isKeyPressed(key: KeyboardEvent['key'], secondaryKey?: KeyboardEvent['key']) {
-    return keysPressed.has(key) || (secondaryKey && keysPressed.has(secondaryKey));
+    return keysPressed.has(key) || !!(secondaryKey && keysPressed.has(secondaryKey));
 }
 
 let pressedKey: KeyboardEvent['key'];
@@ -56,7 +56,7 @@ onkeydown = onkeyup = (e) => {
     keyPressListeners.forEach(invokeCallback);
 };
 
-if (isMobileDevice) {
+if (isMobileDevice()) {
     appendVirtualKey('ArrowUp', '↑');
     appendVirtualKey('ArrowDown', '↓');
     appendVirtualKey('ArrowLeft', '←');
@@ -67,17 +67,24 @@ if (isMobileDevice) {
 function appendVirtualKey(key: string, label: string) {
     const button = document.createElement('button');
     button.textContent = label;
-    button.className = 'virtualKey';
+    button.classList.add('floatingElement', 'virtualKey');
     button.id = key;
 
-    button.addEventListener('mousedown', () => {
+    const onEventStart = () => {
         keysPressed.add(key);
         keyPressListeners.forEach(invokeCallback);
-    });
-    button.addEventListener('mouseup', () => {
+    };
+    button.addEventListener('mousedown', onEventStart);
+    button.addEventListener('touchstart', onEventStart);
+
+    const onEventEnd = () => {
         keysPressed.delete(key);
         keyPressListeners.forEach(invokeCallback);
-    });
+    };
+    button.addEventListener('mouseup', onEventEnd);
+    button.addEventListener('mouseleave', onEventEnd);
+    button.addEventListener('touchcancel', onEventEnd);
+    button.addEventListener('touchend', onEventEnd);
 
     document.body.appendChild(button);
 }

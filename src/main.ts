@@ -1,19 +1,16 @@
 import { AmbientLight, CubeTexture, DirectionalLight, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
-import { Quaternion, SAPBroadphase, Vec3, World } from 'cannon-es';
+import { ConvexPolyhedron, SAPBroadphase, Vec3, World } from 'cannon-es';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import wireframeRenderer from 'cannon-es-debugger';
 
 import * as utils from './utils';
 import { PlatformBuilder } from './platformBuilder';
-import Vehicle from './vehicle';
+import Vehicle from './vehicle/vehicle';
 import cameraHandler from './cameraHandler';
 import cfg from './config';
 import inputHandler from './inputHandler';
 
 const worldStep = 1 / 60;
-const AXIS_X = new Vec3(1, 0, 0);
-const AXIS_Y = new Vec3(0, 1, 0);
-const AXIS_Z = new Vec3(0, 0, 1);
 
 (async function init() {
     const scene = new Scene();
@@ -30,7 +27,7 @@ const AXIS_Z = new Vec3(0, 0, 1);
     world.broadphase = new SAPBroadphase(world);
     world.defaultContactMaterial.friction = 0.001;
 
-    const renderer = new WebGLRenderer(/* {antialias: true} */);
+    const renderer = new WebGLRenderer({ antialias: cfg.antialias });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = cfg.renderShadows;
@@ -49,28 +46,26 @@ const AXIS_Z = new Vec3(0, 0, 1);
     platformBuilder.buildBox({ width: 15, height: 0.1, length: 15 });
 
     platformBuilder.buildBox({ width: 2, height: 0.1, length: 10, position: new Vec3(-3, 10, -25) });
-    const rb = new Quaternion().setFromAxisAngle(AXIS_X, Math.PI / 20);
-    platformBuilder.buildBox({ width: 2, height: 0.1, length: 15, position: new Vec3(-3, 4, -25), rotation: rb });
+    platformBuilder.buildBox({
+        width: 2, height: 0.1, length: 15, position: new Vec3(-3, 4, -25), rotation: Math.PI / 20,
+    });
 
-    platformBuilder.buildRamp({ width: 2, length: 2, position: new Vec3(-5, 0.1, -5) });
+    const testId = platformBuilder.buildRamp({ width: 2, length: 2, position: new Vec3(-5, 0.1, -5) });
     platformBuilder.buildRamp({ width: 2, length: 2, height: 2, position: new Vec3(-5, 2.1, -9) });
     platformBuilder.buildBox({ width: 2, height: 4, length: 1, position: new Vec3(-7, 4, -9) });
     platformBuilder.buildBox({ width: 2, height: 4, length: 1, position: new Vec3(1, 4, -9) });
 
     platformBuilder.buildBox({ mass: 40, position: new Vec3(5, 3, 0) });
 
+    inputHandler.addKeyPressListener(() => {
+        if (inputHandler.isKeyPressed('J')) {
+            // platformBuilder.translate(testId, { rotation: v += 0.1 });
+        } else if (inputHandler.isKeyPressed('K')) {
+            //
+        }
+    });
 
-    // inputHandler.addKeyPressListener(() => {
-    //     if (inputHandler.isKeyPressed('J')) {
-    //         platformBuilder.platformBodies[id].position.x++;
-    //         platformBuilder.platformMethods[id]();
-    //         platformBuilder.platformBodies[id].aabbNeedsUpdate = true;
-    //     } else if (inputHandler.isKeyPressed('K')) {
-    //         platformBuilder.platformBodies[id].position.x--;
-    //         platformBuilder.platformMethods[id]();
-    //         platformBuilder.platformBodies[id].aabbNeedsUpdate = true;
-    //     }
-    // });
+    platformBuilder.buildCylinder({ sides: 4, radiusBottom: 4, height: 0.5, position: new Vec3(-10, 0.5, 10) });
 
     platformBuilder.buildCylinder({
         radiusTop: 2,
@@ -78,10 +73,13 @@ const AXIS_Z = new Vec3(0, 0, 1);
         height: 2,
         mass: 20,
         sides: 16,
-        // position: new Vec3(-3, 12, -30),
-        position: new Vec3(-3, 6, -15),
-        rotation: new Quaternion().setFromAxisAngle(AXIS_Z, Math.PI / 2),
+        position: new Vec3(-3, 12, -30),
+        // position: new Vec3(-3, 6, -15),
+        rotation: Math.PI / 2,
+        rotationAxis: Vec3.UNIT_Z,
     });
+
+    platformBuilder.showGUI();
 
     wireframeRenderer(scene, world.bodies);
     render();

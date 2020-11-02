@@ -35,6 +35,7 @@ function loadResource<T extends ResourceType>(url: string): Promise<T> {
         const onLoad = (resource) => resolve(resource);
         const onProgress = NOP;
         const onError = (e) => {
+            // eslint-disable-next-line no-console
             console.error(`Failed to load resource: ${e.target.src}`);
             reject(e);
         };
@@ -100,7 +101,7 @@ function throttle(fnc: Function, timeToWaitBeforeNextCall = 200) {
     };
 }
 
-const mobileUserAgentRegExp = /Android|iPhone/i;
+const mobileUserAgentRegExp = /Android|iPhone|iPad/i;
 
 function isMobileDevice() {
     return mobileUserAgentRegExp.test(window.navigator.userAgent);

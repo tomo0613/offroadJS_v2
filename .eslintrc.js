@@ -25,7 +25,7 @@ module.exports = {
         'indent': [ERROR, 4, {SwitchCase: 1}],
         'max-len': [ERROR, 120],
         'no-dupe-class-members': DISABLED,
-        'no-param-reassign': WARNING,
+        'no-param-reassign': DISABLED,
         'no-plusplus': DISABLED,
         'no-continue': DISABLED,
         'no-prototype-builtins': DISABLED,

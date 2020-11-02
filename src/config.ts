@@ -1,10 +1,10 @@
 export default {
+    antialias: false,
     renderShadows: false,
     world: {
         gravity: {
             x: 0,
             y: -9.8,
-            // y: 0,
             z: 0,
         },
     },
@@ -19,8 +19,8 @@ export default {
         },
     },
     vehicle: {
-        // mass: 20,
         mass: 30,
+        steeringSpeed: 0.1,
         maxSteeringValue: 0.7,
         maxBrakeForce: 1,
         maxEngineForceFront: 70,
