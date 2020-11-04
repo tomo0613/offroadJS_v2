@@ -6,9 +6,18 @@ import { ConvexBufferGeometry } from 'three/examples/jsm/geometries/ConvexGeomet
 import cfg from './config';
 import { setUpEditor } from './editor/editor';
 
+type PlatformType = 'box'|'cylinder'|'ramp';
+
+interface Vec3like {
+    x: number;
+    y: number;
+    z: number;
+}
+
 interface CommonPlatformProps {
-    position?: Vec3;
-    rotationAxis?: Vec3;
+    type?: PlatformType;
+    position?: Vec3like;
+    rotationAxis?: Vec3like;
     rotation?: number;
     mass?: number;
 }
@@ -37,6 +46,13 @@ type CylinderProps = CommonPlatformProps & CylinderShapeProps;
 export type PlatformProps = BoxProps & CylinderProps;
 export type PlatformComponentStore = Map<string, Mesh|Body|Function|PlatformProps>;
 
+const tmp_vec3 = new Vec3();
+const shapeTypeMap = {
+    Box: 'box',
+    Cylinder: 'cylinder',
+    ConvexPolyhedron: 'ramp',
+};
+
 let gId = 0;
 
 export class PlatformBuilder {
@@ -45,10 +61,18 @@ export class PlatformBuilder {
     selectedPlatformId: PlatformId;
     perviousSelectedPlatformId: PlatformId;
     platformComponentStore: PlatformComponentStore = new Map();
+    platformIdStore = new Set<string>();
 
     constructor(scene: Scene, world: World) {
         this.scene = scene;
         this.world = world;
+
+        window.importMap = this.importMap;
+        window.exportMap = this.exportMap;
+    }
+
+    get platformIdList() {
+        return Array.from(this.platformIdStore);
     }
 
     getBodyFromStore(id: PlatformId) {
@@ -64,6 +88,7 @@ export class PlatformBuilder {
     }
 
     private addToWorld(visualShape: Geometry | BufferGeometry, physicalShape: Shape, props: PlatformProps) {
+        const platformId = String(gId++);
         const mesh = new Mesh(visualShape, new MeshLambertMaterial());
         const body = new Body({ shape: physicalShape, mass: props.mass || 0 });
         const updateVisuals = () => {
@@ -72,12 +97,15 @@ export class PlatformBuilder {
         };
 
         if (props.position) {
-            body.position.copy(props.position);
+            body.position.set(props.position.x, props.position.y, props.position.z);
         }
         mesh.position.copy(body.position as unknown as Vector3);
 
         if (props.rotation) {
-            body.quaternion.setFromAxisAngle(props.rotationAxis || Vec3.UNIT_X, props.rotation);
+            const rotationAxis = props.rotationAxis
+                ? tmp_vec3.set(props.rotationAxis.x, props.rotationAxis.y, props.rotationAxis.z)
+                : Vec3.UNIT_X;
+            body.quaternion.setFromAxisAngle(rotationAxis, props.rotation);
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
         }
 
@@ -92,22 +120,24 @@ export class PlatformBuilder {
         if (props.mass) {
             this.world.addEventListener('postStep', updateVisuals);
         }
+        props.type = shapeTypeMap[physicalShape.constructor.name];
 
         body.aabbNeedsUpdate = true;
 
-        this.platformComponentStore.set(`mesh_${gId}`, mesh);
-        this.platformComponentStore.set(`body_${gId}`, body);
-        this.platformComponentStore.set(`updateMethod_${gId}`, updateVisuals);
-        this.platformComponentStore.set(`props_${gId}`, props);
+        this.platformIdStore.add(platformId);
+        this.platformComponentStore.set(`mesh_${platformId}`, mesh);
+        this.platformComponentStore.set(`body_${platformId}`, body);
+        this.platformComponentStore.set(`updateMethod_${platformId}`, updateVisuals);
+        this.platformComponentStore.set(`props_${platformId}`, props);
 
         if (false/* editMode */) {
             this.selectPlatform(String(gId));
         }
 
-        return gId++;
+        return platformId;
     }
 
-    destroy(id: PlatformId) {
+    destroy = (id: PlatformId) => {
         const mesh = this.getMeshFromStore(id);
         mesh.geometry.dispose();
         (mesh.material as MeshLambertMaterial).dispose();
@@ -116,6 +146,7 @@ export class PlatformBuilder {
         this.world.removeBody(this.getBodyFromStore(id));
         this.world.removeEventListener('postStep', this.platformComponentStore.get(`updateMethod_${id}`) as Function);
 
+        this.platformIdStore.delete(id);
         this.platformComponentStore.delete(`mesh_${id}`);
         this.platformComponentStore.delete(`body_${id}`);
         this.platformComponentStore.delete(`updateMethod_${id}`);
@@ -124,6 +155,48 @@ export class PlatformBuilder {
         if (this.selectedPlatformId === id) {
             this.selectedPlatformId = undefined;
         }
+    }
+
+    clone(id: PlatformId) {
+        const mesh = this.getMeshFromStore(id);
+        const body = this.getBodyFromStore(id);
+        const props = this.getPropsFromStore(id);
+
+        this.addToWorld(mesh.geometry, body.shapes[0], props);
+    }
+
+    importMap(mapData: Record<string, PlatformProps>) {
+        this.platformIdStore.forEach(this.destroy);
+
+        Object.entries(mapData).forEach(([platformId, platformProps]) => {
+            const [platformType] = platformId.split('_');
+            switch (platformType) {
+                case 'box':
+                    this.buildBox(platformProps);
+                    break;
+                case 'cylinder':
+                    this.buildCylinder(platformProps);
+                    break;
+                case 'ramp':
+                    this.buildRamp(platformProps);
+                    break;
+                default:
+            }
+        });
+    }
+
+    exportMap() {
+        const exportData = Array.from(this.platformComponentStore.entries())
+            .filter(([key]) => key.startsWith('props'))
+            .reduce((data, [key, props]) => {
+                const id = key.replace('props_', '');
+                const { type: platformType, ...platformProps } = props as PlatformProps;
+                data[`${platformType}_${id}`] = platformProps;
+
+                return data;
+            }, {} as Record<string, Omit<PlatformProps, 'type'>>);
+
+        console.log(JSON.stringify(exportData));
     }
 
     selectPlatform = (id: PlatformId) => {
@@ -154,10 +227,8 @@ export class PlatformBuilder {
 
     // hideGUI() {}
 
-    // updateGUI() ?
-
-    buildBox(props: BoxPropsSimple): number;
-    buildBox(props: BoxProps): number;
+    buildBox(props: BoxPropsSimple): string;
+    buildBox(props: BoxProps): string;
     buildBox(props: BoxPropsSimple & BoxProps) {
         const { size = 1, width = size, height = size, length = size } = props;
 
@@ -170,7 +241,7 @@ export class PlatformBuilder {
 
     buildCylinder(props: CylinderProps) {
         const { radiusTop = 1, radiusBottom = 1, height = 1, sides = 6 } = props;
-        const cylinderSides = Math.max(4, sides);
+        const cylinderSides = Math.max(3, sides);
 
         return this.addToWorld(
             new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides),
@@ -197,7 +268,10 @@ export class PlatformBuilder {
             body.position.set(position.x, position.y, position.z);
         }
         if (rotation !== undefined) {
-            body.quaternion.setFromAxisAngle(rotationAxis || Vec3.UNIT_X, rotation * Math.PI / 180);
+            const axis = rotationAxis
+                ? tmp_vec3.set(rotationAxis.x, rotationAxis.y, rotationAxis.z)
+                : Vec3.UNIT_X;
+            body.quaternion.setFromAxisAngle(axis, rotation * Math.PI / 180);
         }
 
         updateVisuals();
@@ -212,9 +286,9 @@ export class PlatformBuilder {
         const mesh = this.getMeshFromStore(id);
         const body = this.getBodyFromStore(id);
         const shape = body.shapes[0];
+        const cylinderSides = Math.max(3, sides);
         // https://github.com/schteppe/cannon.js/issues/329
-        const cylinderSides = Math.max(4, sides);
-        const shapeType = shape.type === SHAPE_TYPES.CONVEXPOLYHEDRON && (shape as ConvexPolyhedron).faces.length > 5
+        const shapeType = shape.type === SHAPE_TYPES.CONVEXPOLYHEDRON && shape.constructor.name === 'Cylinder'
             ? SHAPE_TYPES.CYLINDER
             : shape.type;
         let modifiedShape: Shape;
@@ -227,7 +301,7 @@ export class PlatformBuilder {
                 modifiedGeometry = new BoxBufferGeometry(width * 2, height * 2, length * 2);
                 break;
             case SHAPE_TYPES.CYLINDER:
-                modifiedShape = new Cylinder(radiusTop, radiusBottom, height * 2, cylinderSides);
+                modifiedShape = new Cylinder(radiusTop, radiusBottom, height * 2, sides);
                 modifiedGeometry = new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides);
                 break;
             case SHAPE_TYPES.CONVEXPOLYHEDRON:

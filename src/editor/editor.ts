@@ -1,10 +1,12 @@
 import { Vec3 } from 'cannon-es';
 
 import store, { EditorState } from './store';
-import { NumberInput } from './numberInput';
+import { List } from './uiComponents/list';
+import { NumberInput } from './uiComponents/numberInput';
 import { PlatformBuilder } from '../platformBuilder';
-import { SelectInput } from './selectInput';
+import { SelectInput } from './uiComponents/selectInput';
 
+const tmp_vec3 = new Vec3();
 const axisMap = [
     Vec3.UNIT_X,
     Vec3.UNIT_Y,
@@ -25,31 +27,27 @@ const transformPanelLayout = {
     radiusBottom: new NumberInput({ label: 'radiusBottom', defaultValue: 1, min: 0 }),
     sides: new NumberInput({ label: 'sides', defaultValue: 6, min: 4 }),
 };
-const tmp_vec3 = new Vec3();
 
 let gEditorPanel: HTMLElement;
 let gPropertyEditorContainer: HTMLElement;
 
-function createEditorPanelIfNotExists() {
-    if (!gEditorPanel) {
-        gEditorPanel = document.createElement('aside');
-        gEditorPanel.classList.add('floatingElement');
-        gEditorPanel.id = 'editorPanel';
+function createEditorPanel() {
+    gEditorPanel = document.createElement('aside');
+    gEditorPanel.classList.add('floatingElement');
+    gEditorPanel.id = 'editorPanel';
 
-        document.body.appendChild(gEditorPanel);
+    document.body.appendChild(gEditorPanel);
 
-        gPropertyEditorContainer = document.createElement('section');
-    }
-
-    return gEditorPanel;
+    gPropertyEditorContainer = document.createElement('section');
 }
 
 export function setUpEditor(platformBuilder: PlatformBuilder) {
-    createEditorPanelIfNotExists();
-
-    const platformIds = Array.from(platformBuilder.platformComponentStore.keys())
-        .filter((key) => key.startsWith('body'))
-        .map((key) => key.replace('body', 'platform'));
+    // createEditorPanelIfNotExists
+    if (!gEditorPanel) {
+        createEditorPanel();
+    } else {
+        return;
+    }
 
     const onListSelection = ({ currentTarget }: MouseEvent) => {
         const platformId = (currentTarget as HTMLElement).dataset.id.replace('platform_', '');
@@ -78,7 +76,6 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
         platformBuilder.selectPlatform(platformId);
     };
 
-    const platformList = createList(platformIds, onListSelection);
     const translatePropertyChangeHandlers = {
         positionX(positionX: number) {
             const { positionY, positionZ } = store.getState();
@@ -126,7 +123,21 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
         return changeHandlers;
     }, {} as Record<typeof transformProperties[number], (value: number) => void>);
 
-    gEditorPanel.appendChild(platformList);
+    const list = new List('platforms: ', onListSelection);
+    list.setItems(getPlatformIdList());
+    list.appendTo(gEditorPanel);
+
+    gEditorPanel.appendChild(createActionButtonBar({
+        add() {},
+        clone() {
+            platformBuilder.clone(platformBuilder.selectedPlatformId);
+            list.setItems(getPlatformIdList());
+        },
+        remove() {
+            platformBuilder.destroy(platformBuilder.selectedPlatformId);
+            list.setItems(getPlatformIdList());
+        },
+    }));
     gEditorPanel.appendChild(gPropertyEditorContainer);
 
     function renderPropertyEditor(state: EditorState) {
@@ -151,26 +162,22 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
             inputElement.setOnChange(transformPropertyChangeHandlers[property]);
         });
     }
+
+    function getPlatformIdList() {
+        return platformBuilder.platformIdList.map((id) => `platform_${id}`);
+    }
 }
 
+function createActionButtonBar(actions: Record<string, () => void>) {
+    const buttonBar = document.createElement('nav');
 
-function createList(items: string[], onSelect: (e: MouseEvent) => void) {
-    const listContainer = document.createElement('nav');
-    const list = document.createElement('ul');
+    Object.entries(actions).forEach(([key, action]) => {
+        const button = document.createElement('button');
+        button.textContent = key;
+        button.addEventListener('click', action);
 
-    listContainer.classList.add('listContainer');
-    list.classList.add('list');
-
-    items.forEach((item) => {
-        const listItem = document.createElement('li');
-        listItem.textContent = item;
-        listItem.dataset.id = item;
-        listItem.addEventListener('click', onSelect);
-
-        list.appendChild(listItem);
+        buttonBar.appendChild(button);
     });
 
-    listContainer.appendChild(list);
-
-    return listContainer;
+    return buttonBar;
 }

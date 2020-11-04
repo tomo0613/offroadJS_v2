@@ -1,14 +1,16 @@
 import { AmbientLight, CubeTexture, DirectionalLight, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
-import { ConvexPolyhedron, SAPBroadphase, Vec3, World } from 'cannon-es';
+import { SAPBroadphase, World } from 'cannon-es';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import wireframeRenderer from 'cannon-es-debugger';
 
 import * as utils from './utils';
+import { CameraHelper } from './cameraHelper';
 import { PlatformBuilder } from './platformBuilder';
 import Vehicle from './vehicle/vehicle';
-import cameraHandler from './cameraHandler';
 import cfg from './config';
 import inputHandler from './inputHandler';
+
+import { map1 } from './maps';
 
 const worldStep = 1 / 60;
 
@@ -34,52 +36,23 @@ const worldStep = 1 / 60;
 
     document.body.appendChild(renderer.domElement);
 
-    const camera = new PerspectiveCamera(cfg.camera.fov, getAspectRatio(), cfg.camera.near, cfg.camera.far);
-    cameraHandler.init(camera, renderer.domElement);
-
     window.onresize = utils.debounce(onWindowResize, 500);
 
-    await loadAssets();
+    const [aVehicle] = await loadAssets();
+
+    const camera = new PerspectiveCamera(cfg.camera.fov, getAspectRatio(), cfg.camera.near, cfg.camera.far);
+    const cameraHelper = new CameraHelper(camera);
+    // cameraHelper.setCameraTarget(aVehicle);
+    cameraHelper.initOrbitCamera(renderer.domElement);
 
     const platformBuilder = new PlatformBuilder(scene, world);
-    // ground
-    platformBuilder.buildBox({ width: 15, height: 0.1, length: 15 });
-
-    platformBuilder.buildBox({ width: 2, height: 0.1, length: 10, position: new Vec3(-3, 10, -25) });
-    platformBuilder.buildBox({
-        width: 2, height: 0.1, length: 15, position: new Vec3(-3, 4, -25), rotation: Math.PI / 20,
-    });
-
-    const testId = platformBuilder.buildRamp({ width: 2, length: 2, position: new Vec3(-5, 0.1, -5) });
-    platformBuilder.buildRamp({ width: 2, length: 2, height: 2, position: new Vec3(-5, 2.1, -9) });
-    platformBuilder.buildBox({ width: 2, height: 4, length: 1, position: new Vec3(-7, 4, -9) });
-    platformBuilder.buildBox({ width: 2, height: 4, length: 1, position: new Vec3(1, 4, -9) });
-
-    platformBuilder.buildBox({ mass: 40, position: new Vec3(5, 3, 0) });
+    platformBuilder.importMap(map1);
 
     inputHandler.addKeyPressListener(() => {
-        if (inputHandler.isKeyPressed('J')) {
-            // platformBuilder.translate(testId, { rotation: v += 0.1 });
-        } else if (inputHandler.isKeyPressed('K')) {
-            //
+        if (inputHandler.isKeyPressed('M')) {
+            platformBuilder.showGUI();
         }
     });
-
-    platformBuilder.buildCylinder({ sides: 4, radiusBottom: 4, height: 0.5, position: new Vec3(-10, 0.5, 10) });
-
-    platformBuilder.buildCylinder({
-        radiusTop: 2,
-        radiusBottom: 2,
-        height: 2,
-        mass: 20,
-        sides: 16,
-        position: new Vec3(-3, 12, -30),
-        // position: new Vec3(-3, 6, -15),
-        rotation: Math.PI / 2,
-        rotationAxis: Vec3.UNIT_Z,
-    });
-
-    platformBuilder.showGUI();
 
     wireframeRenderer(scene, world.bodies);
     render();
@@ -93,7 +66,7 @@ const worldStep = 1 / 60;
         // update physics
         world.step(worldStep);
 
-        // cameraHandler.update();
+        cameraHelper.update();
 
         renderer.render(scene, camera);
     }
@@ -146,6 +119,8 @@ const worldStep = 1 / 60;
             vehicle.setSteeringValue(steeringValue);
             vehicle.setBrakeForce(Number(inputHandler.isKeyPressed(' ')));
         });
+
+        return [vehicle];
     }
 })();
 

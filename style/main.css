@@ -2,7 +2,7 @@
 
 body {
     margin: 0;
-    color: rgb(212, 212, 212);
+    color: rgb(116, 113, 113);
     background-color: rgb(55, 56, 54);
     overflow: hidden;
 
@@ -44,17 +44,14 @@ body {
 }
 
 #editorPanel {
-    background-color: rgba(144, 144, 144, 0.5);
+    background-color: rgba(144, 144, 144, 0.8);
+    padding: 10px;
     width: 250px;
     top: 10px;
     right: 10px;
 }
 
-#editorPanel.listContainer {}
-
-#editorPanel.list {
-    overflow-y:scroll;
+#editorPanel .list {
+    height: 200px;
+    overflow-y: scroll;
 }
-
-/* nav ul{height:200px; width:18%;}
-nav ul{overflow:hidden; } */

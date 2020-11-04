@@ -129,7 +129,7 @@ export default class Vehicle {
             if (frontWheelIndices.includes(i)) {
                 this.steerWheel(i);
             } else {
-                //
+                // increase engine force gradually ?
             }
 
             this.base.updateWheelTransform(i);
