@@ -48,10 +48,35 @@ const worldStep = 1 / 60;
     const platformBuilder = new PlatformBuilder(scene, world);
     platformBuilder.importMap(map1);
 
+    platformBuilder.showGUI();
+
     inputHandler.addKeyPressListener(() => {
-        if (inputHandler.isKeyPressed('M')) {
-            platformBuilder.showGUI();
+        //     if (inputHandler.isKeyPressed('M')) {
+        //         platformBuilder.showGUI();
+        //     }
+        if (inputHandler.isKeyPressed('R')) {
+            aVehicle.resetPosition();
+            platformBuilder.resetDynamicPlatforms();
         }
+
+        let engineForce = 0;
+        let steeringValue = 0;
+
+        if (inputHandler.isKeyPressed('W', 'ArrowUp')) {
+            engineForce = 1;
+        } else if (inputHandler.isKeyPressed('S', 'ArrowDown')) {
+            engineForce = -1;
+        }
+
+        if (inputHandler.isKeyPressed('A', 'ArrowLeft')) {
+            steeringValue = 1;
+        } else if (inputHandler.isKeyPressed('D', 'ArrowRight')) {
+            steeringValue = -1;
+        }
+
+        aVehicle.setEngineForce(engineForce);
+        aVehicle.setSteeringValue(steeringValue);
+        aVehicle.setBrakeForce(Number(inputHandler.isKeyPressed(' ')));
     });
 
     wireframeRenderer(scene, world.bodies);
@@ -94,31 +119,6 @@ const worldStep = 1 / 60;
         vehicle.addToWorld(world);
         vehicle.addToScene(scene);
         vehicle.resetPosition();
-
-        inputHandler.addKeyPressListener(() => {
-            if (inputHandler.isKeyPressed('R')) {
-                vehicle.resetPosition();
-            }
-
-            let engineForce = 0;
-            let steeringValue = 0;
-
-            if (inputHandler.isKeyPressed('W', 'ArrowUp')) {
-                engineForce = 1;
-            } else if (inputHandler.isKeyPressed('S', 'ArrowDown')) {
-                engineForce = -1;
-            }
-
-            if (inputHandler.isKeyPressed('A', 'ArrowLeft')) {
-                steeringValue = 1;
-            } else if (inputHandler.isKeyPressed('D', 'ArrowRight')) {
-                steeringValue = -1;
-            }
-
-            vehicle.setEngineForce(engineForce);
-            vehicle.setSteeringValue(steeringValue);
-            vehicle.setBrakeForce(Number(inputHandler.isKeyPressed(' ')));
-        });
 
         return [vehicle];
     }

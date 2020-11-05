@@ -8,17 +8,14 @@ import { setUpEditor } from './editor/editor';
 
 type PlatformType = 'box'|'cylinder'|'ramp';
 
-interface Vec3like {
-    x: number;
-    y: number;
-    z: number;
-}
-
 interface CommonPlatformProps {
     type?: PlatformType;
-    position?: Vec3like;
-    rotationAxis?: Vec3like;
-    rotation?: number;
+    position_x?: number;
+    position_y?: number;
+    position_z?: number;
+    rotation_x?: number;
+    rotation_y?: number;
+    rotation_z?: number;
     mass?: number;
 }
 
@@ -46,7 +43,6 @@ type CylinderProps = CommonPlatformProps & CylinderShapeProps;
 export type PlatformProps = BoxProps & CylinderProps;
 export type PlatformComponentStore = Map<string, Mesh|Body|Function|PlatformProps>;
 
-const tmp_vec3 = new Vec3();
 const shapeTypeMap = {
     Box: 'box',
     Cylinder: 'cylinder',
@@ -62,6 +58,7 @@ export class PlatformBuilder {
     perviousSelectedPlatformId: PlatformId;
     platformComponentStore: PlatformComponentStore = new Map();
     platformIdStore = new Set<string>();
+    editMode = false;
 
     constructor(scene: Scene, world: World) {
         this.scene = scene;
@@ -88,24 +85,37 @@ export class PlatformBuilder {
     }
 
     private addToWorld(visualShape: Geometry | BufferGeometry, physicalShape: Shape, props: PlatformProps) {
-        const platformId = String(gId++);
+        const platformType = shapeTypeMap[physicalShape.constructor.name];
+        const platformId = `${platformType}_${gId++}`;
+        const platformProps = {
+            ...props,
+            type: platformType,
+        };
+        const {
+            position_x = 0,
+            position_y = 0,
+            position_z = 0,
+            rotation_x = 0,
+            rotation_y = 0,
+            rotation_z = 0,
+        } = platformProps;
+
         const mesh = new Mesh(visualShape, new MeshLambertMaterial());
-        const body = new Body({ shape: physicalShape, mass: props.mass || 0 });
+        const body = new Body({ shape: physicalShape, mass: platformProps.mass || 0 });
         const updateVisuals = () => {
             mesh.position.copy(body.position as unknown as Vector3);
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
         };
 
-        if (props.position) {
-            body.position.set(props.position.x, props.position.y, props.position.z);
-        }
+        body.position.set(position_x, position_y, position_z);
         mesh.position.copy(body.position as unknown as Vector3);
 
-        if (props.rotation) {
-            const rotationAxis = props.rotationAxis
-                ? tmp_vec3.set(props.rotationAxis.x, props.rotationAxis.y, props.rotationAxis.z)
-                : Vec3.UNIT_X;
-            body.quaternion.setFromAxisAngle(rotationAxis, props.rotation);
+        if (rotation_x || rotation_y || rotation_z) {
+            body.quaternion.setFromEuler(
+                rotation_x / 180 * Math.PI,
+                rotation_y / 180 * Math.PI,
+                rotation_z / 180 * Math.PI,
+            );
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
         }
 
@@ -117,10 +127,9 @@ export class PlatformBuilder {
         this.world.addBody(body);
         this.scene.add(mesh);
 
-        if (props.mass) {
+        if (platformProps.mass) {
             this.world.addEventListener('postStep', updateVisuals);
         }
-        props.type = shapeTypeMap[physicalShape.constructor.name];
 
         body.aabbNeedsUpdate = true;
 
@@ -128,13 +137,28 @@ export class PlatformBuilder {
         this.platformComponentStore.set(`mesh_${platformId}`, mesh);
         this.platformComponentStore.set(`body_${platformId}`, body);
         this.platformComponentStore.set(`updateMethod_${platformId}`, updateVisuals);
-        this.platformComponentStore.set(`props_${platformId}`, props);
+        this.platformComponentStore.set(`props_${platformId}`, platformProps);
 
-        if (false/* editMode */) {
-            this.selectPlatform(String(gId));
+        if (this.editMode) {
+            this.selectPlatform(platformId);
         }
 
         return platformId;
+    }
+
+    clone(id: PlatformId) {
+        const props = { ...this.getPropsFromStore(id) };
+
+        switch (props.type) {
+            case 'box':
+                return this.buildBox(props);
+            case 'cylinder':
+                return this.buildCylinder(props);
+            case 'ramp':
+                return this.buildRamp(props);
+            default:
+                return '';
+        }
     }
 
     destroy = (id: PlatformId) => {
@@ -155,48 +179,6 @@ export class PlatformBuilder {
         if (this.selectedPlatformId === id) {
             this.selectedPlatformId = undefined;
         }
-    }
-
-    clone(id: PlatformId) {
-        const mesh = this.getMeshFromStore(id);
-        const body = this.getBodyFromStore(id);
-        const props = this.getPropsFromStore(id);
-
-        this.addToWorld(mesh.geometry, body.shapes[0], props);
-    }
-
-    importMap(mapData: Record<string, PlatformProps>) {
-        this.platformIdStore.forEach(this.destroy);
-
-        Object.entries(mapData).forEach(([platformId, platformProps]) => {
-            const [platformType] = platformId.split('_');
-            switch (platformType) {
-                case 'box':
-                    this.buildBox(platformProps);
-                    break;
-                case 'cylinder':
-                    this.buildCylinder(platformProps);
-                    break;
-                case 'ramp':
-                    this.buildRamp(platformProps);
-                    break;
-                default:
-            }
-        });
-    }
-
-    exportMap() {
-        const exportData = Array.from(this.platformComponentStore.entries())
-            .filter(([key]) => key.startsWith('props'))
-            .reduce((data, [key, props]) => {
-                const id = key.replace('props_', '');
-                const { type: platformType, ...platformProps } = props as PlatformProps;
-                data[`${platformType}_${id}`] = platformProps;
-
-                return data;
-            }, {} as Record<string, Omit<PlatformProps, 'type'>>);
-
-        console.log(JSON.stringify(exportData));
     }
 
     selectPlatform = (id: PlatformId) => {
@@ -222,6 +204,7 @@ export class PlatformBuilder {
     }
 
     showGUI() {
+        this.editMode = true;
         setUpEditor(this);
     }
 
@@ -260,19 +243,62 @@ export class PlatformBuilder {
         );
     }
 
-    translate(id: PlatformId, { position, rotation, rotationAxis }: CommonPlatformProps) {
+    resetDynamicPlatforms() {
+        this.platformIdList.forEach(this.resetPlatformIfDynamic);
+    }
+
+    resetPlatformIfDynamic = (id: PlatformId) => {
+        const {
+            mass,
+            position_x = 0,
+            position_y = 0,
+            position_z = 0,
+            rotation_x = 0,
+            rotation_y = 0,
+            rotation_z = 0,
+        } = this.getPropsFromStore(id);
+
+        if (!mass) {
+            return;
+        }
         const body = this.getBodyFromStore(id);
+        body.velocity.copy(Vec3.ZERO);
+        body.angularVelocity.copy(Vec3.ZERO);
+
+        body.position.set(position_x, position_y, position_z);
+        body.quaternion.setFromEuler(
+            rotation_x / 180 * Math.PI,
+            rotation_y / 180 * Math.PI,
+            rotation_z / 180 * Math.PI,
+        );
+    }
+
+    translate(id: PlatformId, props: CommonPlatformProps) {
+        const body = this.getBodyFromStore(id);
+        const platformProps = this.getPropsFromStore(id);
         const updateVisuals = this.platformComponentStore.get(`updateMethod_${id}`) as Function;
 
-        if (position) {
-            body.position.set(position.x, position.y, position.z);
-        }
-        if (rotation !== undefined) {
-            const axis = rotationAxis
-                ? tmp_vec3.set(rotationAxis.x, rotationAxis.y, rotationAxis.z)
-                : Vec3.UNIT_X;
-            body.quaternion.setFromAxisAngle(axis, rotation * Math.PI / 180);
-        }
+        Object.assign(platformProps, { ...props });
+
+        const {
+            position_x = 0,
+            position_y = 0,
+            position_z = 0,
+            rotation_x = 0,
+            rotation_y = 0,
+            rotation_z = 0,
+        } = platformProps;
+
+        body.position.set(
+            position_x,
+            position_y,
+            position_z,
+        );
+        body.quaternion.setFromEuler(
+            rotation_x / 180 * Math.PI,
+            rotation_y / 180 * Math.PI,
+            rotation_z / 180 * Math.PI,
+        );
 
         updateVisuals();
         body.aabbNeedsUpdate = true;
@@ -291,34 +317,72 @@ export class PlatformBuilder {
         const shapeType = shape.type === SHAPE_TYPES.CONVEXPOLYHEDRON && shape.constructor.name === 'Cylinder'
             ? SHAPE_TYPES.CYLINDER
             : shape.type;
-        let modifiedShape: Shape;
-        let modifiedGeometry: BufferGeometry;
+        let transformedShape: Shape;
+        let transformedGeometry: BufferGeometry;
 
         switch (shapeType) {
             case SHAPE_TYPES.BOX:
                 (shape as Box).halfExtents.set(width, height, length);
-                modifiedShape = shape;
-                modifiedGeometry = new BoxBufferGeometry(width * 2, height * 2, length * 2);
+                (shape as Box).updateConvexPolyhedronRepresentation();
+                transformedShape = shape;
+                transformedGeometry = new BoxBufferGeometry(width * 2, height * 2, length * 2);
+                Object.assign(this.getPropsFromStore(id), { width, height, length });
                 break;
             case SHAPE_TYPES.CYLINDER:
-                modifiedShape = new Cylinder(radiusTop, radiusBottom, height * 2, sides);
-                modifiedGeometry = new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides);
+                transformedShape = new Cylinder(radiusTop, radiusBottom, height * 2, cylinderSides);
+                transformedGeometry = new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides);
+                Object.assign(this.getPropsFromStore(id), { radiusTop, radiusBottom, height, sides: cylinderSides });
                 break;
             case SHAPE_TYPES.CONVEXPOLYHEDRON:
-                modifiedShape = getRampShape(width, height, length);
-                modifiedGeometry = new ConvexBufferGeometry(
-                    (modifiedShape as ConvexPolyhedron).vertices.map(({ x, y, z }) => new Vector3(x, y, z)),
+                transformedShape = getRampShape(width, height, length);
+                transformedGeometry = new ConvexBufferGeometry(
+                    (transformedShape as ConvexPolyhedron).vertices.map(({ x, y, z }) => new Vector3(x, y, z)),
                 );
+                Object.assign(this.getPropsFromStore(id), { width, height, length });
                 break;
             default:
                 return;
         }
 
         body.shapes.length = 0;
-        body.addShape(modifiedShape);
+        body.addShape(transformedShape);
 
         mesh.geometry.dispose();
-        mesh.geometry = modifiedGeometry;
+        mesh.geometry = transformedGeometry;
+    }
+
+    importMap(mapData: Record<string, PlatformProps>) {
+        this.platformIdStore.forEach(this.destroy);
+
+        Object.entries(mapData).forEach(([platformId, platformProps]) => {
+            const [platformType] = platformId.split('_');
+            switch (platformType) {
+                case 'box':
+                    this.buildBox(platformProps);
+                    break;
+                case 'cylinder':
+                    this.buildCylinder(platformProps);
+                    break;
+                case 'ramp':
+                    this.buildRamp(platformProps);
+                    break;
+                default:
+            }
+        });
+    }
+
+    exportMap() {
+        const exportData = Array.from(this.platformComponentStore.entries())
+            .filter(([key]) => key.startsWith('props'))
+            .reduce((data, [key, props]) => {
+                const id = key.replace('props_', '');
+                const { type: platformType, ...platformProps } = props as PlatformProps;
+                data[`${platformType}_${id}`] = platformProps;
+
+                return data;
+            }, {} as Record<string, Omit<PlatformProps, 'type'>>);
+
+        console.log(JSON.stringify(exportData));
     }
 }
 

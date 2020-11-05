@@ -86,6 +86,7 @@ export class CameraHelper {
                 this.camera.fov = 70;
                 this.update = NOP;
                 break;
+            // case 'fixedAngle':
             default:
                 break;
         }

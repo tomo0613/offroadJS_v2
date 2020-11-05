@@ -3,11 +3,13 @@ import { NOP } from '../utils';
 const defaultState = {
     platformId: '',
 
-    positionX: 0,
-    positionY: 0,
-    positionZ: 0,
-    rotation: 0,
-    rotationAxisIndex: 0,
+    position_x: 0,
+    position_y: 0,
+    position_z: 0,
+
+    rotation_x: 0,
+    rotation_y: 0,
+    rotation_z: 0,
 
     width: 1,
     height: 1,
@@ -42,14 +44,14 @@ export default {
     },
 };
 
-function filterUndefinedProps(props: Record<string, any>, [property, value]) {
+function filterUndefinedProps(props: Record<string, string|number|boolean>, [property, value]) {
     if (value !== undefined) {
         props[property] = value;
     }
     return props;
 }
 
-function sameValues(a: Record<string, any>, b: Record<string, any>) {
+function sameValues(a: Record<string, string|number|boolean>, b: Record<string, string|number|boolean>) {
     return Object.entries(a).every(([property, value]) => b[property] === value);
 }
 

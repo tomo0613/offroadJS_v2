@@ -4,20 +4,15 @@ import store, { EditorState } from './store';
 import { List } from './uiComponents/list';
 import { NumberInput } from './uiComponents/numberInput';
 import { PlatformBuilder } from '../platformBuilder';
-import { SelectInput } from './uiComponents/selectInput';
 
 const tmp_vec3 = new Vec3();
-const axisMap = [
-    Vec3.UNIT_X,
-    Vec3.UNIT_Y,
-    Vec3.UNIT_Z,
-];
 const translatePanelLayout = {
-    positionX: new NumberInput({ label: 'position.X:' }),
-    positionY: new NumberInput({ label: 'position.Y:' }),
-    positionZ: new NumberInput({ label: 'position.Z:' }),
-    rotation: new NumberInput({ label: 'rotation:', min: 0, max: 360 }),
-    rotationAxisIndex: new SelectInput({ label: 'rotation axis:', options: ['X', 'Y', 'Z'] }),
+    position_x: new NumberInput({ label: 'position.X:' }),
+    position_y: new NumberInput({ label: 'position.Y:' }),
+    position_z: new NumberInput({ label: 'position.Z:' }),
+    rotation_x: new NumberInput({ label: 'rotation.X:', min: -360, max: 360 }),
+    rotation_y: new NumberInput({ label: 'rotation.Y:', min: -360, max: 360 }),
+    rotation_z: new NumberInput({ label: 'rotation.Z:', min: -360, max: 360 }),
 };
 const transformPanelLayout = {
     width: new NumberInput({ label: 'width', defaultValue: 1, min: 0 }),
@@ -50,12 +45,12 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
     }
 
     const onListSelection = ({ currentTarget }: MouseEvent) => {
-        const platformId = (currentTarget as HTMLElement).dataset.id.replace('platform_', '');
+        const platformId = (currentTarget as HTMLElement).dataset.id;
         const { width, height, length, radiusTop, radiusBottom, sides } = platformBuilder.getPropsFromStore(platformId);
         const platformBody = platformBuilder.getBodyFromStore(platformId);
-        const { x: positionX, y: positionY, z: positionZ } = platformBody.position;
-        const [rotationAxis, rotation] = platformBody.quaternion.toAxisAngle();
-        const rotationAxisIndex = axisMap.findIndex((axis) => rotationAxis.almostEquals(axis));
+        const { x: position_x, y: position_y, z: position_z } = platformBody.position;
+        platformBody.quaternion.toEuler(tmp_vec3);
+        const { x: rotation_x, y: rotation_y, z: rotation_z } = tmp_vec3;
 
         store.onChange = renderPropertyEditor;
         store.setState({
@@ -66,52 +61,29 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
             radiusTop,
             radiusBottom,
             sides,
-            positionX,
-            positionY,
-            positionZ,
-            rotation: rotation * 180 / Math.PI,
-            rotationAxisIndex: rotationAxisIndex === -1 ? 0 : rotationAxisIndex,
+            position_x,
+            position_y,
+            position_z,
+            rotation_x: rotation_x * 180 / Math.PI,
+            rotation_y: rotation_y * 180 / Math.PI,
+            rotation_z: rotation_z * 180 / Math.PI,
         });
 
         platformBuilder.selectPlatform(platformId);
     };
 
-    const translatePropertyChangeHandlers = {
-        positionX(positionX: number) {
-            const { positionY, positionZ } = store.getState();
-            const position = tmp_vec3.set(positionX, positionY, positionZ);
-            platformBuilder.translate(platformBuilder.selectedPlatformId, { position });
-            store.setState({ positionX });
-        },
-        positionY(positionY: number) {
-            const { positionX, positionZ } = store.getState();
-            const position = tmp_vec3.set(positionX, positionY, positionZ);
-            platformBuilder.translate(platformBuilder.selectedPlatformId, { position });
-            store.setState({ positionY });
-        },
-        positionZ(positionZ: number) {
-            const { positionX, positionY } = store.getState();
-            const position = tmp_vec3.set(positionX, positionY, positionZ);
-            platformBuilder.translate(platformBuilder.selectedPlatformId, { position });
-            store.setState({ positionZ });
-        },
-        rotation(rotation: number) {
-            const { rotationAxisIndex } = store.getState();
-            platformBuilder.translate(platformBuilder.selectedPlatformId, {
-                rotation,
-                rotationAxis: axisMap[rotationAxisIndex],
-            });
-            store.setState({ rotation });
-        },
-        rotationAxisIndex(rotationAxisIndex: number) {
-            const { rotation } = store.getState();
-            platformBuilder.translate(platformBuilder.selectedPlatformId, {
-                rotation,
-                rotationAxis: axisMap[rotationAxisIndex],
-            });
-            store.setState({ rotationAxisIndex });
-        },
-    };
+    const translateProperties = [
+        'position_x', 'position_y', 'position_z', 'rotation_x', 'rotation_y', 'rotation_z',
+    ] as const;
+    const translatePropertyChangeHandlers = translateProperties.reduce((changeHandlers, property) => {
+        changeHandlers[property] = (value: number) => {
+            platformBuilder.translate(platformBuilder.selectedPlatformId, { [property]: value });
+            store.setState({ [property]: value });
+        };
+
+        return changeHandlers;
+    }, {} as Record<typeof translateProperties[number], (value: number) => void>);
+
     const transformProperties = ['width', 'height', 'length', 'radiusTop', 'radiusBottom', 'sides'] as const;
     const transformPropertyChangeHandlers = transformProperties.reduce((changeHandlers, property) => {
         changeHandlers[property] = (value: number) => {
@@ -124,18 +96,18 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
     }, {} as Record<typeof transformProperties[number], (value: number) => void>);
 
     const list = new List('platforms: ', onListSelection);
-    list.setItems(getPlatformIdList());
+    list.setItems(platformBuilder.platformIdList);
     list.appendTo(gEditorPanel);
 
     gEditorPanel.appendChild(createActionButtonBar({
         add() {},
         clone() {
             platformBuilder.clone(platformBuilder.selectedPlatformId);
-            list.setItems(getPlatformIdList());
+            list.setItems(platformBuilder.platformIdList);
         },
         remove() {
             platformBuilder.destroy(platformBuilder.selectedPlatformId);
-            list.setItems(getPlatformIdList());
+            list.setItems(platformBuilder.platformIdList);
         },
     }));
     gEditorPanel.appendChild(gPropertyEditorContainer);
@@ -161,10 +133,6 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
             inputElement.setValue(state[property]);
             inputElement.setOnChange(transformPropertyChangeHandlers[property]);
         });
-    }
-
-    function getPlatformIdList() {
-        return platformBuilder.platformIdList.map((id) => `platform_${id}`);
     }
 }
 
