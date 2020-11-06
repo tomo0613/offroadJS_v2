@@ -26,9 +26,9 @@ export default {
         maxEngineForceFront: 70,
         maxEngineForceRear: 65,
         initialPosition: {
-            x: 0,
+            x: 10,
             y: 1,
-            z: 0,
+            z: 10,
         },
         initialRotation: -Math.PI / 2,
         // initialRotation: 0,

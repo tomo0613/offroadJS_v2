@@ -48,6 +48,8 @@ const shapeTypeMap = {
     Cylinder: 'cylinder',
     ConvexPolyhedron: 'ramp',
 };
+const defaultPlatformColor = 0xFFFFFF;
+const dynamicPlatformColor = 0x95C0E5;
 
 let gId = 0;
 
@@ -100,7 +102,8 @@ export class PlatformBuilder {
             rotation_z = 0,
         } = platformProps;
 
-        const mesh = new Mesh(visualShape, new MeshLambertMaterial());
+        const color = platformProps.mass ? dynamicPlatformColor : defaultPlatformColor;
+        const mesh = new Mesh(visualShape, new MeshLambertMaterial({ color }));
         const body = new Body({ shape: physicalShape, mass: platformProps.mass || 0 });
         const updateVisuals = () => {
             mesh.position.copy(body.position as unknown as Vector3);
@@ -351,7 +354,7 @@ export class PlatformBuilder {
         mesh.geometry = transformedGeometry;
     }
 
-    importMap(mapData: Record<string, PlatformProps>) {
+    importMap = (mapData: Record<string, PlatformProps>) => {
         this.platformIdStore.forEach(this.destroy);
 
         Object.entries(mapData).forEach(([platformId, platformProps]) => {
@@ -371,13 +374,13 @@ export class PlatformBuilder {
         });
     }
 
-    exportMap() {
+    exportMap = () => {
         const exportData = Array.from(this.platformComponentStore.entries())
             .filter(([key]) => key.startsWith('props'))
             .reduce((data, [key, props]) => {
                 const id = key.replace('props_', '');
-                const { type: platformType, ...platformProps } = props as PlatformProps;
-                data[`${platformType}_${id}`] = platformProps;
+                const { type, ...platformProps } = props as PlatformProps;
+                data[id] = platformProps;
 
                 return data;
             }, {} as Record<string, Omit<PlatformProps, 'type'>>);

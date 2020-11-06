@@ -48,12 +48,13 @@ const worldStep = 1 / 60;
     const platformBuilder = new PlatformBuilder(scene, world);
     platformBuilder.importMap(map1);
 
-    platformBuilder.showGUI();
+    // platformBuilder.showGUI();
 
     inputHandler.addKeyPressListener(() => {
-        //     if (inputHandler.isKeyPressed('M')) {
-        //         platformBuilder.showGUI();
-        //     }
+        if (inputHandler.isKeyPressed('M')) {
+            platformBuilder.showGUI();
+        }
+
         if (inputHandler.isKeyPressed('R')) {
             aVehicle.resetPosition();
             platformBuilder.resetDynamicPlatforms();
