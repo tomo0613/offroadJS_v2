@@ -1,6 +1,7 @@
 export default {
     antialias: false,
     renderShadows: false,
+    renderWireFrame: false,
     world: {
         gravity: {
             x: 0,

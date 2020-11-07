@@ -1,7 +1,7 @@
 import { NOP } from '../utils';
 
 const defaultState = {
-    platformId: '',
+    mapElementId: '',
 
     position_x: 0,
     position_y: 0,
@@ -10,6 +10,8 @@ const defaultState = {
     rotation_x: 0,
     rotation_y: 0,
     rotation_z: 0,
+
+    size: 1,
 
     width: 1,
     height: 1,

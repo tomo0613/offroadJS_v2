@@ -88,7 +88,7 @@ export const map1 = {
         width: 0.1,
         height: 0.5,
         length: 5,
-        position_x: -5.15,
+        position_x: -5.2,
         position_y: 11.3,
         position_z: -33,
         rotation_x: 0,
@@ -225,7 +225,7 @@ export const map1 = {
         rotation_z: 90,
         rotation_x: 0,
     },
-    box_25: {
+    box_24: {
         width: 2,
         height: 0.1,
         length: 1.65,
@@ -234,7 +234,7 @@ export const map1 = {
         position_z: -22.33,
         rotation_x: 12.5,
     },
-    box_26: {
+    box_25: {
         width: 2,
         height: 0.1,
         length: 2.5,
@@ -243,7 +243,7 @@ export const map1 = {
         position_z: -26.4,
         rotation_x: 0,
     },
-    box_27: {
+    box_26: {
         width: 0.1,
         height: 1,
         length: 7,
@@ -251,7 +251,7 @@ export const map1 = {
         position_y: 10.8,
         position_z: -17,
     },
-    box_28: {
+    box_27: {
         width: 2,
         height: 0.1,
         length: 2.2,
@@ -259,7 +259,7 @@ export const map1 = {
         position_y: 5.2,
         position_z: -10.2,
     },
-    box_29: {
+    box_28: {
         width: 2,
         height: 2,
         length: 2,
@@ -267,7 +267,7 @@ export const map1 = {
         position_y: 3.1,
         position_z: -2,
     },
-    box_30: {
+    box_29: {
         width: 2,
         height: 0.1,
         length: 0.1,
@@ -275,7 +275,7 @@ export const map1 = {
         position_z: -3.9,
         position_y: 1.2,
     },
-    box_31: {
+    box_30: {
         width: 4,
         height: 0.1,
         length: 0.1,
@@ -283,12 +283,68 @@ export const map1 = {
         position_z: -8.1,
         position_y: 1.2,
     },
-    box_32: {
+    box_31: {
         width: 0.1,
         height: 0.1,
         length: 2,
         position_x: 2.9,
         position_z: -6,
         position_y: 1.2,
+    },
+    trigger_32: {
+        event: 'setCameraPosition',
+        dataSet: '34,11,4.5',
+        size: 8,
+        position_x: 13,
+        position_y: 1,
+        position_z: 0,
+    },
+    trigger_33: {
+        event: 'setCameraPosition',
+        dataSet: '-3,9,29',
+        size: 7,
+        position_x: -2,
+        position_y: 1,
+        position_z: 8,
+    },
+    trigger_34: {
+        event: 'setCameraPosition',
+        dataSet: '-30,16,-3',
+        size: 3,
+        position_x: -3,
+        position_y: 12,
+        position_z: -21,
+    },
+    trigger_35: {
+        event: 'setCameraPosition',
+        dataSet: '-30,22,-29',
+        size: 3,
+        position_x: -15,
+        position_y: 9,
+        position_z: -20,
+    },
+    trigger_36: {
+        event: 'setCameraPosition',
+        dataSet: '-27,14,-13',
+        size: 2,
+        position_x: -9,
+        position_y: 6,
+        position_z: -10,
+    },
+    trigger_37: {
+        event: 'setCameraPosition',
+        dataSet: '9.5,10,-25',
+        size: 2,
+        position_x: 1,
+        position_y: 6,
+        position_z: -11,
+    },
+    trigger_38: {
+        event: 'finish',
+        dataSet: '',
+        size: 1,
+        position_x: 5,
+        position_y: 6,
+        position_z: -2,
     },
 };

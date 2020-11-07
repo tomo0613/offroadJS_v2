@@ -1,11 +1,13 @@
-import { AmbientLight, CubeTexture, DirectionalLight, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { CubeTexture, DirectionalLight, LightProbe, Scene, WebGLRenderer } from 'three';
 import { SAPBroadphase, World } from 'cannon-es';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
 import wireframeRenderer from 'cannon-es-debugger';
 
 import * as utils from './utils';
+import { MapBuilder, MapEvent } from './mapBuilder';
 import { CameraHelper } from './cameraHelper';
-import { PlatformBuilder } from './platformBuilder';
+import { GameProgressManager } from './gameProgressManager';
 import Vehicle from './vehicle/vehicle';
 import cfg from './config';
 import inputHandler from './inputHandler';
@@ -17,11 +19,11 @@ const worldStep = 1 / 60;
 (async function init() {
     const scene = new Scene();
 
-    const ambientLight = new AmbientLight(0xffffff, 0.5);
-    const sunLight = new DirectionalLight(0xf5f4d3, 0.85);
+    const lightProbe = new LightProbe();
+    const sunLight = new DirectionalLight(0xf5f4d3, 0.5);
     sunLight.position.set(-30, 50, -30);
     sunLight.castShadow = cfg.renderShadows;
-    scene.add(ambientLight, sunLight);
+    scene.add(lightProbe, sunLight);
 
     const world = new World();
     const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
@@ -40,24 +42,45 @@ const worldStep = 1 / 60;
 
     const [aVehicle] = await loadAssets();
 
-    const camera = new PerspectiveCamera(cfg.camera.fov, getAspectRatio(), cfg.camera.near, cfg.camera.far);
-    const cameraHelper = new CameraHelper(camera);
-    // cameraHelper.setCameraTarget(aVehicle);
-    cameraHelper.initOrbitCamera(renderer.domElement);
+    const cameraHelper = new CameraHelper(renderer.domElement);
+    cameraHelper.setCameraTarget(aVehicle);
 
-    const platformBuilder = new PlatformBuilder(scene, world);
-    platformBuilder.importMap(map1);
+    const gameProgress = new GameProgressManager();
 
-    // platformBuilder.showGUI();
+    const mapBuilder = new MapBuilder(scene, world);
+    mapBuilder.importMap(map1);
+
+    mapBuilder.eventTriggerListeners.add(MapEvent.setCameraPosition, (e) => {
+        if (e.relatedTarget === aVehicle.chassisBody) {
+            const [x, y, z] = e.dataSet.split(',');
+            cameraHelper.cameraPosition.set(x, y, z);
+        }
+    });
+    mapBuilder.eventTriggerListeners.add(MapEvent.finish, (e) => {
+        if (e.relatedTarget === aVehicle.chassisBody) {
+            gameProgress.stopTimer();
+            // showPopUp('retry', 'next')
+            console.log(`Well done! _ time: ${gameProgress.result}`);
+        }
+    });
 
     inputHandler.addKeyPressListener(() => {
         if (inputHandler.isKeyPressed('M')) {
-            platformBuilder.showGUI();
+            mapBuilder.toggleEditMode();
         }
+
+        // if (inputHandler.isKeyPressed('V')) {
+        //     console.log(cameraHelper.camera.position);
+        // }
 
         if (inputHandler.isKeyPressed('R')) {
             aVehicle.resetPosition();
-            platformBuilder.resetDynamicPlatforms();
+            mapBuilder.resetDynamicPlatforms();
+            gameProgress.resetTimer();
+        }
+
+        if (inputHandler.isKeyPressed('C')) {
+            cameraHelper.switchMode();
         }
 
         let engineForce = 0;
@@ -67,6 +90,10 @@ const worldStep = 1 / 60;
             engineForce = 1;
         } else if (inputHandler.isKeyPressed('S', 'ArrowDown')) {
             engineForce = -1;
+        }
+        if (!gameProgress.started && engineForce) {
+            // console.log('start');
+            gameProgress.startTimer();
         }
 
         if (inputHandler.isKeyPressed('A', 'ArrowLeft')) {
@@ -80,7 +107,9 @@ const worldStep = 1 / 60;
         aVehicle.setBrakeForce(Number(inputHandler.isKeyPressed(' ')));
     });
 
-    wireframeRenderer(scene, world.bodies);
+    if (cfg.renderWireFrame) {
+        wireframeRenderer(scene, world.bodies);
+    }
     render();
 
     function render() {
@@ -93,13 +122,14 @@ const worldStep = 1 / 60;
         world.step(worldStep);
 
         cameraHelper.update();
+        gameProgress.updateHUD();
 
-        renderer.render(scene, camera);
+        renderer.render(scene, cameraHelper.camera);
     }
 
     function onWindowResize() {
-        camera.aspect = getAspectRatio();
-        camera.updateProjectionMatrix();
+        cameraHelper.camera.aspect = window.aspectRatio;
+        cameraHelper.camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
@@ -114,6 +144,8 @@ const worldStep = 1 / 60;
         skyBox.needsUpdate = true;
         scene.background = skyBox;
 
+        lightProbe.copy(LightProbeGenerator.fromCubeTexture(skyBox));
+
         const vehicleChassis = chassisGLTF.scene;
         const vehicleWheel = wheelGLTF.scene;
         const vehicle = new Vehicle(vehicleChassis, vehicleWheel);
@@ -125,6 +157,8 @@ const worldStep = 1 / 60;
     }
 })();
 
-function getAspectRatio() {
-    return window.innerWidth / window.innerHeight;
-}
+Object.defineProperty(window, 'aspectRatio', {
+    get() {
+        return window.innerWidth / window.innerHeight;
+    },
+});

@@ -8,8 +8,8 @@ export class Input {
     constructor(label: string, type = 'input' as 'input'|'select') {
         this.type = type;
         this.inputElement = document.createElement(type);
-        this.inputElement.addEventListener('change', this.onChange);
         this.labelElement.innerText = label;
+        this.containerElement.classList.add('inputContainer');
         this.containerElement.appendChild(this.labelElement);
         this.containerElement.appendChild(this.inputElement);
     }
@@ -28,6 +28,7 @@ export class Input {
 
     appendTo(element: HTMLElement) {
         element.appendChild(this.containerElement);
+        this.inputElement.addEventListener('change', this.onChange);
 
         return this;
     }

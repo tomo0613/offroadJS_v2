@@ -2,8 +2,9 @@
 
 body {
     margin: 0;
-    color: rgb(116, 113, 113);
+    color: whitesmoke;
     background-color: rgb(55, 56, 54);
+    font-family: 'Courier New', Courier, monospace;
     overflow: hidden;
 
     user-select: none;
@@ -15,6 +16,19 @@ body {
 .floatingElement {
     position: absolute;
     border-radius: 5px;
+}
+
+.inputContainer {
+    display: flex;
+}
+
+.inputContainer span {
+    margin-right: auto;
+}
+
+.label {
+    margin-top: 8px;
+    margin-bottom: 4px;
 }
 
 .virtualKey {
@@ -44,9 +58,9 @@ body {
 }
 
 #editorPanel {
-    background-color: rgba(144, 144, 144, 0.8);
+    background-color: rgba(70, 70, 70, 0.8);
     padding: 10px;
-    width: 250px;
+    width: 280px;
     top: 10px;
     right: 10px;
 }
@@ -54,4 +68,13 @@ body {
 #editorPanel .list {
     height: 200px;
     overflow-y: scroll;
+}
+
+#hud {
+    background-color: rgba(70, 70, 70, 0.8);
+    padding: 10px;
+    width: 90px;
+    height: 20px;
+    top: 10px;
+    left: 10px;
 }

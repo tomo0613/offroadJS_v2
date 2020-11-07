@@ -1,11 +1,20 @@
 import { Vec3 } from 'cannon-es';
 
 import store, { EditorState } from './store';
+import { Label } from './uiComponents/label';
 import { List } from './uiComponents/list';
+import { MapBuilder } from '../mapBuilder';
 import { NumberInput } from './uiComponents/numberInput';
-import { PlatformBuilder } from '../platformBuilder';
+
+const transformableProperties = {
+    box: ['width', 'height', 'length'],
+    cylinder: ['height', 'radiusTop', 'radiusBottom', 'sides'],
+    ramp: ['width', 'height', 'length'],
+    trigger: ['size'],
+};
 
 const tmp_vec3 = new Vec3();
+const translatePanelLabel = new Label('Translate');
 const translatePanelLayout = {
     position_x: new NumberInput({ label: 'position.X:' }),
     position_y: new NumberInput({ label: 'position.Y:' }),
@@ -14,13 +23,15 @@ const translatePanelLayout = {
     rotation_y: new NumberInput({ label: 'rotation.Y:', min: -360, max: 360 }),
     rotation_z: new NumberInput({ label: 'rotation.Z:', min: -360, max: 360 }),
 };
+const transformPanelLabel = new Label('Transform');
 const transformPanelLayout = {
-    width: new NumberInput({ label: 'width', defaultValue: 1, min: 0 }),
-    height: new NumberInput({ label: 'height', defaultValue: 1, min: 0 }),
-    length: new NumberInput({ label: 'length', defaultValue: 1, min: 0 }),
-    radiusTop: new NumberInput({ label: 'radiusTop', defaultValue: 1, min: 0 }),
-    radiusBottom: new NumberInput({ label: 'radiusBottom', defaultValue: 1, min: 0 }),
-    sides: new NumberInput({ label: 'sides', defaultValue: 6, min: 4 }),
+    size: new NumberInput({ label: 'size:', defaultValue: 1, min: 0 }),
+    width: new NumberInput({ label: 'width:', defaultValue: 1, min: 0 }),
+    height: new NumberInput({ label: 'height:', defaultValue: 1, min: 0 }),
+    length: new NumberInput({ label: 'length:', defaultValue: 1, min: 0 }),
+    radiusTop: new NumberInput({ label: 'radius top:', defaultValue: 1, min: 0 }),
+    radiusBottom: new NumberInput({ label: 'radius bottom:', defaultValue: 1, min: 0 }),
+    sides: new NumberInput({ label: 'sides:', defaultValue: 6, min: 4 }),
 };
 
 let gEditorPanel: HTMLElement;
@@ -36,7 +47,7 @@ function createEditorPanel() {
     gPropertyEditorContainer = document.createElement('section');
 }
 
-export function setUpEditor(platformBuilder: PlatformBuilder) {
+export function renderEditor(mapBuilder: MapBuilder) {
     // createEditorPanelIfNotExists
     if (!gEditorPanel) {
         createEditorPanel();
@@ -44,17 +55,21 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
         return;
     }
 
+    store.onChange = renderPropertyEditor;
+
     const onListSelection = ({ currentTarget }: MouseEvent) => {
-        const platformId = (currentTarget as HTMLElement).dataset.id;
-        const { width, height, length, radiusTop, radiusBottom, sides } = platformBuilder.getPropsFromStore(platformId);
-        const platformBody = platformBuilder.getBodyFromStore(platformId);
-        const { x: position_x, y: position_y, z: position_z } = platformBody.position;
-        platformBody.quaternion.toEuler(tmp_vec3);
+        const mapElementId = (currentTarget as HTMLElement).dataset.id;
+        const mapElementBody = mapBuilder.getBodyFromStore(mapElementId);
+        const {
+            size, width, height, length, radiusTop, radiusBottom, sides,
+        } = mapBuilder.getPropsFromStore(mapElementId);
+        const { x: position_x, y: position_y, z: position_z } = mapElementBody.position;
+        mapElementBody.quaternion.toEuler(tmp_vec3);
         const { x: rotation_x, y: rotation_y, z: rotation_z } = tmp_vec3;
 
-        store.onChange = renderPropertyEditor;
         store.setState({
-            platformId,
+            mapElementId,
+            size,
             width,
             height,
             length,
@@ -69,7 +84,7 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
             rotation_z: rotation_z * 180 / Math.PI,
         });
 
-        platformBuilder.selectPlatform(platformId);
+        mapBuilder.selectPlatform(mapElementId);
     };
 
     const translateProperties = [
@@ -77,49 +92,49 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
     ] as const;
     const translatePropertyChangeHandlers = translateProperties.reduce((changeHandlers, property) => {
         changeHandlers[property] = (value: number) => {
-            platformBuilder.translate(platformBuilder.selectedPlatformId, { [property]: value });
+            mapBuilder.translate(mapBuilder.selectedMapElementId, { [property]: value });
             store.setState({ [property]: value });
         };
 
         return changeHandlers;
     }, {} as Record<typeof translateProperties[number], (value: number) => void>);
 
-    const transformProperties = ['width', 'height', 'length', 'radiusTop', 'radiusBottom', 'sides'] as const;
+    const transformProperties = ['size', 'width', 'height', 'length', 'radiusTop', 'radiusBottom', 'sides'] as const;
     const transformPropertyChangeHandlers = transformProperties.reduce((changeHandlers, property) => {
         changeHandlers[property] = (value: number) => {
             const props = store.getState();
-            platformBuilder.transform(platformBuilder.selectedPlatformId, { ...props, [property]: value });
+            mapBuilder.transform(mapBuilder.selectedMapElementId, { ...props, [property]: value });
             store.setState({ [property]: value });
         };
 
         return changeHandlers;
     }, {} as Record<typeof transformProperties[number], (value: number) => void>);
 
-    const list = new List('platforms: ', onListSelection);
-    list.setItems(platformBuilder.platformIdList);
+    const list = new List('Map elements: ', onListSelection);
+    list.setItems(mapBuilder.mapElementIdList);
     list.appendTo(gEditorPanel);
 
     gEditorPanel.appendChild(createActionButtonBar({
         add() {},
         clone() {
-            platformBuilder.clone(platformBuilder.selectedPlatformId);
-            list.setItems(platformBuilder.platformIdList);
+            mapBuilder.clone(mapBuilder.selectedMapElementId);
+            list.setItems(mapBuilder.mapElementIdList);
         },
         remove() {
-            platformBuilder.destroy(platformBuilder.selectedPlatformId);
-            list.setItems(platformBuilder.platformIdList);
+            mapBuilder.destroy(mapBuilder.selectedMapElementId);
+            list.setItems(mapBuilder.mapElementIdList);
         },
     }));
     gEditorPanel.appendChild(gPropertyEditorContainer);
 
     function renderPropertyEditor(state: EditorState) {
-        // label
         renderTranslatePanel(state);
-        // label
         renderTransformPanel(state);
     }
 
     function renderTranslatePanel(state: EditorState) {
+        translatePanelLabel.appendTo(gPropertyEditorContainer);
+
         Object.entries(translatePanelLayout).forEach(([property, inputElement]) => {
             inputElement.appendTo(gPropertyEditorContainer);
             inputElement.setValue(state[property]);
@@ -128,10 +143,17 @@ export function setUpEditor(platformBuilder: PlatformBuilder) {
     }
 
     function renderTransformPanel(state: EditorState) {
+        transformPanelLabel.appendTo(gPropertyEditorContainer);
+
         Object.entries(transformPanelLayout).forEach(([property, inputElement]) => {
-            inputElement.appendTo(gPropertyEditorContainer);
-            inputElement.setValue(state[property]);
-            inputElement.setOnChange(transformPropertyChangeHandlers[property]);
+            const [mapElementType] = state.mapElementId.split('_');
+            if (transformableProperties[mapElementType].includes(property)) {
+                inputElement.appendTo(gPropertyEditorContainer);
+                inputElement.setValue(state[property]);
+                inputElement.setOnChange(transformPropertyChangeHandlers[property]);
+            } else {
+                inputElement.remove();
+            }
         });
     }
 }
