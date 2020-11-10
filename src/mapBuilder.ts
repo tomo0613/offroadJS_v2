@@ -4,7 +4,6 @@ import {
     ContactEquation,
     ConvexPolyhedron,
     Cylinder,
-    SHAPE_TYPES,
     Shape,
     Sphere,
     Vec3,
@@ -25,6 +24,7 @@ import { ConvexBufferGeometry } from 'three/examples/jsm/geometries/ConvexGeomet
 
 import { EventListener } from './common/EventListener';
 import cfg from './config';
+import { degToRad } from './utils';
 import { renderEditor } from './editor/editor';
 
 export enum MapEvent {
@@ -36,6 +36,7 @@ enum MapElementType {
     box = 'box',
     cylinder = 'cylinder',
     ramp = 'ramp',
+    triangularRamp = 'triangularRamp',
     trigger = 'trigger',
 }
 
@@ -96,11 +97,6 @@ type CylinderProps = CommonMapElementProps & CylinderShapeProps;
 export type MapElementProps = BoxProps & CylinderProps & Partial<EventTriggerProps>;
 export type PlatformComponentStore = Map<string, Mesh|Body|Function|MapElementProps>;
 
-const shapeTypeMap = {
-    Box: MapElementType.box,
-    Cylinder: MapElementType.cylinder,
-    ConvexPolyhedron: MapElementType.ramp,
-};
 const defaultPlatformColor = 0xDDDDDD;
 const dynamicPlatformColor = 0x95C0E5;
 
@@ -141,12 +137,7 @@ export class MapBuilder {
     }
 
     private addToWorld(visualShape: Geometry | BufferGeometry, physicalShape: Shape, props: MapElementProps) {
-        const mapElementType: MapElementType = props.type || shapeTypeMap[physicalShape.constructor.name];
-        const mapElementId = `${mapElementType}_${gId++}`;
-        const mapElementProps = {
-            ...props,
-            type: mapElementType,
-        };
+        const mapElementId = `${props.type}_${gId++}`;
         const {
             position_x = 0,
             position_y = 0,
@@ -154,11 +145,11 @@ export class MapBuilder {
             rotation_x = 0,
             rotation_y = 0,
             rotation_z = 0,
-        } = mapElementProps;
+        } = props;
 
-        const color = mapElementProps.mass ? dynamicPlatformColor : defaultPlatformColor;
+        const color = props.mass ? dynamicPlatformColor : defaultPlatformColor;
         const mesh = new Mesh(visualShape, new MeshLambertMaterial({ color }));
-        const body = new Body({ shape: physicalShape, mass: mapElementProps.mass || 0 });
+        const body = new Body({ shape: physicalShape, mass: props.mass || 0 });
         const updateVisuals = () => {
             mesh.position.copy(body.position as unknown as Vector3);
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
@@ -169,9 +160,9 @@ export class MapBuilder {
 
         if (rotation_x || rotation_y || rotation_z) {
             body.quaternion.setFromEuler(
-                rotation_x / 180 * Math.PI,
-                rotation_y / 180 * Math.PI,
-                rotation_z / 180 * Math.PI,
+                degToRad(rotation_x),
+                degToRad(rotation_y),
+                degToRad(rotation_z),
             );
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
         }
@@ -184,7 +175,7 @@ export class MapBuilder {
         this.world.addBody(body);
         this.scene.add(mesh);
 
-        if (mapElementProps.mass) {
+        if (props.mass) {
             this.world.addEventListener('postStep', updateVisuals);
         }
 
@@ -194,7 +185,7 @@ export class MapBuilder {
         this.mapElementComponentStore.set(`${mapElementId}_mesh`, mesh);
         this.mapElementComponentStore.set(`${mapElementId}_body`, body);
         this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, updateVisuals);
-        this.mapElementComponentStore.set(`${mapElementId}_props`, mapElementProps);
+        this.mapElementComponentStore.set(`${mapElementId}_props`, props);
 
         if (this.editMode) {
             this.selectPlatform(mapElementId);
@@ -213,6 +204,8 @@ export class MapBuilder {
                 return this.buildCylinder(props);
             case MapElementType.ramp:
                 return this.buildRamp(props);
+            case MapElementType.triangularRamp:
+                return this.buildTriangularRamp(props);
             case MapElementType.trigger:
                 return this.placeEventTrigger(props as EventTriggerProps);
             default:
@@ -281,12 +274,12 @@ export class MapBuilder {
             this.mapElementIdList.forEach((id) => {
                 this.setEventTriggerVisibility(id, true);
             });
-            document.getElementById('editorPanel').style.display = 'block';
+            document.getElementById('editorPanel').classList.remove('hidden');
         } else {
             this.mapElementIdList.forEach((id) => {
                 this.setEventTriggerVisibility(id, false);
             });
-            document.getElementById('editorPanel').style.display = 'none';
+            document.getElementById('editorPanel').classList.add('hidden');
         }
     }
 
@@ -298,7 +291,7 @@ export class MapBuilder {
         return this.addToWorld(
             new BoxBufferGeometry(width * 2, height * 2, length * 2),
             new Box(new Vec3(width, height, length)),
-            props,
+            { type: MapElementType.box, ...props },
         );
     }
 
@@ -309,7 +302,7 @@ export class MapBuilder {
         return this.addToWorld(
             new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides),
             new Cylinder(radiusTop, radiusBottom, height * 2, cylinderSides),
-            props,
+            { type: MapElementType.cylinder, ...props },
         );
     }
 
@@ -319,9 +312,20 @@ export class MapBuilder {
         return this.addToWorld(
             new ConvexBufferGeometry(shape.vertices.map(({ x, y, z }) => new Vector3(x, y, z))),
             shape,
-            props,
+            { type: MapElementType.ramp, ...props },
         );
     }
+
+    buildTriangularRamp(props: BoxProps) {
+        const shape = getTriangularRampShape(props.width, props.height, props.length);
+
+        return this.addToWorld(
+            new ConvexBufferGeometry(shape.vertices.map(({ x, y, z }) => new Vector3(x, y, z))),
+            shape,
+            { type: MapElementType.triangularRamp, ...props },
+        );
+    }
+
 
     placeEventTrigger(props: EventTriggerProps) {
         const { event, dataSet, size = 1 } = props;
@@ -385,9 +389,9 @@ export class MapBuilder {
 
         body.position.set(position_x, position_y, position_z);
         body.quaternion.setFromEuler(
-            rotation_x / 180 * Math.PI,
-            rotation_y / 180 * Math.PI,
-            rotation_z / 180 * Math.PI,
+            degToRad(rotation_x),
+            degToRad(rotation_y),
+            degToRad(rotation_z),
         );
     }
 
@@ -413,9 +417,9 @@ export class MapBuilder {
             position_z,
         );
         body.quaternion.setFromEuler(
-            rotation_x / 180 * Math.PI,
-            rotation_y / 180 * Math.PI,
-            rotation_z / 180 * Math.PI,
+            degToRad(rotation_x),
+            degToRad(rotation_y),
+            degToRad(rotation_z),
         );
 
         updateVisuals();
@@ -429,36 +433,40 @@ export class MapBuilder {
     }: BoxProps & BoxPropsSimple & CylinderProps) {
         const mesh = this.getMeshFromStore(id);
         const body = this.getBodyFromStore(id);
+        const { type } = this.getPropsFromStore(id);
         const shape = body.shapes[0];
         const cylinderSides = Math.max(3, sides);
-        // https://github.com/schteppe/cannon.js/issues/329
-        const shapeType = shape.type === SHAPE_TYPES.CONVEXPOLYHEDRON && shape.constructor.name === 'Cylinder'
-            ? SHAPE_TYPES.CYLINDER
-            : shape.type;
         let transformedShape: Shape;
         let transformedGeometry: BufferGeometry;
 
-        switch (shapeType) {
-            case SHAPE_TYPES.BOX:
+        switch (type) {
+            case MapElementType.box:
                 (shape as Box).halfExtents.set(width, height, length);
                 (shape as Box).updateConvexPolyhedronRepresentation();
                 transformedShape = shape;
                 transformedGeometry = new BoxBufferGeometry(width * 2, height * 2, length * 2);
                 Object.assign(this.getPropsFromStore(id), { width, height, length });
                 break;
-            case SHAPE_TYPES.CYLINDER:
+            case MapElementType.cylinder:
                 transformedShape = new Cylinder(radiusTop, radiusBottom, height * 2, cylinderSides);
                 transformedGeometry = new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides);
                 Object.assign(this.getPropsFromStore(id), { radiusTop, radiusBottom, height, sides: cylinderSides });
                 break;
-            case SHAPE_TYPES.CONVEXPOLYHEDRON:
+            case MapElementType.ramp:
                 transformedShape = getRampShape(width, height, length);
                 transformedGeometry = new ConvexBufferGeometry(
                     (transformedShape as ConvexPolyhedron).vertices.map(({ x, y, z }) => new Vector3(x, y, z)),
                 );
                 Object.assign(this.getPropsFromStore(id), { width, height, length });
                 break;
-            case SHAPE_TYPES.SPHERE:
+            case MapElementType.triangularRamp:
+                transformedShape = getTriangularRampShape(width, height, length);
+                transformedGeometry = new ConvexBufferGeometry(
+                    (transformedShape as ConvexPolyhedron).vertices.map(({ x, y, z }) => new Vector3(x, y, z)),
+                );
+                Object.assign(this.getPropsFromStore(id), { width, height, length });
+                break;
+            case MapElementType.trigger:
                 transformedShape = new Sphere(size);
                 transformedGeometry = new SphereBufferGeometry(size);
                 Object.assign(this.getPropsFromStore(id), { size });
@@ -487,6 +495,9 @@ export class MapBuilder {
                     break;
                 case MapElementType.ramp:
                     this.buildRamp(props);
+                    break;
+                case MapElementType.triangularRamp:
+                    this.buildTriangularRamp(props);
                     break;
                 case MapElementType.trigger:
                     this.placeEventTrigger(props as EventTriggerProps);
@@ -533,3 +544,57 @@ function getRampShape(width = 1, height = 1, length = 1) {
 
     return new ConvexPolyhedron({ vertices, faces });
 }
+
+function getTriangularRampShape(width = 1, height = 1, length = 1) {
+    // List of vertices that can be assigned to a face
+    const vertices = [
+        new Vec3(0, 0, 0),
+        new Vec3(width * 2, 0, 0),
+        new Vec3(0, height * 2, 0),
+        new Vec3(0, 0, length * 2),
+    ];
+    // List of vertex index groups that are assigned to individual faces
+    // ! CCW order is important for correct normals !
+    const faces = [
+        [0, 2, 1],
+        [1, 2, 3],
+        [0, 1, 3],
+        [3, 2, 0],
+    ];
+
+    return new ConvexPolyhedron({ vertices, faces });
+}
+
+// (function generateLoop(this: MapBuilder, segmentWidth = 3, radius = 10, segmentCount = 20, width = 10) {
+//     const tmp_vector = new Vector3();
+//     const xAxis = new Vector3(1, 0, 0);
+//     // const positionOffset = new Vector3(-1, 10, 5);
+//     const positionOffset = new Vector3(5, 10, -25);
+
+//     const anglePerSegment = 360 / segmentCount;
+//     const circumference = 2 * radius * Math.PI;
+//     const segmentWidthOffset = width / segmentCount;
+
+//     const o = {
+//         width: segmentWidth,
+//         height: 0.1,
+//         length: circumference / segmentCount / 2 + 0.1,
+//     };
+
+//     for (let i = 0; i < segmentCount; i++) {
+//         const id = this.buildBox({
+//             ...o,
+//             position_x: segmentWidthOffset * i,
+//             position_y: -radius,
+
+//             rotation_x: anglePerSegment * i,
+//             // rotation_y: -width * 0.8,
+//             // rotation_z: -width / 2,
+//         });
+//         tmp_vector.set(segmentWidthOffset * i, -radius, 0)
+//             .applyAxisAngle(xAxis, degToRad(anglePerSegment * i))
+//             .add(positionOffset);
+
+//         this.translate(id, { position_x: tmp_vector.x, position_y: tmp_vector.y, position_z: tmp_vector.z });
+//     }
+// }).call(this);

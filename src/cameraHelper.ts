@@ -1,4 +1,4 @@
-import { Object3D, PerspectiveCamera, Quaternion, Scene, Vector3 } from 'three';
+import { Object3D, PerspectiveCamera, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import cfg from './config';

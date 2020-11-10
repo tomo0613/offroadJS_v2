@@ -11,8 +11,10 @@ import { GameProgressManager } from './gameProgressManager';
 import Vehicle from './vehicle/vehicle';
 import cfg from './config';
 import inputHandler from './inputHandler';
+import { layoutRenderers } from './notifications/popUpWindow';
+import { popUpWindow } from './notifications/notificationHandler';
 
-import { map1 } from './maps';
+import { maps } from './maps';
 
 const worldStep = 1 / 60;
 
@@ -48,7 +50,8 @@ const worldStep = 1 / 60;
     const gameProgress = new GameProgressManager();
 
     const mapBuilder = new MapBuilder(scene, world);
-    mapBuilder.importMap(map1);
+    // mapBuilder.importMap(maps.map2);
+    mapBuilder.importMap(maps.map1);
 
     mapBuilder.eventTriggerListeners.add(MapEvent.setCameraPosition, (e) => {
         if (e.relatedTarget === aVehicle.chassisBody) {
@@ -59,8 +62,17 @@ const worldStep = 1 / 60;
     mapBuilder.eventTriggerListeners.add(MapEvent.finish, (e) => {
         if (e.relatedTarget === aVehicle.chassisBody) {
             gameProgress.stopTimer();
-            // showPopUp('retry', 'next')
-            console.log(`Well done! _ time: ${gameProgress.result}`);
+            // console.log(`Well done! _ time: ${gameProgress.result}`);
+            popUpWindow.open(layoutRenderers.mapFinished, {
+                result: gameProgress.result,
+                onNext: () => {
+                    // gameProgress ? next map
+                    popUpWindow.close();
+                    mapBuilder.importMap(maps.map2);
+                    reset();
+                },
+                onRetry: reset,
+            });
         }
     });
 
@@ -69,14 +81,12 @@ const worldStep = 1 / 60;
             mapBuilder.toggleEditMode();
         }
 
-        // if (inputHandler.isKeyPressed('V')) {
-        //     console.log(cameraHelper.camera.position);
-        // }
+        if (inputHandler.isKeyPressed('P')) {
+            console.log(cameraHelper.camera.position);
+        }
 
         if (inputHandler.isKeyPressed('R')) {
-            aVehicle.resetPosition();
-            mapBuilder.resetDynamicPlatforms();
-            gameProgress.resetTimer();
+            reset();
         }
 
         if (inputHandler.isKeyPressed('C')) {
@@ -91,21 +101,26 @@ const worldStep = 1 / 60;
         } else if (inputHandler.isKeyPressed('S', 'ArrowDown')) {
             engineForce = -1;
         }
-        if (!gameProgress.started && engineForce) {
-            // console.log('start');
-            gameProgress.startTimer();
-        }
-
         if (inputHandler.isKeyPressed('A', 'ArrowLeft')) {
             steeringValue = 1;
         } else if (inputHandler.isKeyPressed('D', 'ArrowRight')) {
             steeringValue = -1;
+        }
+        if (!gameProgress.started && engineForce) {
+            gameProgress.startTimer();
         }
 
         aVehicle.setEngineForce(engineForce);
         aVehicle.setSteeringValue(steeringValue);
         aVehicle.setBrakeForce(Number(inputHandler.isKeyPressed(' ')));
     });
+
+    function reset() {
+        popUpWindow.close();
+        aVehicle.resetPosition();
+        mapBuilder.resetDynamicPlatforms();
+        gameProgress.resetTimer();
+    }
 
     if (cfg.renderWireFrame) {
         wireframeRenderer(scene, world.bodies);

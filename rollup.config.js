@@ -12,6 +12,6 @@ export default {
     plugins: [
         rollup_ts({ typescript }),
         node_resolve({ only: ['three', 'cannon-es', 'cannon-es-debugger'] }),
-        terser({ keep_classnames: true }),
+        terser(),
     ],
 };

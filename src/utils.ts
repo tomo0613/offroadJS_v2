@@ -106,3 +106,11 @@ const mobileUserAgentRegExp = /Android|iPhone|iPad/i;
 function isMobileDevice() {
     return mobileUserAgentRegExp.test(window.navigator.userAgent);
 }
+
+export function degToRad(deg: number) {
+    return deg / 180 * Math.PI;
+}
+
+export function radToDeg(rad: number) {
+    return rad * 180 / Math.PI;
+}

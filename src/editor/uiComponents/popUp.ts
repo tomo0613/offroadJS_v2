@@ -1,7 +1,0 @@
-function show() {
-    //
-}
-
-function hide() {
-    //
-}

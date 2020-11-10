@@ -5,11 +5,13 @@ import { Label } from './uiComponents/label';
 import { List } from './uiComponents/list';
 import { MapBuilder } from '../mapBuilder';
 import { NumberInput } from './uiComponents/numberInput';
+import { radToDeg } from '../utils';
 
 const transformableProperties = {
     box: ['width', 'height', 'length'],
     cylinder: ['height', 'radiusTop', 'radiusBottom', 'sides'],
     ramp: ['width', 'height', 'length'],
+    triangularRamp: ['width', 'height', 'length'],
     trigger: ['size'],
 };
 
@@ -31,7 +33,7 @@ const transformPanelLayout = {
     length: new NumberInput({ label: 'length:', defaultValue: 1, min: 0 }),
     radiusTop: new NumberInput({ label: 'radius top:', defaultValue: 1, min: 0 }),
     radiusBottom: new NumberInput({ label: 'radius bottom:', defaultValue: 1, min: 0 }),
-    sides: new NumberInput({ label: 'sides:', defaultValue: 6, min: 4 }),
+    sides: new NumberInput({ label: 'sides:', defaultValue: 6, min: 3 }),
 };
 
 let gEditorPanel: HTMLElement;
@@ -79,9 +81,9 @@ export function renderEditor(mapBuilder: MapBuilder) {
             position_x,
             position_y,
             position_z,
-            rotation_x: rotation_x * 180 / Math.PI,
-            rotation_y: rotation_y * 180 / Math.PI,
-            rotation_z: rotation_z * 180 / Math.PI,
+            rotation_x: radToDeg(rotation_x),
+            rotation_y: radToDeg(rotation_y),
+            rotation_z: radToDeg(rotation_z),
         });
 
         mapBuilder.selectPlatform(mapElementId);
@@ -115,7 +117,9 @@ export function renderEditor(mapBuilder: MapBuilder) {
     list.appendTo(gEditorPanel);
 
     gEditorPanel.appendChild(createActionButtonBar({
-        add() {},
+        add() {
+            console.log('ToDo add new');
+        },
         clone() {
             mapBuilder.clone(mapBuilder.selectedMapElementId);
             list.setItems(mapBuilder.mapElementIdList);
