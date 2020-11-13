@@ -9,6 +9,7 @@ import {
     Vec3,
     World,
 } from 'cannon-es';
+
 import {
     BoxBufferGeometry,
     BufferGeometry,
@@ -22,14 +23,15 @@ import {
 } from 'three';
 import { ConvexBufferGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
 
-import { EventListener } from './common/EventListener';
-import cfg from './config';
-import { degToRad } from './utils';
-import { renderEditor } from './editor/editor';
+import { degToRad, radToDeg } from '../utils';
+import { EventListener } from '../common/EventListener';
+import cfg from '../config';
+import { renderEditor } from '../mapEditor/editor';
 
 export enum MapEvent {
-    setCameraPosition = 'setCameraPosition',
+    checkpoint = 'checkpoint',
     finish = 'finish',
+    setCameraPosition = 'setCameraPosition',
 }
 
 enum MapElementType {
@@ -84,11 +86,11 @@ interface CollisionEvent {
     target: Body;
 }
 
-type EventTriggerListener = (event: {
+export interface TriggeredEvent {
     target: Body;
     relatedTarget: Body | null;
     dataSet?: string;
-}) => void;
+}
 
 type MapElementId = string;
 type BoxProps = CommonMapElementProps & BoxShapeProps;
@@ -483,6 +485,7 @@ export class MapBuilder {
 
     importMap = (mapData: Record<string, MapElementProps>) => {
         this.mapElementIdStore.forEach(this.destroy);
+        gId = 0;
 
         Object.entries(mapData).forEach(([id, props]) => {
             const [type] = id.split('_');
@@ -505,6 +508,14 @@ export class MapBuilder {
                 default:
             }
         });
+
+        // generateHorizontalToVerticalTransition.call(this, {
+        //     position: new Vec3(16, 0.1, 1),
+        //     segmentCount: 15,
+        //     segmentWidth: 3,
+        //     segmentHeight: 0.3,
+        //     segmentLength: 0.5,
+        // });
     }
 
     exportMap = () => {
@@ -598,3 +609,66 @@ function getTriangularRampShape(width = 1, height = 1, length = 1) {
 //         this.translate(id, { position_x: tmp_vector.x, position_y: tmp_vector.y, position_z: tmp_vector.z });
 //     }
 // }).call(this);
+
+interface TransitionProps {
+    segmentWidth: number;
+    segmentHeight: number;
+    segmentLength: number;
+    segmentCount: number;
+    position: Vec3;
+}
+
+function generateHorizontalToVerticalTransition(this: MapBuilder, props: TransitionProps) {
+    const tmp_vector = new Vector3();
+    const { segmentWidth = 2, segmentLength = 1, segmentHeight = 0.5, segmentCount = 2, position } = props;
+
+    const width = segmentWidth;
+    const height = segmentHeight;
+    const boxHeight = 0.1;
+    const length = segmentLength;
+    const rotationPerSegment_deg = radToDeg(Math.atan(height / width));
+    let prevRampId: string;
+
+    for (let i = 0; i < segmentCount; i++) {
+        const rampId = this.buildTriangularRamp({
+            width,
+            height,
+            length,
+            position_x: position.x,
+            position_y: position.y,
+            position_z: position.z - segmentLength * 2 * i,
+            rotation_z: -rotationPerSegment_deg * i,
+        });
+        const rampMesh = this.getMeshFromStore(rampId);
+        const rampBody = this.getBodyFromStore(rampId);
+
+        if (prevRampId) {
+            const prevRampMesh = this.getMeshFromStore(prevRampId);
+            tmp_vector.copy(prevRampMesh.position);
+            prevRampMesh.translateY(segmentHeight * 2);
+
+            rampMesh.position.setX(prevRampMesh.position.x);
+            rampMesh.position.setY(prevRampMesh.position.y);
+            rampBody.position.x = prevRampMesh.position.x;
+            rampBody.position.y = prevRampMesh.position.y;
+
+            prevRampMesh.position.copy(tmp_vector);
+        }
+
+        const boxId = this.buildBox({
+            width,
+            height: boxHeight,
+            length,
+            rotation_z: -rotationPerSegment_deg * i,
+        });
+        const boxMesh = this.getMeshFromStore(boxId);
+        const boxBody = this.getBodyFromStore(boxId);
+        boxMesh.position.copy(rampMesh.position);
+        boxMesh.translateX(segmentWidth);
+        boxMesh.translateY(-boxHeight);
+        boxMesh.translateZ(segmentLength);
+        boxBody.position.copy(boxMesh.position as unknown as Vec3);
+
+        prevRampId = rampId;
+    }
+}

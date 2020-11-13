@@ -12,6 +12,7 @@
     "startTSCompiler": "npx tsc -w",
     "startDevServer": "rm -rf ./build-tmp/* && WATCH='./build-tmp' node ./devServer/server.js",
     "build": "npx rollup -c",
+    "build:test": "TEST=true node ./devServer/server.js",
     "lint": "npx eslint src/**",
     "lint:fix": "npm run lint --fix",
     "test": "echo \"Error: no test specified\" && exit 1"

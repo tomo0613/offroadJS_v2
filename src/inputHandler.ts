@@ -7,9 +7,9 @@ const navigationKeys = [
     'PageDown',
     'End',
     'Home',
-    'ArrowLeft',
+    // 'ArrowLeft',
     'ArrowUp',
-    'ArrowRight',
+    // 'ArrowRight',
     'ArrowDown',
 ];
 
@@ -57,17 +57,19 @@ onkeydown = onkeyup = (e) => {
 };
 
 if (isMobileDevice()) {
-    appendVirtualKey('ArrowUp', '↑');
-    appendVirtualKey('ArrowDown', '↓');
-    appendVirtualKey('ArrowLeft', '←');
-    appendVirtualKey('ArrowRight', '→');
-    appendVirtualKey('R', '↺');
+    appendVirtualKey('bottomLeftPanel', 'ArrowUp', '▲');
+    appendVirtualKey('bottomLeftPanel', 'ArrowDown', '▼');
+    appendVirtualKey('bottomRightPanel', 'ArrowLeft', '◄');
+    appendVirtualKey('bottomRightPanel', 'ArrowRight', '►');
+    appendVirtualKey('topRightPanel', 'R', '⟲');
+    appendVirtualKey('topRightPanel', 'C', 'c');
+    appendVirtualKey('topRightPanel', 'P', 'p');
 }
 
-function appendVirtualKey(key: string, label: string) {
+function appendVirtualKey(containerElementId: string, key: string, label: string) {
     const button = document.createElement('button');
     button.textContent = label;
-    button.classList.add('floatingElement', 'virtualKey');
+    button.classList.add('virtualKey');
     button.id = key;
 
     const onEventStart = () => {
@@ -86,7 +88,9 @@ function appendVirtualKey(key: string, label: string) {
     button.addEventListener('touchcancel', onEventEnd);
     button.addEventListener('touchend', onEventEnd);
 
-    document.body.appendChild(button);
+    const containerElement = document.getElementById(containerElementId);
+    containerElement.classList.remove('hidden');
+    containerElement.appendChild(button);
 }
 
 function invokeCallback(callback: Function) {

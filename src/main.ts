@@ -1,24 +1,27 @@
-import { CubeTexture, DirectionalLight, LightProbe, Scene, WebGLRenderer } from 'three';
+import { CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, WebGLRenderer } from 'three';
 import { SAPBroadphase, World } from 'cannon-es';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
+import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import wireframeRenderer from 'cannon-es-debugger';
 
 import * as utils from './utils';
-import { MapBuilder, MapEvent } from './mapBuilder';
+import { MapBuilder, MapEvent, TriggeredEvent } from './mapModules/mapBuilder';
+import { popUpWindow, showPopUpMessage } from './notificationModules/notificationManager';
 import { CameraHelper } from './cameraHelper';
+import { CheckpointManager } from './mapModules/checkpointManager';
 import { GameProgressManager } from './gameProgressManager';
 import Vehicle from './vehicle/vehicle';
 import cfg from './config';
 import inputHandler from './inputHandler';
-import { layoutRenderers } from './notifications/popUpWindow';
-import { popUpWindow } from './notifications/notificationHandler';
+import { layoutRenderers } from './notificationModules/popUpWindow';
 
-import { maps } from './maps';
+import { maps } from './mapModules/maps';
 
 const worldStep = 1 / 60;
 
 (async function init() {
+    let paused = false;
     const scene = new Scene();
 
     const lightProbe = new LightProbe();
@@ -42,7 +45,7 @@ const worldStep = 1 / 60;
 
     window.onresize = utils.debounce(onWindowResize, 500);
 
-    const [aVehicle] = await loadAssets();
+    const [aVehicle, finishIcon3d, checkpointIcon3d] = await loadAssets() as [Vehicle, Mesh, Mesh];
 
     const cameraHelper = new CameraHelper(renderer.domElement);
     cameraHelper.setCameraTarget(aVehicle);
@@ -50,29 +53,38 @@ const worldStep = 1 / 60;
     const gameProgress = new GameProgressManager();
 
     const mapBuilder = new MapBuilder(scene, world);
-    // mapBuilder.importMap(maps.map2);
-    mapBuilder.importMap(maps.map1);
 
-    mapBuilder.eventTriggerListeners.add(MapEvent.setCameraPosition, (e) => {
-        if (e.relatedTarget === aVehicle.chassisBody) {
-            const [x, y, z] = e.dataSet.split(',');
-            cameraHelper.cameraPosition.set(x, y, z);
+    const checkpointManager = new CheckpointManager(scene, {
+        finish: finishIcon3d,
+        checkpoint: checkpointIcon3d,
+    });
+
+    mapBuilder.importMap(maps.map1);
+    // mapBuilder.importMap(maps.map2);
+    checkpointManager.init(mapBuilder, gameProgress);
+
+    mapBuilder.eventTriggerListeners.add(MapEvent.setCameraPosition, ({ relatedTarget, dataSet }: TriggeredEvent) => {
+        if (relatedTarget === aVehicle.chassisBody) {
+            const [x, y, z] = dataSet.split(',');
+            cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
         }
     });
-    mapBuilder.eventTriggerListeners.add(MapEvent.finish, (e) => {
-        if (e.relatedTarget === aVehicle.chassisBody) {
-            gameProgress.stopTimer();
-            // console.log(`Well done! _ time: ${gameProgress.result}`);
-            popUpWindow.open(layoutRenderers.mapFinished, {
-                result: gameProgress.result,
-                onNext: () => {
-                    // gameProgress ? next map
-                    popUpWindow.close();
-                    mapBuilder.importMap(maps.map2);
-                    reset();
-                },
-                onRetry: reset,
-            });
+
+    mapBuilder.eventTriggerListeners.add(MapEvent.finish, ({ relatedTarget, dataSet }: TriggeredEvent) => {
+        if (relatedTarget === aVehicle.chassisBody) {
+            if (parseCheckpointCount(dataSet) === gameProgress.checkpointsReached) {
+                gameProgress.stopTimer();
+                popUpWindow.open(layoutRenderers.mapFinished, {
+                    result: gameProgress.result,
+                    onNext: () => {
+                        // gameProgress ? next map
+                        popUpWindow.close();
+                        mapBuilder.importMap(maps.map2);
+                        reset();
+                    },
+                    onRetry: reset,
+                });
+            }
         }
     });
 
@@ -82,7 +94,7 @@ const worldStep = 1 / 60;
         }
 
         if (inputHandler.isKeyPressed('P')) {
-            console.log(cameraHelper.camera.position);
+            pause();
         }
 
         if (inputHandler.isKeyPressed('R')) {
@@ -117,9 +129,26 @@ const worldStep = 1 / 60;
 
     function reset() {
         popUpWindow.close();
-        aVehicle.resetPosition();
+        gameProgress.reset();
         mapBuilder.resetDynamicPlatforms();
-        gameProgress.resetTimer();
+        checkpointManager.init(mapBuilder, gameProgress);
+        aVehicle.resetPosition();
+    }
+
+    function pause() {
+        paused = !paused;
+
+        if (!paused) {
+            render();
+            if (gameProgress.started) {
+                gameProgress.startTimer();
+            }
+        } else {
+            showPopUpMessage('paused');
+            if (gameProgress.started) {
+                gameProgress.stopTimer();
+            }
+        }
     }
 
     if (cfg.renderWireFrame) {
@@ -127,10 +156,10 @@ const worldStep = 1 / 60;
     }
     render();
 
-    function render() {
-        // if (pause) {
-        //     return;
-        // }
+    function render(dt = performance.now()) {
+        if (paused) {
+            return;
+        }
         requestAnimationFrame(render);
 
         // update physics
@@ -138,6 +167,8 @@ const worldStep = 1 / 60;
 
         cameraHelper.update();
         gameProgress.updateHUD();
+
+        checkpointManager.updateVisuals(dt);
 
         renderer.render(scene, cameraHelper.camera);
     }
@@ -149,10 +180,12 @@ const worldStep = 1 / 60;
     }
 
     async function loadAssets() {
-        const [cubeTexture, wheelGLTF, chassisGLTF] = await Promise.all([
+        const [cubeTexture, wheelGLTF, chassisGLTF, finishIcon, checkpointIcon] = await Promise.all([
             utils.loadResource<HTMLImageElement>('./img/skybox.jpg'),
-            utils.loadResource<GLTF>('3D_objects/lowPoly_car_wheel.gltf'),
-            utils.loadResource<GLTF>('3D_objects/mg.glb'),
+            utils.loadResource<GLTF>('./3D_objects/lowPoly_car_wheel.gltf'),
+            utils.loadResource<GLTF>('./3D_objects/mg.glb'),
+            utils.loadResource<SVGResult>('./img/laurel_wreath.svg'),
+            utils.loadResource<SVGResult>('./img/pin.svg'),
         ]);
 
         const skyBox = new CubeTexture(utils.sliceCubeTexture(cubeTexture));
@@ -164,13 +197,23 @@ const worldStep = 1 / 60;
         const vehicleChassis = chassisGLTF.scene;
         const vehicleWheel = wheelGLTF.scene;
         const vehicle = new Vehicle(vehicleChassis, vehicleWheel);
-        vehicle.addToWorld(world);
-        vehicle.addToScene(scene);
-        vehicle.resetPosition();
+        vehicle.addToWorld(world)
+            .addToScene(scene)
+            .resetPosition();
 
-        return [vehicle];
+        return [
+            vehicle,
+            utils.svgToMesh(finishIcon, { x: 3.5, y: -3, scale: 0.07 }),
+            utils.svgToMesh(checkpointIcon, { x: -5, y: -5, scale: 0.07 }),
+        ];
     }
 })();
+
+function parseCheckpointCount(dataSet: string) {
+    const [, checkpointCount] = dataSet.match(/checkpoints:(\d+)/) || [];
+
+    return checkpointCount ? Number(checkpointCount) : 0;
+}
 
 Object.defineProperty(window, 'aspectRatio', {
     get() {

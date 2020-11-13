@@ -2,6 +2,7 @@ import { Object3D, PerspectiveCamera, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import cfg from './config';
+import { showPopUpMessage } from './notificationModules/notificationManager';
 import { NOP } from './utils';
 import Vehicle from './vehicle/vehicle';
 
@@ -72,9 +73,11 @@ export class CameraHelper {
         switch (this.currentCameraMode) {
             case CameraMode.dynamic:
                 this.update = this.updateDynamicCamera;
+                showPopUpMessage('Camera mode is set to: "dynamic"');
                 break;
             case CameraMode.chase:
                 this.update = this.updateChaseCamera;
+                showPopUpMessage('Camera mode is set to: "chase"');
                 break;
             case CameraMode.hood:
                 this.cameraTarget.chassisMesh.add(this.camera);
@@ -82,9 +85,11 @@ export class CameraHelper {
                 this.camera.rotation.set(0, 0, 0);
                 this.camera.fov = 70;
                 this.update = NOP;
+                showPopUpMessage('Camera mode is set to: "hood"');
                 break;
             case CameraMode.free:
                 this.orbitControls.enabled = true;
+                showPopUpMessage('Camera mode is set to: "free" (use mouse to look around)');
                 break;
             default:
         }

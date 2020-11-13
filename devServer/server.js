@@ -90,7 +90,9 @@ async function serveIndexFile(response) {
         const scriptToInject = `<body>\n\t<script>\n${browserReloadScript.toString()}\t</script>`;
         fileContent = fileContent.replace('<body>', scriptToInject);
     }
-    fileContent = fileContent.replace('./build/', `./${devBuildFolder}/`);
+    if (!process.env.TEST) {
+        fileContent = fileContent.replace('./build/', `./${devBuildFolder}/`);
+    }
 
     response.setHeader('Content-Type', 'text/html');
     response.end(fileContent);
@@ -174,6 +176,8 @@ function getContentTypeByExtension(fileExtension) {
             return 'application/javascript';
         case 'json':
             return 'application/json';
+        case 'svg':
+            return 'image/svg+xml';
         default:
             return 'text/plain';
     }

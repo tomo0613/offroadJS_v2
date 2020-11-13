@@ -1,15 +1,18 @@
+import { Box3, ExtrudeBufferGeometry, Group, ImageLoader, Mesh, MeshBasicMaterial, Vector3 } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { ImageLoader } from 'three';
+import { SVGLoader, SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
+import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeBufferGeometry';
 
-type ResourceType = GLTF | HTMLImageElement;
+type ResourceType = GLTF|HTMLImageElement|SVGResult;
 
 export {
-    loadResource,
-    sliceCubeTexture,
     debounce,
-    throttle,
-    NOP,
     isMobileDevice,
+    loadResource,
+    NOP,
+    sliceCubeTexture,
+    svgToMesh,
+    throttle,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -17,11 +20,14 @@ function NOP() {}
 
 function loadResource<T extends ResourceType>(url: string): Promise<T> {
     const extension = url.split('.').pop();
-    let loader;
+    let loader: ImageLoader|GLTFLoader|SVGLoader;
 
     switch (extension) {
         case 'jpg':
             loader = new ImageLoader();
+            break;
+        case 'svg':
+            loader = new SVGLoader();
             break;
         case 'glb':
         case 'gltf':
@@ -44,6 +50,52 @@ function loadResource<T extends ResourceType>(url: string): Promise<T> {
     });
 }
 
+interface TranslateProps {
+    x?: number;
+    y?: number;
+    z?: number;
+    scale?: number;
+}
+
+function svgToMesh({ paths }: SVGResult, translateProps = {} as TranslateProps) {
+    const group = new Group();
+    const extrudeOptions: ExtrudeGeometryOptions = {
+        bevelEnabled: false,
+        depth: 1,
+    };
+
+    for (let i = 0; i < paths.length; i++) {
+        const path = paths[i];
+
+        const material = new MeshBasicMaterial({
+            color: path.color,
+        });
+
+        const shapes = path.toShapes(false);
+        for (let j = 0; j < shapes.length; j++) {
+            const shape = shapes[j];
+            const geometry = new ExtrudeBufferGeometry(shape, extrudeOptions);
+            const mesh = new Mesh(geometry, material);
+            group.add(mesh);
+        }
+    }
+
+    const { x: width, y: height, z: length } = new Box3().setFromObject(group).getSize(new Vector3());
+    const { x: offsetX = 0, y: offsetY = 0, z: offsetZ = 0, scale = 1 } = translateProps;
+
+    group.traverse((mesh) => {
+        mesh.translateX(-width / 2 + offsetX);
+        mesh.translateY(-height / 2 + offsetY);
+        mesh.translateZ(-length / 2 + offsetZ);
+    });
+
+    group.rotateY(Math.PI);
+    group.rotateZ(Math.PI);
+    group.scale.set(scale, scale, scale);
+
+    return group;
+}
+
 function sliceCubeTexture(img: HTMLImageElement, imgSize = 1024) {
     const cubeTextureMap = [
         { x: 2, y: 1 },
@@ -54,9 +106,9 @@ function sliceCubeTexture(img: HTMLImageElement, imgSize = 1024) {
         { x: 3, y: 1 },
     ];
 
-    return cubeTextureMap.map((positionOffset) => getFace(positionOffset.x, positionOffset.y));
+    return cubeTextureMap.map(getFace);
 
-    function getFace(x: number, y: number) {
+    function getFace({ x, y }: { x: number; y: number }) {
         const canvas = document.createElement('canvas');
         canvas.width = imgSize;
         canvas.height = imgSize;

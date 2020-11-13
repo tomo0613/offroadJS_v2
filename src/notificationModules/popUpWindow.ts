@@ -23,26 +23,25 @@ export const layoutRenderers = {
 };
 
 export class PopUpWindow {
-    container = document.createElement('div');
-    popUpWindow = document.createElement('div');
-    popUpWindow_title = document.createElement('div');
-    popUpWindow_textContent = document.createElement('span');
-    popUpWindow_buttonBar = document.createElement('div');
-    onClose = NOP;
-    currentLayout: Layout;
+    private container = document.createElement('div');
+    private domElement = document.createElement('div');
+    private domElement_title = document.createElement('div');
+    private domElement_textContent = document.createElement('span');
+    private domElement_buttonBar = document.createElement('div');
+    private currentLayout: Layout;
 
     constructor() {
-        this.popUpWindow.id = 'popUpWindow';
         this.container.id = 'popUpWindow_container';
-        this.popUpWindow_title.id = 'popUpWindow_title';
-        this.popUpWindow_textContent.id = 'popUpWindow_textContent';
-        this.popUpWindow_buttonBar.id = 'popUpWindow_buttonBar';
+        this.domElement.id = 'popUpWindow';
+        this.domElement_title.id = 'popUpWindow_title';
+        this.domElement_textContent.id = 'popUpWindow_textContent';
+        this.domElement_buttonBar.id = 'popUpWindow_buttonBar';
         this.container.classList.add('hidden');
 
-        this.popUpWindow.appendChild(this.popUpWindow_title);
-        this.popUpWindow.appendChild(this.popUpWindow_textContent);
-        this.popUpWindow.appendChild(this.popUpWindow_buttonBar);
-        this.container.appendChild(this.popUpWindow);
+        this.domElement.appendChild(this.domElement_title);
+        this.domElement.appendChild(this.domElement_textContent);
+        this.domElement.appendChild(this.domElement_buttonBar);
+        this.container.appendChild(this.domElement);
         document.body.appendChild(this.container);
     }
 
@@ -59,11 +58,11 @@ export class PopUpWindow {
             return;
         }
 
-        this.popUpWindow_title.textContent = layout.title;
-        this.popUpWindow_textContent.textContent = layout.textContent;
+        this.domElement_title.textContent = layout.title;
+        this.domElement_textContent.textContent = layout.textContent;
         // remove all buttons
-        while (this.popUpWindow_buttonBar.firstChild) {
-            this.popUpWindow_buttonBar.removeChild(this.popUpWindow_buttonBar.lastChild);
+        while (this.domElement_buttonBar.firstChild) {
+            this.domElement_buttonBar.removeChild(this.domElement_buttonBar.lastChild);
         }
         // add buttons
         layout.buttonBar.forEach((buttonProps) => {
@@ -73,7 +72,7 @@ export class PopUpWindow {
                 buttonProps.onClick();
             });
 
-            this.popUpWindow_buttonBar.appendChild(button);
+            this.domElement_buttonBar.appendChild(button);
         });
     }
 

@@ -13,13 +13,52 @@ body {
     -ms-user-select: none;
 }
 
+button {
+    border-radius: 5px;
+    margin: 5px;
+}
+
+.virtualKey {
+    width: 60px; 
+    /* width: 42px;  */
+    height: 60px;
+    font-size: 42px;
+    line-height: 42px;
+    padding: 0 2px 2px 0;
+}
+
 .hidden {
     display: none;
 }
 
-.floatingElement {
+.floatingPanel {
     position: absolute;
-    border-radius: 5px;
+}
+
+.floatingPanel:not(.hidden) {
+    display: flex;
+}
+
+#topLeftPanel {
+    top: 10px;
+    left: 10px;
+}
+
+#topRightPanel {
+    top: 10px;
+    right: 10px;
+    flex-direction: column;
+}
+
+#bottomRightPanel {
+    bottom: 10px;
+    right: 10px;
+}
+
+#bottomLeftPanel {
+    bottom: 10px;
+    left: 10px;
+    flex-direction: column;
 }
 
 .inputContainer {
@@ -35,34 +74,10 @@ body {
     margin-bottom: 4px;
 }
 
-.virtualKey {
-    width: 32px;
-    height: 32px;
-}
-
-.virtualKey#ArrowUp {
-    bottom: 50px;
-    left: 10px;
-}
-.virtualKey#ArrowDown {
-    bottom: 10px;
-    left: 10px;
-}
-.virtualKey#ArrowLeft {
-    bottom: 10px;
-    right: 50px;
-}
-.virtualKey#ArrowRight {
-    bottom: 10px;
-    right: 10px;
-}
-.virtualKey#R {
-    top: 10px;
-    right: 10px;
-}
-
 #editorPanel {
+    flex-direction: column;
     background-color: rgba(70, 70, 70, 0.8);
+    border-radius: 5px;
     padding: 10px;
     width: 300px;
     top: 10px;
@@ -76,6 +91,7 @@ body {
 
 #hud {
     background-color: rgba(70, 70, 70, 0.8);
+    border-radius: 5px;
     padding: 10px;
     width: 90px;
     height: 20px;

@@ -2,12 +2,12 @@ const hud = document.createElement('aside');
 const timer = document.createElement('span');
 const defaultTimerContent = '00:00.000';
 
-hud.classList.add('floatingElement');
 hud.id = 'hud';
 
 export class GameProgressManager {
     started = false;
     result = '';
+    checkpointsReached = 0;
     private stopped = false;
     private startTime = 0;
     private stopTime = 0;
@@ -15,7 +15,11 @@ export class GameProgressManager {
     constructor() {
         timer.textContent = defaultTimerContent;
         hud.appendChild(timer);
-        document.body.appendChild(hud);
+        document.getElementById('topLeftPanel').appendChild(hud);
+    }
+
+    checkpointReached = () => {
+        this.checkpointsReached++;
     }
 
     startTimer() {
@@ -53,8 +57,15 @@ export class GameProgressManager {
 
     resetTimer() {
         this.started = false;
-        this.startTime = undefined;
+        this.stopped = false;
+        this.startTime = 0;
         timer.textContent = defaultTimerContent;
+    }
+
+    reset() {
+        this.resetTimer();
+        this.checkpointsReached = 0;
+        this.result = '';
     }
 }
 

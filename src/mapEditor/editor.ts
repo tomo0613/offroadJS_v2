@@ -3,7 +3,7 @@ import { Vec3 } from 'cannon-es';
 import store, { EditorState } from './store';
 import { Label } from './uiComponents/label';
 import { List } from './uiComponents/list';
-import { MapBuilder } from '../mapBuilder';
+import { MapBuilder } from '../mapModules/mapBuilder';
 import { NumberInput } from './uiComponents/numberInput';
 import { radToDeg } from '../utils';
 
@@ -41,7 +41,7 @@ let gPropertyEditorContainer: HTMLElement;
 
 function createEditorPanel() {
     gEditorPanel = document.createElement('aside');
-    gEditorPanel.classList.add('floatingElement');
+    gEditorPanel.classList.add('floatingPanel');
     gEditorPanel.id = 'editorPanel';
 
     document.body.appendChild(gEditorPanel);

@@ -1,5 +1,10 @@
 @charset "UTF-8";
 
+.fade-out {
+    opacity: 0;
+    transition: opacity var(--fade-out-duration) ease-in-out;
+}
+
 #popUpWindow_container {
     position: absolute;
     z-index: 1;
@@ -40,4 +45,18 @@
     justify-content: space-evenly;
     margin-top: auto;
     margin-bottom: 10px;
+}
+
+#popUpMessage_container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.popUpMessage {
+    margin: auto;
+    padding: 5px 20px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.6);
 }

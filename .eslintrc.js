@@ -22,6 +22,7 @@ module.exports = {
     rules: {
         'sort-imports': WARNING,
         'import/extensions': [ERROR, 'never'],
+        // https://dev.to/otamnitram/sorting-your-imports-correctly-in-react-213m
         'indent': [ERROR, 4, {SwitchCase: 1}],
         'max-len': [ERROR, 120],
         'no-dupe-class-members': DISABLED,
