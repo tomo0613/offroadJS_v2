@@ -1,4 +1,4 @@
-import { CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, WebGLRenderer } from 'three';
+import { CubeTexture, DirectionalLight, LightProbe, log, Mesh, Scene, WebGLRenderer } from 'three';
 import { SAPBroadphase, World } from 'cannon-es';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
@@ -16,7 +16,7 @@ import cfg from './config';
 import inputHandler from './inputHandler';
 import { layoutRenderers } from './notificationModules/popUpWindow';
 
-import { maps } from './mapModules/maps';
+import { mapCollection } from './maps/mapCollection';
 
 const worldStep = 1 / 60;
 
@@ -59,8 +59,8 @@ const worldStep = 1 / 60;
         checkpoint: checkpointIcon3d,
     });
 
-    mapBuilder.importMap(maps.map1);
-    // mapBuilder.importMap(maps.map2);
+    mapBuilder.importMap(mapCollection.map01);
+    // mapBuilder.importMap(mapCollection.map02);
     checkpointManager.init(mapBuilder, gameProgress);
 
     mapBuilder.eventTriggerListeners.add(MapEvent.setCameraPosition, ({ relatedTarget, dataSet }: TriggeredEvent) => {
@@ -79,7 +79,7 @@ const worldStep = 1 / 60;
                     onNext: () => {
                         // gameProgress ? next map
                         popUpWindow.close();
-                        mapBuilder.importMap(maps.map2);
+                        mapBuilder.importMap(mapCollection.map02);
                         reset();
                     },
                     onRetry: reset,
@@ -96,6 +96,10 @@ const worldStep = 1 / 60;
         if (inputHandler.isKeyPressed('P')) {
             pause();
         }
+
+        // if (inputHandler.isKeyPressed('O')) {
+        //     console.log(cameraHelper.camera.position);
+        // }
 
         if (inputHandler.isKeyPressed('R')) {
             reset();

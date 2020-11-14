@@ -2,8 +2,10 @@ import {
     Body,
     Box,
     ContactEquation,
+    ContactMaterial,
     ConvexPolyhedron,
     Cylinder,
+    Material,
     Shape,
     Sphere,
     Vec3,
@@ -38,6 +40,7 @@ enum MapElementType {
     box = 'box',
     cylinder = 'cylinder',
     ramp = 'ramp',
+    sphere = 'sphere',
     triangularRamp = 'triangularRamp',
     trigger = 'trigger',
 }
@@ -51,6 +54,7 @@ interface CommonMapElementProps {
     rotation_y?: number;
     rotation_z?: number;
     mass?: number;
+    noFriction?: boolean;
 }
 
 interface BoxShapeProps {
@@ -101,7 +105,15 @@ export type PlatformComponentStore = Map<string, Mesh|Body|Function|MapElementPr
 
 const defaultPlatformColor = 0xDDDDDD;
 const dynamicPlatformColor = 0x95C0E5;
-
+const normalMaterial = new Material('normalMaterial');
+const lowFrictionMaterial = new Material('lowFrictionMaterial');
+const normal_to_normal_cm = new ContactMaterial(normalMaterial, normalMaterial, {
+    friction: 1e-3,
+});
+const normal_to_lowFriction_cm = new ContactMaterial(normalMaterial, lowFrictionMaterial, {
+    friction: 0,
+    contactEquationStiffness: 1e8,
+});
 let gId = 0;
 
 export class MapBuilder {
@@ -120,6 +132,9 @@ export class MapBuilder {
 
         window.importMap = this.importMap;
         window.exportMap = this.exportMap;
+
+        world.addContactMaterial(normal_to_normal_cm);
+        world.addContactMaterial(normal_to_lowFriction_cm);
     }
 
     get mapElementIdList() {
@@ -151,7 +166,11 @@ export class MapBuilder {
 
         const color = props.mass ? dynamicPlatformColor : defaultPlatformColor;
         const mesh = new Mesh(visualShape, new MeshLambertMaterial({ color }));
-        const body = new Body({ shape: physicalShape, mass: props.mass || 0 });
+        const body = new Body({
+            shape: physicalShape,
+            mass: props.mass || 0,
+            material: props.noFriction ? lowFrictionMaterial : normalMaterial,
+        });
         const updateVisuals = () => {
             mesh.position.copy(body.position as unknown as Vector3);
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
@@ -318,6 +337,16 @@ export class MapBuilder {
         );
     }
 
+    buildSphere(props: BoxPropsSimple) {
+        const { size = 1 } = props;
+
+        return this.addToWorld(
+            new SphereBufferGeometry(size),
+            new Sphere(size),
+            { type: MapElementType.sphere, ...props },
+        );
+    }
+
     buildTriangularRamp(props: BoxProps) {
         const shape = getTriangularRampShape(props.width, props.height, props.length);
 
@@ -461,17 +490,18 @@ export class MapBuilder {
                 );
                 Object.assign(this.getPropsFromStore(id), { width, height, length });
                 break;
+            case MapElementType.sphere:
+            case MapElementType.trigger:
+                transformedShape = new Sphere(size);
+                transformedGeometry = new SphereBufferGeometry(size);
+                Object.assign(this.getPropsFromStore(id), { size });
+                break;
             case MapElementType.triangularRamp:
                 transformedShape = getTriangularRampShape(width, height, length);
                 transformedGeometry = new ConvexBufferGeometry(
                     (transformedShape as ConvexPolyhedron).vertices.map(({ x, y, z }) => new Vector3(x, y, z)),
                 );
                 Object.assign(this.getPropsFromStore(id), { width, height, length });
-                break;
-            case MapElementType.trigger:
-                transformedShape = new Sphere(size);
-                transformedGeometry = new SphereBufferGeometry(size);
-                Object.assign(this.getPropsFromStore(id), { size });
                 break;
             default:
         }
@@ -481,6 +511,11 @@ export class MapBuilder {
 
         mesh.geometry.dispose();
         mesh.geometry = transformedGeometry;
+    }
+
+    // ToDo
+    setMass(id: MapElementId, mass: number) {
+        Object.assign(this.getPropsFromStore(id), { mass });
     }
 
     importMap = (mapData: Record<string, MapElementProps>) => {
@@ -498,6 +533,9 @@ export class MapBuilder {
                     break;
                 case MapElementType.ramp:
                     this.buildRamp(props);
+                    break;
+                case MapElementType.sphere:
+                    this.buildSphere(props);
                     break;
                 case MapElementType.triangularRamp:
                     this.buildTriangularRamp(props);

@@ -21,7 +21,7 @@ export class SelectInput extends Input {
         this.inputElement.appendChild(option);
     }
 
-    setValue(selectedIndex: number) {
-        (this.inputElement as HTMLSelectElement).selectedIndex = selectedIndex;
+    setValue(value: string) {
+        this.inputElement.value = value;
     }
 }

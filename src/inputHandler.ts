@@ -61,6 +61,7 @@ if (isMobileDevice()) {
     appendVirtualKey('bottomLeftPanel', 'ArrowDown', '▼');
     appendVirtualKey('bottomRightPanel', 'ArrowLeft', '◄');
     appendVirtualKey('bottomRightPanel', 'ArrowRight', '►');
+    // keyReleased
     appendVirtualKey('topRightPanel', 'R', '⟲');
     appendVirtualKey('topRightPanel', 'C', 'c');
     appendVirtualKey('topRightPanel', 'P', 'p');

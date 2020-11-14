@@ -18,7 +18,7 @@ export class NumberInput extends Input {
         inputElement.value = String(defaultValue);
     }
 
-    setValue(value: number) {
+    setValue(value: number|string) {
         this.inputElement.value = String(value);
     }
 }

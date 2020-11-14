@@ -5,14 +5,25 @@ import { Label } from './uiComponents/label';
 import { List } from './uiComponents/list';
 import { MapBuilder } from '../mapModules/mapBuilder';
 import { NumberInput } from './uiComponents/numberInput';
+import { SelectInput } from './uiComponents/selectInput';
+import { TextInput } from './uiComponents/textInput';
 import { radToDeg } from '../utils';
 
 const transformableProperties = {
     box: ['width', 'height', 'length'],
     cylinder: ['height', 'radiusTop', 'radiusBottom', 'sides'],
     ramp: ['width', 'height', 'length'],
+    sphere: ['size'],
     triangularRamp: ['width', 'height', 'length'],
     trigger: ['size'],
+};
+const editableAttributes = {
+    box: ['mass'/* , noFriction */],
+    cylinder: ['mass'],
+    ramp: ['mass'],
+    sphere: ['mass'],
+    triangularRamp: ['mass'],
+    trigger: ['event', 'dataSet'],
 };
 
 const tmp_vec3 = new Vec3();
@@ -34,6 +45,14 @@ const transformPanelLayout = {
     radiusTop: new NumberInput({ label: 'radius top:', defaultValue: 1, min: 0 }),
     radiusBottom: new NumberInput({ label: 'radius bottom:', defaultValue: 1, min: 0 }),
     sides: new NumberInput({ label: 'sides:', defaultValue: 6, min: 3 }),
+};
+const attributesPanelLabel = new Label('Attributes');
+const attributesPanelLayout = {
+    mass: new NumberInput({ label: 'mass:', defaultValue: 0, min: 0 }),
+    event: new SelectInput({ label: 'event:', options: ['setCameraPosition', 'checkpoint', 'finish'] }),
+    dataSet: new TextInput({ label: 'data set:', defaultValue: '' }),
+    // color: new NumberInput({ label: 'mass:', defaultValue: 0, min: 0 }),
+    // noFriction: new Checkbox({ label: 'mass:', defaultValue: 0, min: 0 }),
 };
 
 let gEditorPanel: HTMLElement;
@@ -63,7 +82,7 @@ export function renderEditor(mapBuilder: MapBuilder) {
         const mapElementId = (currentTarget as HTMLElement).dataset.id;
         const mapElementBody = mapBuilder.getBodyFromStore(mapElementId);
         const {
-            size, width, height, length, radiusTop, radiusBottom, sides,
+            size, width, height, length, radiusTop, radiusBottom, sides, mass, event, dataSet,
         } = mapBuilder.getPropsFromStore(mapElementId);
         const { x: position_x, y: position_y, z: position_z } = mapElementBody.position;
         mapElementBody.quaternion.toEuler(tmp_vec3);
@@ -71,6 +90,7 @@ export function renderEditor(mapBuilder: MapBuilder) {
 
         store.setState({
             mapElementId,
+            // transform
             size,
             width,
             height,
@@ -78,12 +98,17 @@ export function renderEditor(mapBuilder: MapBuilder) {
             radiusTop,
             radiusBottom,
             sides,
+            // translate
             position_x,
             position_y,
             position_z,
             rotation_x: radToDeg(rotation_x),
             rotation_y: radToDeg(rotation_y),
             rotation_z: radToDeg(rotation_z),
+            // attributes
+            mass,
+            event,
+            dataSet,
         });
 
         mapBuilder.selectPlatform(mapElementId);
@@ -93,7 +118,8 @@ export function renderEditor(mapBuilder: MapBuilder) {
         'position_x', 'position_y', 'position_z', 'rotation_x', 'rotation_y', 'rotation_z',
     ] as const;
     const translatePropertyChangeHandlers = translateProperties.reduce((changeHandlers, property) => {
-        changeHandlers[property] = (value: number) => {
+        changeHandlers[property] = (aValue: number|string) => {
+            const value = Number(aValue);
             mapBuilder.translate(mapBuilder.selectedMapElementId, { [property]: value });
             store.setState({ [property]: value });
         };
@@ -103,7 +129,8 @@ export function renderEditor(mapBuilder: MapBuilder) {
 
     const transformProperties = ['size', 'width', 'height', 'length', 'radiusTop', 'radiusBottom', 'sides'] as const;
     const transformPropertyChangeHandlers = transformProperties.reduce((changeHandlers, property) => {
-        changeHandlers[property] = (value: number) => {
+        changeHandlers[property] = (aValue: number|string) => {
+            const value = Number(aValue);
             const props = store.getState();
             mapBuilder.transform(mapBuilder.selectedMapElementId, { ...props, [property]: value });
             store.setState({ [property]: value });
@@ -111,6 +138,21 @@ export function renderEditor(mapBuilder: MapBuilder) {
 
         return changeHandlers;
     }, {} as Record<typeof transformProperties[number], (value: number) => void>);
+
+    // ToDo
+    const attributes = ['mass', 'event', 'dataSet'] as const;
+    const attributeChangeHandlers = attributes.reduce((changeHandlers, attribute) => {
+        changeHandlers[attribute] = (value: number) => {
+            // const props = store.getState();
+            // todo mapBuilder should update
+            const props = mapBuilder.getPropsFromStore(mapBuilder.selectedMapElementId);
+            Object.assign(props, { [attribute]: value });
+            store.setState({ [attribute]: value });
+        };
+
+        return changeHandlers;
+    }, {} as Record<typeof transformProperties[number], (value: number) => void>);
+
 
     const list = new List('Map elements: ', onListSelection);
     list.setItems(mapBuilder.mapElementIdList);
@@ -134,6 +176,7 @@ export function renderEditor(mapBuilder: MapBuilder) {
     function renderPropertyEditor(state: EditorState) {
         renderTranslatePanel(state);
         renderTransformPanel(state);
+        renderAttributesPanel(state);
     }
 
     function renderTranslatePanel(state: EditorState) {
@@ -155,6 +198,21 @@ export function renderEditor(mapBuilder: MapBuilder) {
                 inputElement.appendTo(gPropertyEditorContainer);
                 inputElement.setValue(state[property]);
                 inputElement.setOnChange(transformPropertyChangeHandlers[property]);
+            } else {
+                inputElement.remove();
+            }
+        });
+    }
+
+    function renderAttributesPanel(state: EditorState) {
+        attributesPanelLabel.appendTo(gPropertyEditorContainer);
+
+        Object.entries(attributesPanelLayout).forEach(([property, inputElement]) => {
+            const [mapElementType] = state.mapElementId.split('_');
+            if (editableAttributes[mapElementType].includes(property)) {
+                inputElement.appendTo(gPropertyEditorContainer);
+                inputElement.setValue(state[property]);
+                inputElement.setOnChange(attributeChangeHandlers[property]);
             } else {
                 inputElement.remove();
             }

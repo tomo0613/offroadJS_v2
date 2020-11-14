@@ -20,6 +20,10 @@ const defaultState = {
     radiusTop: 1,
     radiusBottom: 1,
     sides: 6,
+
+    mass: 0,
+    event: 'setCameraPosition',
+    dataSet: '',
 };
 
 const gState = {

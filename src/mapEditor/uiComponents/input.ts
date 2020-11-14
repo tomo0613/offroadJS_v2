@@ -3,7 +3,7 @@ export class Input {
     containerElement = document.createElement('div');
     labelElement = document.createElement('span');
     inputElement: HTMLInputElement|HTMLSelectElement;
-    private valueChangeListener: (value: number) => void;
+    private valueChangeListener: (value: number|string) => void;
 
     constructor(label: string, type = 'input' as 'input'|'select') {
         this.type = type;
@@ -15,15 +15,7 @@ export class Input {
     }
 
     private onChange = ({ currentTarget }: InputEvent) => {
-        let value: string|number;
-
-        if (this.type === 'select') {
-            value = (currentTarget as HTMLSelectElement).selectedIndex;
-        } else {
-            value = (currentTarget as HTMLInputElement).value;
-        }
-
-        this.valueChangeListener(Number(value));
+        this.valueChangeListener((currentTarget as HTMLSelectElement|HTMLInputElement).value);
     }
 
     appendTo(element: HTMLElement) {
@@ -38,7 +30,7 @@ export class Input {
         this.containerElement.remove();
     }
 
-    setOnChange(onChange: (value: number) => void) {
+    setOnChange(onChange: (value: number|string) => void) {
         this.valueChangeListener = onChange;
     }
 }

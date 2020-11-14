@@ -4,6 +4,7 @@ import { Body } from 'cannon-es';
 import { MapBuilder, MapEvent, TriggeredEvent } from './mapBuilder';
 import { GameProgressManager } from '../gameProgressManager';
 import ObjectPool from '../common/ObjectPool';
+// import { layoutRenderers } from '../notificationModules/popUpWindow';
 
 interface Icon3dList {
     checkpoint: Mesh;
@@ -46,6 +47,7 @@ export class CheckpointManager {
         this.gameProgress = gameProgress;
 
         mapBuilder.eventTriggerListeners.add(MapEvent.checkpoint, this.checkpointEventHandler);
+        // mapBuilder.eventTriggerListeners.add(MapEvent.finish, this.finishEventHandler);
 
         if (this.checkpointIcon3dPool.activeCount) {
             this.checkpointIcon3dPool.releaseAll();
@@ -85,7 +87,6 @@ export class CheckpointManager {
     checkpointEventHandler = ({ target, relatedTarget }: TriggeredEvent) => {
         // if (relatedTarget === aVehicle.chassisBody) {
         if (this.activeCheckpoints.has(target)) {
-            console.log('checkpointReached');
             this.gameProgress.checkpointReached();
 
             const icon3d = this.checkpointIconToElementLinks.get(target);
@@ -93,6 +94,23 @@ export class CheckpointManager {
             this.activeCheckpoints.delete(target);
         }
     }
+
+    // finishEventHandler = ({ target, relatedTarget, dataSet }: TriggeredEvent) => {
+    //     // if (relatedTarget === aVehicle.chassisBody) {
+    //     if (parseCheckpointCount(dataSet) === this.gameProgress.checkpointsReached) {
+    //         this.gameProgress.stopTimer();
+    //         popUpWindow.open(layoutRenderers.mapFinished, {
+    //             result: this.gameProgress.result,
+    //             onNext: () => {
+    //                 // gameProgress ? next map
+    //                 popUpWindow.close();
+    //                 // mapBuilder.importMap(mapCollection.map02);
+    //                 reset();
+    //             },
+    //             onRetry: reset,
+    //         });
+    //     }
+    // }
 
     updateVisuals(dt: number) {
         animationHeightOffset = Math.sin(dt / 1000) / 500;
@@ -106,4 +124,10 @@ function animateIcon3d(icon3d: Mesh) {
     const r = icon3d.rotation.y + 0.02;
     icon3d.rotation.y = r >= PIx2 ? 0 : r;
     icon3d.position.y += animationHeightOffset;
+}
+
+function parseCheckpointCount(dataSet: string) {
+    const [, checkpointCount] = dataSet.match(/checkpoints:(\d+)/) || [];
+
+    return checkpointCount ? Number(checkpointCount) : 0;
 }
