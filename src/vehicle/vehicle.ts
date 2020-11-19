@@ -1,13 +1,9 @@
 import { Body, Box, Cylinder, Quaternion, RaycastVehicle, Transform, Vec3, World } from 'cannon-es';
 import { Object3D, Scene, Vector3 } from 'three';
 
-import { VehicleState, initStateHandler } from './stateHandler';
 import cfg from '../config';
 import { setMaterials } from './materials';
-
-const { x: initialX, y: initialY, z: initialZ } = cfg.vehicle.initialPosition;
-const vehicleInitialPosition = new Vec3(initialX, initialY, initialZ);
-const vehicleInitialRotation = new Quaternion().setFromAxisAngle(new Vec3(0, -1, 0), cfg.vehicle.initialRotation);
+import { VehicleState, initStateHandler } from './stateHandler';
 
 const translateAxis = new Vector3(0, 0, 1);
 
@@ -26,7 +22,8 @@ export default class Vehicle {
     wheelBodies: Body[];
     wheelMeshes: Object3D[];
     state: VehicleState;
-    shouldUpdate = false;
+    initialPosition = new Vec3();
+    initialRotation = new Quaternion();
 
     constructor(chassisMesh: Object3D, wheelMesh: Object3D) {
         const chassisBaseShape = new Box(new Vec3(0.9, 0.4, 2.1));
@@ -190,8 +187,8 @@ export default class Vehicle {
     }
 
     resetPosition() {
-        this.chassisBody.position.copy(vehicleInitialPosition);
-        this.chassisBody.quaternion.copy(vehicleInitialRotation);
+        this.chassisBody.position.copy(this.initialPosition);
+        this.chassisBody.quaternion.copy(this.initialRotation);
         this.chassisBody.velocity.set(0, 0, 0);
         this.chassisBody.angularVelocity.set(0, 0, 0);
     }

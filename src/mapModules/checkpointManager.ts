@@ -1,9 +1,9 @@
-import { Mesh, Scene, Vector3 } from 'three';
 import { Body } from 'cannon-es';
+import { Mesh, Scene, Vector3 } from 'three';
 
-import { MapBuilder, MapEvent, TriggeredEvent } from './mapBuilder';
-import { GameProgressManager } from '../gameProgressManager';
 import ObjectPool from '../common/ObjectPool';
+import { GameProgressManager } from '../gameProgressManager';
+import { MapBuilder, MapTriggerElementEvent, TriggeredEvent } from './mapBuilder';
 // import { layoutRenderers } from '../notificationModules/popUpWindow';
 
 interface Icon3dList {
@@ -46,7 +46,7 @@ export class CheckpointManager {
     init(mapBuilder: MapBuilder, gameProgress: GameProgressManager) {
         this.gameProgress = gameProgress;
 
-        mapBuilder.eventTriggerListeners.add(MapEvent.checkpoint, this.checkpointEventHandler);
+        mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.checkpoint, this.checkpointEventHandler);
         // mapBuilder.eventTriggerListeners.add(MapEvent.finish, this.finishEventHandler);
 
         if (this.checkpointIcon3dPool.activeCount) {

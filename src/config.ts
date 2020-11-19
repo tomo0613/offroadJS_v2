@@ -21,17 +21,10 @@ export default {
     },
     vehicle: {
         mass: 30,
-        steeringSpeed: 0.1,
-        maxSteeringValue: 0.7,
+        steeringSpeed: 0.05,
+        maxSteeringValue: 0.8,
         maxBrakeForce: 1,
         maxEngineForceFront: 70,
         maxEngineForceRear: 65,
-        initialPosition: {
-            x: 10,
-            y: 1,
-            z: 10,
-        },
-        initialRotation: -Math.PI / 2,
-        // initialRotation: 0,
     },
 };

@@ -52,6 +52,7 @@ export class GameProgressManager {
     stopTimer() {
         this.stopTime = performance.now();
         this.stopped = true;
+        // store mapHash
         this.result = this.getElapsedTime();
     }
 

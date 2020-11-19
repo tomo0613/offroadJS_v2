@@ -1,5 +1,3 @@
-import { NOP } from '../utils';
-
 interface MapFinishedContext {
     result: string;
     onNext: Function;

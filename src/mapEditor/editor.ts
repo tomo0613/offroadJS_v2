@@ -1,13 +1,10 @@
-import { Vec3 } from 'cannon-es';
-
+import { MapBuilder } from '../mapModules/mapBuilder';
 import store, { EditorState } from './store';
 import { Label } from './uiComponents/label';
-import { List } from './uiComponents/list';
-import { MapBuilder } from '../mapModules/mapBuilder';
+import { List, ListEvent } from './uiComponents/list';
 import { NumberInput } from './uiComponents/numberInput';
 import { SelectInput } from './uiComponents/selectInput';
 import { TextInput } from './uiComponents/textInput';
-import { radToDeg } from '../utils';
 
 const transformableProperties = {
     box: ['width', 'height', 'length'],
@@ -16,6 +13,7 @@ const transformableProperties = {
     sphere: ['size'],
     triangularRamp: ['width', 'height', 'length'],
     trigger: ['size'],
+    vehicle: [],
 };
 const editableAttributes = {
     box: ['mass'/* , noFriction */],
@@ -24,9 +22,9 @@ const editableAttributes = {
     sphere: ['mass'],
     triangularRamp: ['mass'],
     trigger: ['event', 'dataSet'],
+    vehicle: [],
 };
 
-const tmp_vec3 = new Vec3();
 const translatePanelLabel = new Label('Translate');
 const translatePanelLayout = {
     position_x: new NumberInput({ label: 'position.X:' }),
@@ -78,42 +76,6 @@ export function renderEditor(mapBuilder: MapBuilder) {
 
     store.onChange = renderPropertyEditor;
 
-    const onListSelection = ({ currentTarget }: MouseEvent) => {
-        const mapElementId = (currentTarget as HTMLElement).dataset.id;
-        const mapElementBody = mapBuilder.getBodyFromStore(mapElementId);
-        const {
-            size, width, height, length, radiusTop, radiusBottom, sides, mass, event, dataSet,
-        } = mapBuilder.getPropsFromStore(mapElementId);
-        const { x: position_x, y: position_y, z: position_z } = mapElementBody.position;
-        mapElementBody.quaternion.toEuler(tmp_vec3);
-        const { x: rotation_x, y: rotation_y, z: rotation_z } = tmp_vec3;
-
-        store.setState({
-            mapElementId,
-            // transform
-            size,
-            width,
-            height,
-            length,
-            radiusTop,
-            radiusBottom,
-            sides,
-            // translate
-            position_x,
-            position_y,
-            position_z,
-            rotation_x: radToDeg(rotation_x),
-            rotation_y: radToDeg(rotation_y),
-            rotation_z: radToDeg(rotation_z),
-            // attributes
-            mass,
-            event,
-            dataSet,
-        });
-
-        mapBuilder.selectPlatform(mapElementId);
-    };
-
     const translateProperties = [
         'position_x', 'position_y', 'position_z', 'rotation_x', 'rotation_y', 'rotation_z',
     ] as const;
@@ -153,9 +115,19 @@ export function renderEditor(mapBuilder: MapBuilder) {
         return changeHandlers;
     }, {} as Record<typeof transformProperties[number], (value: number) => void>);
 
+    const list = new List('Map elements: ', mapBuilder.mapElementIdList);
+    list.listeners.add(ListEvent.select, (mapElementId: string) => {
+        store.setState({
+            ...store.defaultState,
+            ...mapBuilder.getPropsFromStore(mapElementId),
+            mapElementId,
+        });
 
-    const list = new List('Map elements: ', onListSelection);
-    list.setItems(mapBuilder.mapElementIdList);
+        mapBuilder.selectPlatform(mapElementId);
+    });
+    list.listeners.add(ListEvent.setItems, () => {
+        list.selectItemByContent(mapBuilder.selectedMapElementId);
+    });
     list.appendTo(gEditorPanel);
 
     gEditorPanel.appendChild(createActionButtonBar({

@@ -1,4 +1,10 @@
 export default {
+    vehicle_0: {
+        position_x: 10,
+        position_y: 1,
+        position_z: 10,
+        rotation_y: 90,
+    },
     box_0: {
         width: 6,
         height: 0.1,
@@ -133,7 +139,8 @@ export default {
         position_z: 15.5,
         position_y: -1,
         mass: 40,
-        noFriction: true,
+        lowFriction: true,
+        fixedRotation: true,
     },
     box_17: {
         width: 2,
@@ -159,7 +166,8 @@ export default {
         position_z: 15.5,
         position_y: -6.5,
         mass: 10,
-        noFriction: true,
+        lowFriction: true,
+        fixedRotation: true,
     },
     box_20: {
         width: 1,
@@ -288,6 +296,7 @@ export default {
         position_z: 11.75,
         position_y: -6.5,
         mass: 10,
+        fixedRotation: true,
     },
     box_36: {
         width: 2,

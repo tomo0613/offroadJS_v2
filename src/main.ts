@@ -1,22 +1,21 @@
-import { CubeTexture, DirectionalLight, LightProbe, log, Mesh, Scene, WebGLRenderer } from 'three';
 import { SAPBroadphase, World } from 'cannon-es';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
-import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import wireframeRenderer from 'cannon-es-debugger';
+import { CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, WebGLRenderer } from 'three';
+import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 
-import * as utils from './utils';
-import { MapBuilder, MapEvent, TriggeredEvent } from './mapModules/mapBuilder';
-import { popUpWindow, showPopUpMessage } from './notificationModules/notificationManager';
 import { CameraHelper } from './cameraHelper';
-import { CheckpointManager } from './mapModules/checkpointManager';
-import { GameProgressManager } from './gameProgressManager';
-import Vehicle from './vehicle/vehicle';
 import cfg from './config';
+import { GameProgressManager } from './gameProgressManager';
 import inputHandler from './inputHandler';
-import { layoutRenderers } from './notificationModules/popUpWindow';
-
+import { CheckpointManager } from './mapModules/checkpointManager';
+import { MapBuilder, MapTriggerElementEvent, TriggeredEvent } from './mapModules/mapBuilder';
 import { mapCollection } from './maps/mapCollection';
+import { popUpWindow, showPopUpMessage } from './notificationModules/notificationManager';
+import { layoutRenderers } from './notificationModules/popUpWindow';
+import * as utils from './utils';
+import Vehicle from './vehicle/vehicle';
 
 const worldStep = 1 / 60;
 
@@ -53,6 +52,11 @@ const worldStep = 1 / 60;
     const gameProgress = new GameProgressManager();
 
     const mapBuilder = new MapBuilder(scene, world);
+    mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
+        aVehicle.initialPosition.set(pX, pY, pZ);
+        aVehicle.initialRotation.setFromEuler(utils.degToRad(rX), utils.degToRad(rY), utils.degToRad(rZ));
+        aVehicle.resetPosition();
+    };
 
     const checkpointManager = new CheckpointManager(scene, {
         finish: finishIcon3d,
@@ -61,32 +65,40 @@ const worldStep = 1 / 60;
 
     mapBuilder.importMap(mapCollection.map01);
     // mapBuilder.importMap(mapCollection.map02);
+    // mapBuilder.importMap(mapCollection.test);
+    // mapBuilder.toggleEditMode();
     checkpointManager.init(mapBuilder, gameProgress);
 
-    mapBuilder.eventTriggerListeners.add(MapEvent.setCameraPosition, ({ relatedTarget, dataSet }: TriggeredEvent) => {
-        if (relatedTarget === aVehicle.chassisBody) {
-            const [x, y, z] = dataSet.split(',');
-            cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
-        }
-    });
-
-    mapBuilder.eventTriggerListeners.add(MapEvent.finish, ({ relatedTarget, dataSet }: TriggeredEvent) => {
-        if (relatedTarget === aVehicle.chassisBody) {
-            if (parseCheckpointCount(dataSet) === gameProgress.checkpointsReached) {
-                gameProgress.stopTimer();
-                popUpWindow.open(layoutRenderers.mapFinished, {
-                    result: gameProgress.result,
-                    onNext: () => {
-                        // gameProgress ? next map
-                        popUpWindow.close();
-                        mapBuilder.importMap(mapCollection.map02);
-                        reset();
-                    },
-                    onRetry: reset,
-                });
+    mapBuilder.eventTriggerListeners.add(
+        MapTriggerElementEvent.setCameraPosition,
+        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+            if (relatedTarget === aVehicle.chassisBody) {
+                const [x, y, z] = dataSet.split(',');
+                cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
             }
-        }
-    });
+        },
+    );
+
+    mapBuilder.eventTriggerListeners.add(
+        MapTriggerElementEvent.finish,
+        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+            if (relatedTarget === aVehicle.chassisBody) {
+                if (parseCheckpointCount(dataSet) === gameProgress.checkpointsReached) {
+                    gameProgress.stopTimer();
+                    popUpWindow.open(layoutRenderers.mapFinished, {
+                        result: gameProgress.result,
+                        onNext: () => {
+                            // gameProgress ? next map
+                            popUpWindow.close();
+                            mapBuilder.importMap(mapCollection.map02);
+                            reset();
+                        },
+                        onRetry: reset,
+                    });
+                }
+            }
+        },
+    );
 
     inputHandler.addKeyPressListener(() => {
         if (inputHandler.isKeyPressed('M')) {

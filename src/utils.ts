@@ -6,13 +6,11 @@ import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeBufferGeomet
 type ResourceType = GLTF|HTMLImageElement|SVGResult;
 
 export {
-    debounce,
     isMobileDevice,
     loadResource,
     NOP,
     sliceCubeTexture,
     svgToMesh,
-    throttle,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -118,7 +116,7 @@ function sliceCubeTexture(img: HTMLImageElement, imgSize = 1024) {
     }
 }
 
-function debounce(fnc: Function, delay = 200, immediate = false) {
+export function debounce(fnc: Function, delay = 200, immediate = false) {
     let timeoutId: number;
 
     return (...args) => {
@@ -130,7 +128,7 @@ function debounce(fnc: Function, delay = 200, immediate = false) {
     };
 }
 
-function throttle(fnc: Function, timeToWaitBeforeNextCall = 200) {
+export function throttle(fnc: Function, timeToWaitBeforeNextCall = 200) {
     let timeoutId: number;
     let prevCallTime: number;
     let now: number;
@@ -165,4 +163,12 @@ export function degToRad(deg: number) {
 
 export function radToDeg(rad: number) {
     return rad * 180 / Math.PI;
+}
+
+export function round(n: number) {
+    return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+export function valueBetween(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(value, max));
 }

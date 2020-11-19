@@ -1,4 +1,4 @@
-import { NOP } from '../utils';
+import { NOP, round } from '../utils';
 
 const defaultState = {
     mapElementId: '',
@@ -35,6 +35,7 @@ export type EditorState = typeof gState;
 let changeListener = NOP as (state: EditorState) => void;
 
 export default {
+    defaultState,
     getState() {
         return gState;
     },
@@ -69,8 +70,4 @@ function roundNumericValue([property, value]) {
     if (typeof value === 'number') {
         gState[property] = round(value);
     }
-}
-
-function round(n: number) {
-    return Math.round((n + Number.EPSILON) * 100) / 100;
 }

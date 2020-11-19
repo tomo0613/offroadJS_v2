@@ -1,5 +1,6 @@
-import Vehicle from './vehicle';
 import cfg from '../config';
+import { valueBetween } from '../utils';
+import Vehicle from './vehicle';
 
 const stateValueLimits = {
     engineForceMin: -0.8, // reverse
@@ -26,14 +27,9 @@ export function initStateHandler(vehicle: Vehicle) {
 
             if (currentValue !== nextValue) {
                 state[prop] = nextValue;
-                vehicle.shouldUpdate = true;
             }
 
             return true;
         },
     });
-}
-
-function valueBetween(value: number, min: number, max: number) {
-    return Math.max(min, Math.min(value, max));
 }

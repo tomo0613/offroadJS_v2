@@ -1,9 +1,13 @@
+import { NOP } from '../../utils';
+
+type InputElement = HTMLInputElement|HTMLSelectElement;
+
 export class Input {
     type: 'input'|'select'
     containerElement = document.createElement('div');
     labelElement = document.createElement('span');
-    inputElement: HTMLInputElement|HTMLSelectElement;
-    private valueChangeListener: (value: number|string) => void;
+    inputElement: InputElement;
+    protected valueChangeListener = NOP as (value: number|string) => void;
 
     constructor(label: string, type = 'input' as 'input'|'select') {
         this.type = type;
@@ -14,8 +18,10 @@ export class Input {
         this.containerElement.appendChild(this.inputElement);
     }
 
-    private onChange = ({ currentTarget }: InputEvent) => {
-        this.valueChangeListener((currentTarget as HTMLSelectElement|HTMLInputElement).value);
+    protected onChange = ({ currentTarget }: InputEvent) => {
+        if (!(currentTarget as InputElement).validity.patternMismatch) {
+            this.valueChangeListener((currentTarget as InputElement).value);
+        }
     }
 
     appendTo(element: HTMLElement) {

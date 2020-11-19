@@ -4,7 +4,35 @@ import map02 from './map_02';
 export const mapCollection = {
     map01,
     map02,
+    test: {
+        vehicle_0: {
+            position_x: 10,
+            position_y: 2,
+            position_z: 15,
+        },
+        box_0: {
+            width: 12,
+            height: 0.1,
+            length: 20,
+            position_x: 14,
+            position_z: 22,
+        },
+        box_1: {
+            size: 1,
+            position_x: 15,
+            position_y: 2,
+            position_z: 10,
+            mass: 40,
+            fixedRotation: true,
+            rotation_x: 45,
+        },
+    },
     map03: {
+        vehicle_0: {
+            position_x: 10,
+            position_y: 2,
+            position_z: 15,
+        },
         triangularRamp_0: {
             position_z: 5,
             position_x: 8,
@@ -54,11 +82,20 @@ export const mapCollection = {
             position_z: -18,
         },
         box_0: {
-            width: 10,
+            width: 12,
             height: 0.1,
-            length: 8,
+            length: 20,
+            position_x: 14,
+            position_z: 22,
+        },
+        box_1: {
+            size: 1,
+            position_x: 15,
+            position_y: 2,
             position_z: 10,
-            position_x: 12,
+            mass: 40,
+            fixedRotation: true,
+            rotation_x: 45,
         },
         box_2: {
             width: 3,

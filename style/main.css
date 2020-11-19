@@ -13,20 +13,6 @@ body {
     -ms-user-select: none;
 }
 
-button {
-    border-radius: 5px;
-    margin: 5px;
-}
-
-.virtualKey {
-    width: 60px; 
-    /* width: 42px;  */
-    height: 60px;
-    font-size: 42px;
-    line-height: 42px;
-    padding: 0 2px 2px 0;
-}
-
 .hidden {
     display: none;
 }
@@ -61,22 +47,9 @@ button {
     flex-direction: column;
 }
 
-.inputContainer {
-    display: flex;
-}
-
-.inputContainer span {
-    margin-right: auto;
-}
-
-.label {
-    margin-top: 8px;
-    margin-bottom: 4px;
-}
-
 #editorPanel {
     flex-direction: column;
-    background-color: rgba(70, 70, 70, 0.8);
+    background-color: rgba(5, 5, 5, 0.8);
     border-radius: 5px;
     padding: 10px;
     width: 300px;

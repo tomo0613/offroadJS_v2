@@ -1,4 +1,10 @@
 export default {
+    vehicle_0: {
+        position_x: 10,
+        position_y: 1,
+        position_z: 10,
+        rotation_y: 90,
+    },
     box_0: {
         width: 15,
         height: 0.1,

@@ -11,7 +11,6 @@ import {
     Vec3,
     World,
 } from 'cannon-es';
-
 import {
     BoxBufferGeometry,
     BufferGeometry,
@@ -25,12 +24,13 @@ import {
 } from 'three';
 import { ConvexBufferGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
 
-import { degToRad, radToDeg } from '../utils';
 import { EventListener } from '../common/EventListener';
 import cfg from '../config';
 import { renderEditor } from '../mapEditor/editor';
+import { degToRad, NOP } from '../utils';
+import { generateLoop, generateSlopeTransition } from './compoundPlatformGenerator';
 
-export enum MapEvent {
+export enum MapTriggerElementEvent {
     checkpoint = 'checkpoint',
     finish = 'finish',
     setCameraPosition = 'setCameraPosition',
@@ -43,18 +43,23 @@ enum MapElementType {
     sphere = 'sphere',
     triangularRamp = 'triangularRamp',
     trigger = 'trigger',
+    vehicle = 'vehicle',
 }
 
-interface CommonMapElementProps {
-    type?: MapElementType;
+export interface MapElementOrientationProps {
     position_x?: number;
     position_y?: number;
     position_z?: number;
     rotation_x?: number;
     rotation_y?: number;
     rotation_z?: number;
+}
+
+interface CommonMapElementProps extends MapElementOrientationProps {
+    type?: MapElementType;
     mass?: number;
-    noFriction?: boolean;
+    lowFriction?: boolean;
+    fixedRotation?: boolean;
 }
 
 interface BoxShapeProps {
@@ -75,7 +80,7 @@ interface CylinderShapeProps {
 }
 
 interface EventTriggerProps {
-    event: MapEvent|string;
+    event: MapTriggerElementEvent|string;
     size?: number;
     position_x?: number;
     position_y?: number;
@@ -123,8 +128,9 @@ export class MapBuilder {
     perviousSelectedMapElementId: MapElementId;
     private mapElementComponentStore: PlatformComponentStore = new Map();
     private mapElementIdStore = new Set<string>();
-    eventTriggerListeners = new EventListener<MapEvent>();
+    eventTriggerListeners = new EventListener<MapTriggerElementEvent>();
     editMode = false;
+    onPlaceVehicle = NOP as (pX: number, pY: number, pZ: number, rX: number, rY: number, rZ: number) => void;
 
     constructor(scene: Scene, world: World) {
         this.scene = scene;
@@ -162,14 +168,17 @@ export class MapBuilder {
             rotation_x = 0,
             rotation_y = 0,
             rotation_z = 0,
+            mass = 0,
+            lowFriction = false,
+            fixedRotation = false,
         } = props;
 
-        const color = props.mass ? dynamicPlatformColor : defaultPlatformColor;
+        const color = mass ? dynamicPlatformColor : defaultPlatformColor;
         const mesh = new Mesh(visualShape, new MeshLambertMaterial({ color }));
         const body = new Body({
             shape: physicalShape,
-            mass: props.mass || 0,
-            material: props.noFriction ? lowFrictionMaterial : normalMaterial,
+            mass,
+            material: lowFriction ? lowFrictionMaterial : normalMaterial,
         });
         const updateVisuals = () => {
             mesh.position.copy(body.position as unknown as Vector3);
@@ -178,6 +187,7 @@ export class MapBuilder {
 
         body.position.set(position_x, position_y, position_z);
         mesh.position.copy(body.position as unknown as Vector3);
+        mesh.name = mapElementId;
 
         if (rotation_x || rotation_y || rotation_z) {
             body.quaternion.setFromEuler(
@@ -186,6 +196,10 @@ export class MapBuilder {
                 degToRad(rotation_z),
             );
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
+        }
+        if (fixedRotation) {
+            body.fixedRotation = true;
+            body.updateMassProperties();
         }
 
         if (cfg.renderShadows) {
@@ -196,7 +210,7 @@ export class MapBuilder {
         this.world.addBody(body);
         this.scene.add(mesh);
 
-        if (props.mass) {
+        if (mass) {
             this.world.addEventListener('postStep', updateVisuals);
         }
 
@@ -225,6 +239,8 @@ export class MapBuilder {
                 return this.buildCylinder(props);
             case MapElementType.ramp:
                 return this.buildRamp(props);
+            case MapElementType.sphere:
+                return this.buildSphere(props);
             case MapElementType.triangularRamp:
                 return this.buildTriangularRamp(props);
             case MapElementType.trigger:
@@ -235,6 +251,9 @@ export class MapBuilder {
     }
 
     destroy = (id: MapElementId) => {
+        if (id === 'vehicle_0') {
+            return;
+        }
         const [type] = id.split('_');
         const body = this.getBodyFromStore(id);
         const mesh = this.getMeshFromStore(id);
@@ -278,13 +297,17 @@ export class MapBuilder {
     private highlightSelectedPlatform() {
         if (this.perviousSelectedMapElementId) {
             const previousSelected = this.getMeshFromStore(this.perviousSelectedMapElementId);
-            const material = previousSelected.material as MeshLambertMaterial;
-            material.color.setHex(0xFFFFFF);
-            // material.transparent = true;
-            // material.opacity = 0.7;
+            if (previousSelected) {
+                const material = previousSelected.material as MeshLambertMaterial;
+                material.color.setHex(0xFFFFFF);
+                // material.transparent = true;
+                // material.opacity = 0.7;
+            }
         }
         const selected = this.getMeshFromStore(this.selectedMapElementId);
-        (selected.material as MeshLambertMaterial).color.setHex(0xFFC266);
+        if (selected) {
+            (selected.material as MeshLambertMaterial).color.setHex(0xFFC266);
+        }
     }
 
     toggleEditMode() {
@@ -357,7 +380,6 @@ export class MapBuilder {
         );
     }
 
-
     placeEventTrigger(props: EventTriggerProps) {
         const { event, dataSet, size = 1 } = props;
 
@@ -370,7 +392,10 @@ export class MapBuilder {
         const mesh = this.getMeshFromStore(triggerId);
         const material = mesh.material as MeshLambertMaterial;
         const listener = ({ target, body }: CollisionEvent) => {
-            this.eventTriggerListeners.dispatch(event as MapEvent, { target, dataSet, relatedTarget: body });
+            this.eventTriggerListeners.dispatch(
+                event as MapTriggerElementEvent,
+                { target, dataSet, relatedTarget: body },
+            );
         };
 
         this.mapElementComponentStore.set(`${triggerId}_listener`, listener);
@@ -387,6 +412,24 @@ export class MapBuilder {
         }
 
         return triggerId;
+    }
+
+    placeVehicle(props: CommonMapElementProps) {
+        const mapElementId = 'vehicle_0';
+        const {
+            position_x: pX, position_y: pY, position_z: pZ, rotation_x: rX, rotation_y: rY, rotation_z: rZ,
+        } = props;
+
+        this.mapElementIdStore.add(mapElementId);
+        this.mapElementComponentStore.set(`${mapElementId}_props`, props);
+        this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, () => {
+            const {
+                position_x, position_y, position_z, rotation_x, rotation_y, rotation_z,
+            } = this.getPropsFromStore(mapElementId);
+            this.onPlaceVehicle(position_x, position_y, position_z, rotation_x, rotation_y, rotation_z);
+        });
+
+        this.onPlaceVehicle(pX, pY, pZ, rX, rY, rZ);
     }
 
     setEventTriggerVisibility(id: MapElementId, visible = false) {
@@ -433,28 +476,30 @@ export class MapBuilder {
 
         Object.assign(mapElementProps, { ...props });
 
-        const {
-            position_x = 0,
-            position_y = 0,
-            position_z = 0,
-            rotation_x = 0,
-            rotation_y = 0,
-            rotation_z = 0,
-        } = mapElementProps;
+        if (body) {
+            const {
+                position_x = 0,
+                position_y = 0,
+                position_z = 0,
+                rotation_x = 0,
+                rotation_y = 0,
+                rotation_z = 0,
+            } = mapElementProps;
 
-        body.position.set(
-            position_x,
-            position_y,
-            position_z,
-        );
-        body.quaternion.setFromEuler(
-            degToRad(rotation_x),
-            degToRad(rotation_y),
-            degToRad(rotation_z),
-        );
+            body.position.set(
+                position_x,
+                position_y,
+                position_z,
+            );
+            body.quaternion.setFromEuler(
+                degToRad(rotation_x),
+                degToRad(rotation_y),
+                degToRad(rotation_z),
+            );
+            body.aabbNeedsUpdate = true;
+        }
 
         updateVisuals();
-        body.aabbNeedsUpdate = true;
     }
 
     transform(id: MapElementId, props: BoxProps): void;
@@ -543,16 +588,29 @@ export class MapBuilder {
                 case MapElementType.trigger:
                     this.placeEventTrigger(props as EventTriggerProps);
                     break;
+                case MapElementType.vehicle:
+                    this.placeVehicle(props);
+                    break;
                 default:
             }
         });
 
-        // generateHorizontalToVerticalTransition.call(this, {
-        //     position: new Vec3(16, 0.1, 1),
-        //     segmentCount: 15,
+        // generateLoop.call(this, {
+        //     position: new Vec3(40, 2, -50),
         //     segmentWidth: 3,
         //     segmentHeight: 0.3,
-        //     segmentLength: 0.5,
+        //     segmentLength: 1,
+        //     segmentCount: 10,
+        //     width: 10,
+        //     radius: 10,
+        // });
+
+        // generateSlopeTransition.call(this, {
+        //     position: new Vec3(20, 0.1, 1),
+        //     segmentCount: 15,
+        //     segmentWidth: 3,
+        //     segmentHeight: 0.2,
+        //     segmentLength: 2,
         // });
     }
 
@@ -612,101 +670,4 @@ function getTriangularRampShape(width = 1, height = 1, length = 1) {
     ];
 
     return new ConvexPolyhedron({ vertices, faces });
-}
-
-// (function generateLoop(this: MapBuilder, segmentWidth = 3, radius = 10, segmentCount = 20, width = 10) {
-//     const tmp_vector = new Vector3();
-//     const xAxis = new Vector3(1, 0, 0);
-//     // const positionOffset = new Vector3(-1, 10, 5);
-//     const positionOffset = new Vector3(5, 10, -25);
-
-//     const anglePerSegment = 360 / segmentCount;
-//     const circumference = 2 * radius * Math.PI;
-//     const segmentWidthOffset = width / segmentCount;
-
-//     const o = {
-//         width: segmentWidth,
-//         height: 0.1,
-//         length: circumference / segmentCount / 2 + 0.1,
-//     };
-
-//     for (let i = 0; i < segmentCount; i++) {
-//         const id = this.buildBox({
-//             ...o,
-//             position_x: segmentWidthOffset * i,
-//             position_y: -radius,
-
-//             rotation_x: anglePerSegment * i,
-//             // rotation_y: -width * 0.8,
-//             // rotation_z: -width / 2,
-//         });
-//         tmp_vector.set(segmentWidthOffset * i, -radius, 0)
-//             .applyAxisAngle(xAxis, degToRad(anglePerSegment * i))
-//             .add(positionOffset);
-
-//         this.translate(id, { position_x: tmp_vector.x, position_y: tmp_vector.y, position_z: tmp_vector.z });
-//     }
-// }).call(this);
-
-interface TransitionProps {
-    segmentWidth: number;
-    segmentHeight: number;
-    segmentLength: number;
-    segmentCount: number;
-    position: Vec3;
-}
-
-function generateHorizontalToVerticalTransition(this: MapBuilder, props: TransitionProps) {
-    const tmp_vector = new Vector3();
-    const { segmentWidth = 2, segmentLength = 1, segmentHeight = 0.5, segmentCount = 2, position } = props;
-
-    const width = segmentWidth;
-    const height = segmentHeight;
-    const boxHeight = 0.1;
-    const length = segmentLength;
-    const rotationPerSegment_deg = radToDeg(Math.atan(height / width));
-    let prevRampId: string;
-
-    for (let i = 0; i < segmentCount; i++) {
-        const rampId = this.buildTriangularRamp({
-            width,
-            height,
-            length,
-            position_x: position.x,
-            position_y: position.y,
-            position_z: position.z - segmentLength * 2 * i,
-            rotation_z: -rotationPerSegment_deg * i,
-        });
-        const rampMesh = this.getMeshFromStore(rampId);
-        const rampBody = this.getBodyFromStore(rampId);
-
-        if (prevRampId) {
-            const prevRampMesh = this.getMeshFromStore(prevRampId);
-            tmp_vector.copy(prevRampMesh.position);
-            prevRampMesh.translateY(segmentHeight * 2);
-
-            rampMesh.position.setX(prevRampMesh.position.x);
-            rampMesh.position.setY(prevRampMesh.position.y);
-            rampBody.position.x = prevRampMesh.position.x;
-            rampBody.position.y = prevRampMesh.position.y;
-
-            prevRampMesh.position.copy(tmp_vector);
-        }
-
-        const boxId = this.buildBox({
-            width,
-            height: boxHeight,
-            length,
-            rotation_z: -rotationPerSegment_deg * i,
-        });
-        const boxMesh = this.getMeshFromStore(boxId);
-        const boxBody = this.getBodyFromStore(boxId);
-        boxMesh.position.copy(rampMesh.position);
-        boxMesh.translateX(segmentWidth);
-        boxMesh.translateY(-boxHeight);
-        boxMesh.translateZ(segmentLength);
-        boxBody.position.copy(boxMesh.position as unknown as Vec3);
-
-        prevRampId = rampId;
-    }
 }
