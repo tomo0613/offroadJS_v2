@@ -40,7 +40,8 @@ export function generateLoop(this: MapBuilder, props: CompoundPlatformProps) {
     const group = tmp_group;
     // group.clear
     group.position.set(position.x, position.y, position.z);
-    group.rotation.set(0, Math.PI / 2, Math.PI / 2);
+    // group.rotation.set(0, Math.PI / 2, Math.PI / 2);
+    group.rotation.set(0, 0, 0);
     group.add(tmp_object3d);
 
     for (let i = 0; i < segmentCount; i++) {

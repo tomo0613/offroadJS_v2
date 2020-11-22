@@ -1,7 +1,7 @@
 interface MapFinishedContext {
     result: string;
-    onNext: Function;
-    onRetry: Function;
+    onNext: VoidFnc;
+    onRetry: VoidFnc;
 }
 
 const mapFinished = (context: MapFinishedContext) => ({

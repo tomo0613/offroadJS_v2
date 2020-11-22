@@ -1,7 +1,7 @@
 export class EventListener<EventType extends string|number> {
-    private listeners: Map<EventType, Set<Function>> = new Map();
+    private listeners: Map<EventType, Set<VoidFnc>> = new Map();
 
-    add(eventType: EventType, listener: Function) {
+    add(eventType: EventType, listener: VoidFnc) {
         if (!listener) {
             throw new Error(`EventListener->add($listener) Invalid $listener: ${listener}, with type ${eventType}`);
         }
@@ -16,7 +16,7 @@ export class EventListener<EventType extends string|number> {
         }
     }
 
-    remove(eventType: EventType, listener: Function) {
+    remove(eventType: EventType, listener: VoidFnc) {
         if (this.listeners.has(eventType)) {
             const listeners = this.listeners.get(eventType);
 

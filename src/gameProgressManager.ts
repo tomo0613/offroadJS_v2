@@ -37,23 +37,23 @@ export class GameProgressManager {
             return;
         }
 
-        timer.textContent = this.getElapsedTime();
+        timer.textContent = this.getElapsedTimeFormatted();
     }
 
-    getElapsedTime() {
-        const elapsedTime = performance.now() - this.startTime;
-        const milSec = (elapsedTime % 1000).toFixed();
-        const sec = appendLeadingZero((elapsedTime / 1000 % 60).toFixed());
-        const min = appendLeadingZero((elapsedTime / 60000 % 60).toFixed());
+    getElapsedTimeFormatted() {
+        const dt = performance.now() - this.startTime;
+        const milSec = Math.floor(dt % 1000);
+        const sec = Math.floor(dt / 1000 % 60);
+        const min = Math.floor(dt / 60000 % 60);
 
-        return `${min}:${sec}.${milSec}`;
+        return `${appendLeadingZero(min)}:${appendLeadingZero(sec)}.${milSec}`;
     }
 
     stopTimer() {
         this.stopTime = performance.now();
         this.stopped = true;
         // store mapHash
-        this.result = this.getElapsedTime();
+        this.result = this.getElapsedTimeFormatted();
     }
 
     resetTimer() {
@@ -70,10 +70,8 @@ export class GameProgressManager {
     }
 }
 
-function appendLeadingZero(value: string) {
-    if (value.length < 2) {
-        value = `0${value}`;
-    }
+function appendLeadingZero(value: number) {
+    const str = value.toString();
 
-    return value;
+    return str.length < 2 ? `0${value}` : str;
 }

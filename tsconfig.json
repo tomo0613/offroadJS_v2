@@ -3,15 +3,13 @@
         "moduleResolution": "node",
         "module": "esnext",
         "target": "esnext",
-        "outDir": "build-tmp",
-        "rootDir": "src",
-        "sourceMap": true
+        "jsx": "preserve",
+        "noEmit": true,
+        "baseUrl": "./",
+        "paths": {},
+        "allowSyntheticDefaultImports": true
     },
     "include": [
         "src"
-    ],
-    "exclude": [
-        "node_modules",
-        "build"
     ]
 }

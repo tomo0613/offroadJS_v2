@@ -1,6 +1,8 @@
 import { isMobileDevice } from './utils';
 
-const keyPressListeners = new Set<Function>();
+type KeyPressListener = () => void;
+
+const keyPressListeners = new Set<KeyPressListener>();
 const navigationKeys = [
     ' ',
     'PageUp',
@@ -21,11 +23,11 @@ export default {
 
 const keysPressed = new Set<KeyboardEvent['key']>();
 
-function addKeyPressListener(listener: Function) {
+function addKeyPressListener(listener: KeyPressListener) {
     keyPressListeners.add(listener);
 }
 
-function removeKeyPressListener(listener: Function) {
+function removeKeyPressListener(listener: KeyPressListener) {
     keyPressListeners.delete(listener);
 }
 
@@ -94,6 +96,6 @@ function appendVirtualKey(containerElementId: string, key: string, label: string
     containerElement.appendChild(button);
 }
 
-function invokeCallback(callback: Function) {
+function invokeCallback(callback: KeyPressListener) {
     callback();
 }

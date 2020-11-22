@@ -1,3 +1,5 @@
+import { render } from 'react-dom';
+
 import { MapBuilder } from '../mapModules/mapBuilder';
 import store, { EditorState } from './store';
 import { Label } from './uiComponents/label';
@@ -5,6 +7,7 @@ import { List, ListEvent } from './uiComponents/list';
 import { NumberInput } from './uiComponents/numberInput';
 import { SelectInput } from './uiComponents/selectInput';
 import { TextInput } from './uiComponents/textInput';
+import Editor from './xeditor';
 
 const transformableProperties = {
     box: ['width', 'height', 'length'],
@@ -128,11 +131,18 @@ export function renderEditor(mapBuilder: MapBuilder) {
     list.listeners.add(ListEvent.setItems, () => {
         list.selectItemByContent(mapBuilder.selectedMapElementId);
     });
+
+    // renderMapDataImportExportBar()
     list.appendTo(gEditorPanel);
+    // renderMapElementCreatorBar()
+    // renderMapElementActionBar()
+    const reactContainer = document.createElement('div');
+    gEditorPanel.appendChild(reactContainer);
+    render(Editor(), reactContainer);
 
     gEditorPanel.appendChild(createActionButtonBar({
         add() {
-            console.log('ToDo add new');
+            console.log('ToDo add new _');
         },
         clone() {
             mapBuilder.clone(mapBuilder.selectedMapElementId);

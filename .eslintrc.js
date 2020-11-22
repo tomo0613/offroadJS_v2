@@ -4,8 +4,8 @@ const ERROR = 2;
 
 // https://dev.to/otamnitram/sorting-your-imports-correctly-in-react-213m
 const importOrder_ruleConfig = {
-    groups: ['builtin', 'external', 'internal'],
-    alphabetize: {
+    'groups': ['builtin', 'external', 'internal'],
+    'alphabetize': {
         order: 'asc',
         caseInsensitive: true,
     },
@@ -18,7 +18,7 @@ const noMixedOperators_ruleConfig = {
         ['&', '|', '^', '~', '<<', '>>', '>>>'],
         ['==', '!=', '===', '!==', '>', '>=', '<', '<='],
         ['&&', '||'],
-        ['in', 'instanceof']
+        ['in', 'instanceof'],
     ],
 };
 
@@ -52,19 +52,24 @@ module.exports = {
         'no-dupe-class-members': DISABLED,
         'no-param-reassign': DISABLED,
         'no-continue': DISABLED,
+        'no-mixed-operators': [ERROR, noMixedOperators_ruleConfig],
         'no-multi-spaces': WARNING,
         'no-multiple-empty-lines': [ERROR, { max: 1 }],
         'no-plusplus': DISABLED,
         'no-prototype-builtins': DISABLED,
         'no-underscore-dangle': DISABLED,
-        'no-use-before-define': [ERROR, 'nofunc'],
+        'no-use-before-define': DISABLED,
         'object-curly-newline': DISABLED,
+        'quote-props': [WARNING, 'consistent-as-needed', { numbers: true }],
         'wrap-iife': DISABLED,
         '@typescript-eslint/no-use-before-define': [ERROR, 'nofunc'],
+        'camelcase': DISABLED,
         '@typescript-eslint/camelcase': DISABLED,
         '@typescript-eslint/explicit-function-return-type': DISABLED,
         '@typescript-eslint/no-empty-function': WARNING,
+        'no-shadow': DISABLED,
+        '@typescript-eslint/no-shadow': ERROR,
         '@typescript-eslint/explicit-member-accessibility': DISABLED,
-        'no-mixed-operators': [ERROR, noMixedOperators_ruleConfig],
+        '@typescript-eslint/explicit-module-boundary-types': DISABLED,
     },
 };

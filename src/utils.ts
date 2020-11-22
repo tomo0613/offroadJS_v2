@@ -116,7 +116,7 @@ function sliceCubeTexture(img: HTMLImageElement, imgSize = 1024) {
     }
 }
 
-export function debounce(fnc: Function, delay = 200, immediate = false) {
+export function debounce(fnc: VoidFnc, delay = 200, immediate = false) {
     let timeoutId: number;
 
     return (...args) => {
@@ -128,7 +128,7 @@ export function debounce(fnc: Function, delay = 200, immediate = false) {
     };
 }
 
-export function throttle(fnc: Function, timeToWaitBeforeNextCall = 200) {
+export function throttle(fnc: VoidFnc, timeToWaitBeforeNextCall = 200) {
     let timeoutId: number;
     let prevCallTime: number;
     let now: number;

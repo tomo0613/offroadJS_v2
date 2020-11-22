@@ -106,7 +106,7 @@ type BoxProps = CommonMapElementProps & BoxShapeProps;
 type BoxPropsSimple = CommonMapElementProps & BoxShapePropsSimple;
 type CylinderProps = CommonMapElementProps & CylinderShapeProps;
 export type MapElementProps = BoxProps & CylinderProps & Partial<EventTriggerProps>;
-export type PlatformComponentStore = Map<string, Mesh|Body|Function|MapElementProps>;
+export type PlatformComponentStore = Map<string, Mesh|Body|VoidFnc|MapElementProps>;
 
 const defaultPlatformColor = 0xDDDDDD;
 const dynamicPlatformColor = 0x95C0E5;
@@ -262,10 +262,10 @@ export class MapBuilder {
 
         this.scene.remove(mesh);
         this.world.removeBody(body);
-        this.world.removeEventListener('postStep', this.mapElementComponentStore.get(`${id}_updateMethod`) as Function);
+        this.world.removeEventListener('postStep', this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc);
 
         if (type === 'trigger') {
-            const listener = this.mapElementComponentStore.get(`${id}_listener`) as Function;
+            const listener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
             body.removeEventListener(Body.COLLIDE_EVENT_NAME, listener);
             this.mapElementComponentStore.delete(`${id}_listener`);
         }
@@ -472,7 +472,7 @@ export class MapBuilder {
     translate(id: MapElementId, props: CommonMapElementProps) {
         const body = this.getBodyFromStore(id);
         const mapElementProps = this.getPropsFromStore(id);
-        const updateVisuals = this.mapElementComponentStore.get(`${id}_updateMethod`) as Function;
+        const updateVisuals = this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc;
 
         Object.assign(mapElementProps, { ...props });
 
@@ -653,15 +653,12 @@ function getRampShape(width = 1, height = 1, length = 1) {
 }
 
 function getTriangularRampShape(width = 1, height = 1, length = 1) {
-    // List of vertices that can be assigned to a face
     const vertices = [
         new Vec3(0, 0, 0),
         new Vec3(width * 2, 0, 0),
         new Vec3(0, height * 2, 0),
         new Vec3(0, 0, length * 2),
     ];
-    // List of vertex index groups that are assigned to individual faces
-    // ! CCW order is important for correct normals !
     const faces = [
         [0, 2, 1],
         [1, 2, 3],

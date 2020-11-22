@@ -5,6 +5,7 @@ interface ObjectPoolHandlerMethods<O> {
     itemActiveCheck: (item: O) => boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default class ObjectPool<O extends Record<string, any>> {
     items: O[];
     activeCount = 0;
