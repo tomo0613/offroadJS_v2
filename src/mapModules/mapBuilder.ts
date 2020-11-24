@@ -30,13 +30,17 @@ import { renderEditor } from '../mapEditor/editor';
 import { degToRad, NOP } from '../utils';
 import { generateLoop, generateSlopeTransition } from './compoundPlatformGenerator';
 
+export enum MapBuilderEvent {
+    select = 'select',
+}
+
 export enum MapTriggerElementEvent {
     checkpoint = 'checkpoint',
     finish = 'finish',
     setCameraPosition = 'setCameraPosition',
 }
 
-enum MapElementType {
+export enum MapElementType {
     box = 'box',
     cylinder = 'cylinder',
     ramp = 'ramp',
@@ -80,7 +84,7 @@ interface CylinderShapeProps {
 }
 
 interface EventTriggerProps {
-    event: MapTriggerElementEvent|string;
+    event?: MapTriggerElementEvent|string;
     size?: number;
     position_x?: number;
     position_y?: number;
@@ -105,7 +109,7 @@ type MapElementId = string;
 type BoxProps = CommonMapElementProps & BoxShapeProps;
 type BoxPropsSimple = CommonMapElementProps & BoxShapePropsSimple;
 type CylinderProps = CommonMapElementProps & CylinderShapeProps;
-export type MapElementProps = BoxProps & CylinderProps & Partial<EventTriggerProps>;
+export type MapElementProps = BoxProps & CylinderProps & EventTriggerProps;
 export type PlatformComponentStore = Map<string, Mesh|Body|VoidFnc|MapElementProps>;
 
 const defaultPlatformColor = 0xDDDDDD;
@@ -128,6 +132,7 @@ export class MapBuilder {
     perviousSelectedMapElementId: MapElementId;
     private mapElementComponentStore: PlatformComponentStore = new Map();
     private mapElementIdStore = new Set<string>();
+    listeners = new EventListener<MapBuilderEvent>();
     eventTriggerListeners = new EventListener<MapTriggerElementEvent>();
     editMode = false;
     onPlaceVehicle = NOP as (pX: number, pY: number, pZ: number, rX: number, rY: number, rZ: number) => void;
@@ -229,27 +234,6 @@ export class MapBuilder {
         return mapElementId;
     }
 
-    clone(id: MapElementId) {
-        const props = { ...this.getPropsFromStore(id) };
-
-        switch (props.type) {
-            case MapElementType.box:
-                return this.buildBox(props);
-            case MapElementType.cylinder:
-                return this.buildCylinder(props);
-            case MapElementType.ramp:
-                return this.buildRamp(props);
-            case MapElementType.sphere:
-                return this.buildSphere(props);
-            case MapElementType.triangularRamp:
-                return this.buildTriangularRamp(props);
-            case MapElementType.trigger:
-                return this.placeEventTrigger(props as EventTriggerProps);
-            default:
-                return '';
-        }
-    }
-
     destroy = (id: MapElementId) => {
         if (id === 'vehicle_0') {
             return;
@@ -278,6 +262,7 @@ export class MapBuilder {
 
         if (this.selectedMapElementId === id) {
             this.selectedMapElementId = undefined;
+            this.listeners.dispatch(MapBuilderEvent.select, this.selectedMapElementId);
         }
         if (this.perviousSelectedMapElementId === id) {
             this.perviousSelectedMapElementId = undefined;
@@ -290,6 +275,7 @@ export class MapBuilder {
         }
 
         this.selectedMapElementId = id;
+        this.listeners.dispatch(MapBuilderEvent.select, this.selectedMapElementId);
 
         this.highlightSelectedPlatform();
     }
@@ -324,6 +310,31 @@ export class MapBuilder {
                 this.setEventTriggerVisibility(id, false);
             });
             document.getElementById('editorPanel').classList.add('hidden');
+        }
+    }
+
+    clone(id: MapElementId) {
+        const props = { ...this.getPropsFromStore(id) };
+
+        return this.build(props.type, props);
+    }
+
+    build(type: MapElementType, props: BoxPropsSimple|BoxProps|CylinderProps = {}) {
+        switch (type) {
+            case MapElementType.box:
+                return this.buildBox(props);
+            case MapElementType.cylinder:
+                return this.buildCylinder(props);
+            case MapElementType.ramp:
+                return this.buildRamp(props);
+            case MapElementType.sphere:
+                return this.buildSphere(props);
+            case MapElementType.triangularRamp:
+                return this.buildTriangularRamp(props);
+            case MapElementType.trigger:
+                return this.placeEventTrigger(props);
+            default:
+                return '';
         }
     }
 
@@ -381,7 +392,7 @@ export class MapBuilder {
     }
 
     placeEventTrigger(props: EventTriggerProps) {
-        const { event, dataSet, size = 1 } = props;
+        const { event = MapTriggerElementEvent.setCameraPosition, dataSet = '', size = 1 } = props;
 
         const triggerId = this.addToWorld(
             new SphereBufferGeometry(size),
@@ -421,7 +432,7 @@ export class MapBuilder {
         } = props;
 
         this.mapElementIdStore.add(mapElementId);
-        this.mapElementComponentStore.set(`${mapElementId}_props`, props);
+        this.mapElementComponentStore.set(`${mapElementId}_props`, { type: MapElementType.vehicle, ...props });
         this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, () => {
             const {
                 position_x, position_y, position_z, rotation_x, rotation_y, rotation_z,
@@ -502,20 +513,25 @@ export class MapBuilder {
         updateVisuals();
     }
 
-    transform(id: MapElementId, props: BoxProps): void;
-    transform(id: MapElementId, props: CylinderProps): void;
-    transform(id: MapElementId, {
-        size = 1, width = size, height = size, length = size, radiusBottom = 1, radiusTop = 1, sides = 6,
-    }: BoxProps & BoxPropsSimple & CylinderProps) {
+    transform(id: MapElementId, props: BoxProps & BoxPropsSimple & CylinderProps) {
         const mesh = this.getMeshFromStore(id);
         const body = this.getBodyFromStore(id);
-        const { type } = this.getPropsFromStore(id);
+        const storedProps = this.getPropsFromStore(id);
         const shape = body.shapes[0];
+        const {
+            size = storedProps.size || 1,
+            width = storedProps.width || size,
+            height = storedProps.height || size,
+            length = storedProps.length || size,
+            radiusBottom = storedProps.radiusBottom || 1,
+            radiusTop = storedProps.radiusTop || 1,
+            sides = storedProps.sides || 6,
+        } = props;
         const cylinderSides = Math.max(3, sides);
         let transformedShape: Shape;
         let transformedGeometry: BufferGeometry;
 
-        switch (type) {
+        switch (storedProps.type) {
             case MapElementType.box:
                 (shape as Box).halfExtents.set(width, height, length);
                 (shape as Box).updateConvexPolyhedronRepresentation();
@@ -568,30 +584,12 @@ export class MapBuilder {
         gId = 0;
 
         Object.entries(mapData).forEach(([id, props]) => {
-            const [type] = id.split('_');
-            switch (type) {
-                case MapElementType.box:
-                    this.buildBox(props);
-                    break;
-                case MapElementType.cylinder:
-                    this.buildCylinder(props);
-                    break;
-                case MapElementType.ramp:
-                    this.buildRamp(props);
-                    break;
-                case MapElementType.sphere:
-                    this.buildSphere(props);
-                    break;
-                case MapElementType.triangularRamp:
-                    this.buildTriangularRamp(props);
-                    break;
-                case MapElementType.trigger:
-                    this.placeEventTrigger(props as EventTriggerProps);
-                    break;
-                case MapElementType.vehicle:
-                    this.placeVehicle(props);
-                    break;
-                default:
+            const [type] = id.split('_') as [MapElementType];
+
+            if (type === MapElementType.vehicle) {
+                this.placeVehicle(props);
+            } else {
+                this.build(type, props);
             }
         });
 
@@ -625,7 +623,7 @@ export class MapBuilder {
                 return data;
             }, {} as Record<string, Omit<MapElementProps, 'type'>>);
 
-        console.log(JSON.stringify(exportData));
+        return exportData;
     }
 }
 

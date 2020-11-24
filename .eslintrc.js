@@ -41,6 +41,7 @@ module.exports = {
     ],
     rules: {
         'sort-imports': DISABLED,
+        'func-names': [WARNING, 'as-needed'],
         'import/extensions': [ERROR, 'never'],
         'import/no-unresolved': DISABLED,
         'import/order': [ERROR, importOrder_ruleConfig],
@@ -69,6 +70,7 @@ module.exports = {
         '@typescript-eslint/no-empty-function': WARNING,
         'no-shadow': DISABLED,
         '@typescript-eslint/no-shadow': ERROR,
+        '@typescript-eslint/member-delimiter-style': ERROR,
         '@typescript-eslint/explicit-member-accessibility': DISABLED,
         '@typescript-eslint/explicit-module-boundary-types': DISABLED,
     },
