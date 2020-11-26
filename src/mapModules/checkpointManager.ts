@@ -47,7 +47,7 @@ export class CheckpointManager {
         this.gameProgress = gameProgress;
 
         mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.checkpoint, this.checkpointEventHandler);
-        // mapBuilder.eventTriggerListeners.add(MapEvent.finish, this.finishEventHandler);
+        // mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.finish, this.finishEventHandler);
 
         if (this.checkpointIcon3dPool.activeCount) {
             this.checkpointIcon3dPool.releaseAll();
@@ -99,6 +99,7 @@ export class CheckpointManager {
     //     // if (relatedTarget === aVehicle.chassisBody) {
     //     if (parseCheckpointCount(dataSet) === this.gameProgress.checkpointsReached) {
     //         this.gameProgress.stopTimer();
+    //         this.gameProgress.openUI
     //         popUpWindow.open(layoutRenderers.mapFinished, {
     //             result: this.gameProgress.result,
     //             onNext: () => {

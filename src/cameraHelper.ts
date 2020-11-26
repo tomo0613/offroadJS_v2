@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import cfg from './config';
 import { showPopUpMessage } from './notificationModules/notificationManager';
-import { NOP } from './utils';
+import { NOP, valueBetween } from './utils';
 import Vehicle from './vehicle/vehicle';
 
 enum CameraMode {
@@ -20,9 +20,8 @@ const cameraModeList = [
     CameraMode.hood,
 ];
 
-const tmp_vector3 = new Vector3();
-const tmp_vector3_2 = new Vector3();
-const tmp_vector3_3 = new Vector3(0, 2, 0);
+const chaseCameraMountPosition = new Vector3();
+const chaseCameraLookPosition = new Vector3();
 
 export class CameraHelper {
     camera: PerspectiveCamera;
@@ -32,7 +31,7 @@ export class CameraHelper {
     cameraSpeed = 0.03;
     private currentCameraMode?: CameraMode;
     private previousCameraMode?: CameraMode;
-    chaseCameraPositionHelper = new Object3D();
+    chaseCameraMountPositionHelper = new Object3D();
     update = NOP;
 
     constructor(domElement: HTMLElement) {
@@ -104,21 +103,24 @@ export class CameraHelper {
     }
 
     updateChaseCamera() {
-        const cameraTargetObject = this.cameraTarget.chassisMesh;
-        if (!cameraTargetObject) {
+        const cameraLookTarget = this.cameraTarget?.chassisMesh;
+        const { currentVehicleSpeedKmHour: speed } = this.cameraTarget.base;
+
+        if (!cameraLookTarget) {
             return;
         }
 
-        this.chaseCameraPositionHelper.getWorldPosition(tmp_vector3);
+        this.chaseCameraMountPositionHelper.getWorldPosition(chaseCameraMountPosition);
 
-        if (tmp_vector3.y < cameraTargetObject.position.y) {
-            tmp_vector3.setY(cameraTargetObject.position.y);
+        if (chaseCameraMountPosition.y < cameraLookTarget.position.y) {
+            chaseCameraMountPosition.setY(cameraLookTarget.position.y);
         }
 
-        this.camera.position.lerp(tmp_vector3, this.cameraSpeed);
+        this.camera.position.lerp(chaseCameraMountPosition, this.cameraSpeed);
 
-        tmp_vector3_2.copy(cameraTargetObject.position).add(tmp_vector3_3);
-        this.camera.lookAt(tmp_vector3_2);
+        chaseCameraLookPosition.copy(cameraLookTarget.position);
+        chaseCameraLookPosition.y += valueBetween(speed * -0.01, -4, 4);
+        this.camera.lookAt(chaseCameraLookPosition);
     }
 
     switchMode() {
@@ -130,15 +132,16 @@ export class CameraHelper {
     }
 
     setCameraTarget(cameraTarget?: Vehicle) {
-        const cameraTargetObject = cameraTarget.chassisMesh;
+        const cameraLookTarget = cameraTarget.chassisMesh;
         if (cameraTarget === this.cameraTarget) {
             return;
         }
         if (cameraTarget) {
-            cameraTargetObject.add(this.chaseCameraPositionHelper);
-            this.chaseCameraPositionHelper.position.set(0, 3, 10);
+            const { x, y, z } = cfg.vehicle.cameraMountPosition;
+            cameraLookTarget.add(this.chaseCameraMountPositionHelper);
+            this.chaseCameraMountPositionHelper.position.set(x, y, z);
         } else if (!cameraTarget && this.cameraTarget) {
-            cameraTargetObject.remove(this.chaseCameraPositionHelper);
+            cameraLookTarget.remove(this.chaseCameraMountPositionHelper);
         }
         this.cameraTarget = cameraTarget;
 

@@ -24,9 +24,9 @@ import {
 } from 'three';
 import { ConvexBufferGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
 
-import { EventListener } from '../common/EventListener';
+import EventListener from '../common/EventListener';
 import cfg from '../config';
-import { renderEditor } from '../mapEditor/editor';
+import { renderEditor } from '../mapEditorUI/editor';
 import { degToRad, NOP } from '../utils';
 import { generateLoop, generateSlopeTransition } from './compoundPlatformGenerator';
 

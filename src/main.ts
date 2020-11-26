@@ -84,7 +84,7 @@ const worldStep = 1 / 60;
         ({ relatedTarget, dataSet }: TriggeredEvent) => {
             if (relatedTarget === aVehicle.chassisBody) {
                 if (parseCheckpointCount(dataSet) === gameProgress.checkpointsReached) {
-                    gameProgress.stopTimer();
+                    gameProgress.stop();
                     popUpWindow.open(layoutRenderers.mapFinished, {
                         result: gameProgress.result,
                         onNext: () => {
@@ -135,7 +135,7 @@ const worldStep = 1 / 60;
             steeringValue = -1;
         }
         if (!gameProgress.started && engineForce) {
-            gameProgress.startTimer();
+            gameProgress.start();
         }
 
         aVehicle.setEngineForce(engineForce);
@@ -157,12 +157,12 @@ const worldStep = 1 / 60;
         if (!paused) {
             render();
             if (gameProgress.started) {
-                gameProgress.startTimer();
+                gameProgress.start();
             }
         } else {
             showPopUpMessage('paused');
             if (gameProgress.started) {
-                gameProgress.stopTimer();
+                gameProgress.stop();
             }
         }
     }

@@ -1,72 +1,59 @@
-const hud = document.createElement('aside');
-const timer = document.createElement('span');
-const defaultTimerContent = '00:00.000';
+import Timer from './common/Timer';
 
+const hud = document.createElement('aside');
+const timeDisplay = document.createElement('span');
+const timeDisplayDefaultContent = '00:00.000';
 hud.id = 'hud';
 
 export class GameProgressManager {
+    timer = new Timer();
     started = false;
     result = '';
     checkpointsReached = 0;
-    private stopped = false;
-    private startTime = 0;
-    private stopTime = 0;
 
     constructor() {
-        timer.textContent = defaultTimerContent;
-        hud.appendChild(timer);
+        timeDisplay.textContent = timeDisplayDefaultContent;
+        hud.appendChild(timeDisplay);
         document.getElementById('topLeftPanel').appendChild(hud);
+    }
+
+    start() {
+        this.started = true;
+        this.timer.start();
+    }
+
+    stop() {
+        this.timer.stop();
+        this.result = this.getElapsedTimeFormatted();
+    }
+
+    reset() {
+        this.started = false;
+        this.checkpointsReached = 0;
+        this.result = '';
+        timeDisplay.textContent = timeDisplayDefaultContent;
+        this.timer.reset();
     }
 
     checkpointReached = () => {
         this.checkpointsReached++;
     }
 
-    startTimer() {
-        this.started = true;
-        if (!this.stopped) {
-            this.startTime = performance.now();
-        } else {
-            this.startTime += performance.now() - this.stopTime;
-        }
-        this.stopped = false;
-    }
-
     updateHUD() {
-        if (!this.startTime || this.stopped) {
+        if (!this.timer.started || this.timer.stopped) {
             return;
         }
 
-        timer.textContent = this.getElapsedTimeFormatted();
+        timeDisplay.textContent = this.getElapsedTimeFormatted();
     }
 
     getElapsedTimeFormatted() {
-        const dt = performance.now() - this.startTime;
+        const dt = this.timer.time;
         const milSec = Math.floor(dt % 1000);
         const sec = Math.floor(dt / 1000 % 60);
         const min = Math.floor(dt / 60000 % 60);
 
         return `${appendLeadingZero(min)}:${appendLeadingZero(sec)}.${milSec}`;
-    }
-
-    stopTimer() {
-        this.stopTime = performance.now();
-        this.stopped = true;
-        // store mapHash
-        this.result = this.getElapsedTimeFormatted();
-    }
-
-    resetTimer() {
-        this.started = false;
-        this.stopped = false;
-        this.startTime = 0;
-        timer.textContent = defaultTimerContent;
-    }
-
-    reset() {
-        this.resetTimer();
-        this.checkpointsReached = 0;
-        this.result = '';
     }
 }
 

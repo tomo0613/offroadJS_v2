@@ -1,4 +1,4 @@
-export class EventListener<EventType extends string|number> {
+export default class EventListener<EventType extends string|number> {
     private listeners: Map<EventType, Set<VoidFnc>> = new Map();
 
     add(eventType: EventType, listener: VoidFnc) {

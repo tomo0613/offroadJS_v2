@@ -26,5 +26,10 @@ export default {
         maxBrakeForce: 1,
         maxEngineForceFront: 70,
         maxEngineForceRear: 65,
+        cameraMountPosition: {
+            x: 0,
+            y: 5,
+            z: 10,
+        },
     },
 };
