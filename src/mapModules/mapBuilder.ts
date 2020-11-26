@@ -450,12 +450,13 @@ export class MapBuilder {
         }
     }
 
-    resetDynamicPlatforms() {
-        this.mapElementIdList.forEach(this.resetPlatformIfDynamic);
+    resetDynamicMapElements() {
+        this.mapElementIdList.forEach(this.resetElementIfDynamic);
     }
 
-    resetPlatformIfDynamic = (id: MapElementId) => {
+    resetElementIfDynamic = (id: MapElementId) => {
         const {
+            type,
             mass,
             position_x = 0,
             position_y = 0,
@@ -465,6 +466,10 @@ export class MapBuilder {
             rotation_z = 0,
         } = this.getPropsFromStore(id);
 
+        if (type === MapElementType.vehicle) {
+            this.onPlaceVehicle(position_x, position_y, position_z, rotation_x, rotation_y, rotation_z);
+            return;
+        }
         if (!mass) {
             return;
         }

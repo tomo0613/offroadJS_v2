@@ -1,10 +1,10 @@
-export class PopUpMessage {
+export class NotificationElement {
     domElement = document.createElement('div');
     testText: string;
     private domElement_textContent = document.createElement('span');
 
     constructor() {
-        this.domElement.classList.add('popUpMessage', 'hidden');
+        this.domElement.classList.add('notificationElement', 'hidden');
         this.domElement.appendChild(this.domElement_textContent);
     }
 

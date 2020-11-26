@@ -1,18 +1,16 @@
 import ObjectPool from '../common/ObjectPool';
-import { PopUpMessage } from './popUpMessage';
-import { PopUpWindow } from './popUpWindow';
+import { NotificationElement } from './NotificationElement';
 
-export const popUpWindow = new PopUpWindow();
 const popUpMessageDuration = 1500;
 const popUpMessageFadeOutDuration = 1000;
 const popUpMessageContainer = document.createElement('div');
-popUpMessageContainer.id = 'popUpMessage_container';
+popUpMessageContainer.id = 'notificationElementContainer';
 document.body.appendChild(popUpMessageContainer);
 document.documentElement.style.setProperty('--fade-out-duration', `${popUpMessageFadeOutDuration / 1000}s`);
 
-const popUpMessagePool = new ObjectPool<PopUpMessage>(1, {
+const notificationElementPool = new ObjectPool<NotificationElement>(1, {
     itemProvider() {
-        return new PopUpMessage();
+        return new NotificationElement();
     },
     itemActiveCheck(item) {
         const active = !item.hidden;
@@ -28,14 +26,14 @@ const popUpMessagePool = new ObjectPool<PopUpMessage>(1, {
     },
 });
 
-export function showPopUpMessage(content: string) {
-    const popUpMessage = popUpMessagePool.obtain();
-    popUpMessage.setContent(content);
+export function showNotification(content: string) {
+    const notificationElement = notificationElementPool.obtain();
+    notificationElement.setContent(content);
 
     window.setTimeout(() => {
         window.setTimeout(() => {
-            popUpMessagePool.release(popUpMessage);
+            notificationElementPool.release(notificationElement);
         }, popUpMessageFadeOutDuration);
-        popUpMessage.fadeOut();
+        notificationElement.fadeOut();
     }, popUpMessageDuration);
 }

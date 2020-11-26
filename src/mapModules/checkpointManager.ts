@@ -2,9 +2,9 @@ import { Body } from 'cannon-es';
 import { Mesh, Scene, Vector3 } from 'three';
 
 import ObjectPool from '../common/ObjectPool';
-import { GameProgressManager } from '../gameProgressManager';
+import { GameProgressManager } from '../gameProgress/gameProgressManager';
+import { GameProgressModal } from '../gameProgress/gameProgressModalController';
 import { MapBuilder, MapTriggerElementEvent, TriggeredEvent } from './mapBuilder';
-// import { layoutRenderers } from '../notificationModules/popUpWindow';
 
 interface Icon3dList {
     checkpoint: Mesh;
@@ -47,7 +47,7 @@ export class CheckpointManager {
         this.gameProgress = gameProgress;
 
         mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.checkpoint, this.checkpointEventHandler);
-        // mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.finish, this.finishEventHandler);
+        mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.finish, this.finishEventHandler);
 
         if (this.checkpointIcon3dPool.activeCount) {
             this.checkpointIcon3dPool.releaseAll();
@@ -95,23 +95,13 @@ export class CheckpointManager {
         }
     }
 
-    // finishEventHandler = ({ target, relatedTarget, dataSet }: TriggeredEvent) => {
-    //     // if (relatedTarget === aVehicle.chassisBody) {
-    //     if (parseCheckpointCount(dataSet) === this.gameProgress.checkpointsReached) {
-    //         this.gameProgress.stopTimer();
-    //         this.gameProgress.openUI
-    //         popUpWindow.open(layoutRenderers.mapFinished, {
-    //             result: this.gameProgress.result,
-    //             onNext: () => {
-    //                 // gameProgress ? next map
-    //                 popUpWindow.close();
-    //                 // mapBuilder.importMap(mapCollection.map02);
-    //                 reset();
-    //             },
-    //             onRetry: reset,
-    //         });
-    //     }
-    // }
+    finishEventHandler = ({ target, relatedTarget, dataSet }: TriggeredEvent) => {
+        // if (relatedTarget === aVehicle.chassisBody) {
+        if (parseCheckpointCount(dataSet) === this.gameProgress.checkpointsReached) {
+            this.gameProgress.stop();
+            this.gameProgress.openModal(GameProgressModal.mapFinished);
+        }
+    }
 
     updateVisuals(dt: number) {
         animationHeightOffset = Math.sin(dt / 1000) / 500;

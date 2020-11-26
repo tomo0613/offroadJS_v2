@@ -62,7 +62,7 @@ body {
     overflow-y: scroll;
 }
 
-.modalContainer textarea {
+.modal__container textarea {
     width: 450px;
     height: 550px;
     margin-bottom: 10px;

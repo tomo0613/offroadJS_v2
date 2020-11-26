@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-import { NOP } from '../utils';
-
 interface ModalProps {
-    onClose: VoidFnc;
+    onClose?: VoidFnc;
 }
 
 const closeButtonText = '⨯';
@@ -14,12 +12,14 @@ gModalRoot.id = 'modal-root';
 gModalRoot.tabIndex = -1;
 document.body.appendChild(gModalRoot);
 
-const ModalContainer: React.FunctionComponent<ModalProps> = function ({ onClose = NOP, children }) {
+const ModalContainer: React.FunctionComponent<ModalProps> = function ({ onClose, children }) {
     return (
-        <div className="modalContainer">
-            <span className="modalCloseButton" onClick={onClose}>
-                {closeButtonText}
-            </span>
+        <div className="modal__container">
+            {onClose && (
+                <span className="modal__closeButton" onClick={onClose}>
+                    {closeButtonText}
+                </span>
+            )}
             {children}
         </div>
     );
@@ -50,7 +50,7 @@ export const Modal: React.FunctionComponent<ModalProps> = function ({ onClose, c
     function onKeyDown(e: globalThis.KeyboardEvent) {
         e.stopPropagation();
 
-        if (e.key === 'Escape') {
+        if (onClose && e.key === 'Escape') {
             onClose();
         }
     }

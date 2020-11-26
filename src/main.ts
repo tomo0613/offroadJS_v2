@@ -7,13 +7,11 @@ import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 
 import { CameraHelper } from './cameraHelper';
 import cfg from './config';
-import { GameProgressManager } from './gameProgressManager';
+import { GameProgressManager } from './gameProgress/gameProgressManager';
 import inputHandler from './inputHandler';
 import { CheckpointManager } from './mapModules/checkpointManager';
 import { MapBuilder, MapTriggerElementEvent, TriggeredEvent } from './mapModules/mapBuilder';
-import { mapCollection } from './maps/mapCollection';
-import { popUpWindow, showPopUpMessage } from './notificationModules/notificationManager';
-import { layoutRenderers } from './notificationModules/popUpWindow';
+import { showNotification } from './notificationModules/notificationManager';
 import * as utils from './utils';
 import Vehicle from './vehicle/vehicle';
 
@@ -49,8 +47,6 @@ const worldStep = 1 / 60;
     const cameraHelper = new CameraHelper(renderer.domElement);
     cameraHelper.setCameraTarget(aVehicle);
 
-    const gameProgress = new GameProgressManager();
-
     const mapBuilder = new MapBuilder(scene, world);
     mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
         aVehicle.initialPosition.set(pX, pY, pZ);
@@ -63,11 +59,8 @@ const worldStep = 1 / 60;
         checkpoint: checkpointIcon3d,
     });
 
-    mapBuilder.importMap(mapCollection.map01);
-    // mapBuilder.importMap(mapCollection.map02);
-    // mapBuilder.importMap(mapCollection.test);
-    // mapBuilder.toggleEditMode();
-    checkpointManager.init(mapBuilder, gameProgress);
+    const gameProgress = new GameProgressManager(mapBuilder, checkpointManager);
+    gameProgress.loadMap();
 
     mapBuilder.eventTriggerListeners.add(
         MapTriggerElementEvent.setCameraPosition,
@@ -75,27 +68,6 @@ const worldStep = 1 / 60;
             if (relatedTarget === aVehicle.chassisBody) {
                 const [x, y, z] = dataSet.split(',');
                 cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
-            }
-        },
-    );
-
-    mapBuilder.eventTriggerListeners.add(
-        MapTriggerElementEvent.finish,
-        ({ relatedTarget, dataSet }: TriggeredEvent) => {
-            if (relatedTarget === aVehicle.chassisBody) {
-                if (parseCheckpointCount(dataSet) === gameProgress.checkpointsReached) {
-                    gameProgress.stop();
-                    popUpWindow.open(layoutRenderers.mapFinished, {
-                        result: gameProgress.result,
-                        onNext: () => {
-                            // gameProgress ? next map
-                            popUpWindow.close();
-                            mapBuilder.importMap(mapCollection.map02);
-                            reset();
-                        },
-                        onRetry: reset,
-                    });
-                }
             }
         },
     );
@@ -109,9 +81,10 @@ const worldStep = 1 / 60;
             pause();
         }
 
-        // if (inputHandler.isKeyPressed('O')) {
-        //     console.log(cameraHelper.camera.position);
-        // }
+        if (inputHandler.isKeyPressed('O')) {
+            // console.log(cameraHelper.camera.position);
+            // gameProgress.openModal('mapFinished');
+        }
 
         if (inputHandler.isKeyPressed('R')) {
             reset();
@@ -144,11 +117,7 @@ const worldStep = 1 / 60;
     });
 
     function reset() {
-        popUpWindow.close();
         gameProgress.reset();
-        mapBuilder.resetDynamicPlatforms();
-        checkpointManager.init(mapBuilder, gameProgress);
-        aVehicle.resetPosition();
     }
 
     function pause() {
@@ -160,7 +129,7 @@ const worldStep = 1 / 60;
                 gameProgress.start();
             }
         } else {
-            showPopUpMessage('paused');
+            showNotification('paused');
             if (gameProgress.started) {
                 gameProgress.stop();
             }
@@ -224,12 +193,6 @@ const worldStep = 1 / 60;
         ];
     }
 })();
-
-function parseCheckpointCount(dataSet: string) {
-    const [, checkpointCount] = dataSet.match(/checkpoints:(\d+)/) || [];
-
-    return checkpointCount ? Number(checkpointCount) : 0;
-}
 
 Object.defineProperty(window, 'aspectRatio', {
     get() {

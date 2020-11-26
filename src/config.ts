@@ -28,7 +28,7 @@ export default {
         maxEngineForceRear: 65,
         cameraMountPosition: {
             x: 0,
-            y: 5,
+            y: 4,
             z: 10,
         },
     },

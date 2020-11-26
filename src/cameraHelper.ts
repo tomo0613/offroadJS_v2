@@ -2,7 +2,7 @@ import { Object3D, PerspectiveCamera, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import cfg from './config';
-import { showPopUpMessage } from './notificationModules/notificationManager';
+import { showNotification } from './notificationModules/notificationManager';
 import { NOP, valueBetween } from './utils';
 import Vehicle from './vehicle/vehicle';
 
@@ -62,6 +62,7 @@ export class CameraHelper {
             case CameraMode.hood:
                 this.cameraTarget.chassisMesh.remove(this.camera);
                 this.camera.fov = cfg.camera.fov;
+                this.camera.updateProjectionMatrix();
                 break;
             case CameraMode.free:
                 this.orbitControls.enabled = false;
@@ -72,23 +73,24 @@ export class CameraHelper {
         switch (this.currentCameraMode) {
             case CameraMode.dynamic:
                 this.update = this.updateDynamicCamera;
-                showPopUpMessage('Camera mode is set to: "dynamic"');
+                showNotification('Camera mode is set to: "dynamic"');
                 break;
             case CameraMode.chase:
                 this.update = this.updateChaseCamera;
-                showPopUpMessage('Camera mode is set to: "chase"');
+                showNotification('Camera mode is set to: "chase"');
                 break;
             case CameraMode.hood:
                 this.cameraTarget.chassisMesh.add(this.camera);
-                this.camera.position.set(0, 1.1, 0);
+                this.camera.position.set(0, 1.1, -0.47);
                 this.camera.rotation.set(0, 0, 0);
-                this.camera.fov = 70;
+                this.camera.fov = 60;
+                this.camera.updateProjectionMatrix();
                 this.update = NOP;
-                showPopUpMessage('Camera mode is set to: "hood"');
+                showNotification('Camera mode is set to: "hood"');
                 break;
             case CameraMode.free:
                 this.orbitControls.enabled = true;
-                showPopUpMessage('Camera mode is set to: "free" (use mouse to look around)');
+                showNotification('Camera mode is set to: "free" (use mouse to look around)');
                 break;
             default:
         }
