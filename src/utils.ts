@@ -3,20 +3,12 @@ import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGLoader, SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeBufferGeometry';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export function NOP() {}
+
 type ResourceType = GLTF|HTMLImageElement|SVGResult;
 
-export {
-    isMobileDevice,
-    loadResource,
-    NOP,
-    sliceCubeTexture,
-    svgToMesh,
-};
-
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-function NOP() {}
-
-function loadResource<T extends ResourceType>(url: string): Promise<T> {
+export function loadResource<T extends ResourceType>(url: string): Promise<T> {
     const extension = url.split('.').pop();
     let loader: ImageLoader|GLTFLoader|SVGLoader;
 
@@ -55,7 +47,7 @@ interface TranslateProps {
     scale?: number;
 }
 
-function svgToMesh({ paths }: SVGResult, translateProps = {} as TranslateProps) {
+export function svgToMesh({ paths }: SVGResult, translateProps = {} as TranslateProps) {
     const group = new Group();
     const extrudeOptions: ExtrudeGeometryOptions = {
         bevelEnabled: false,
@@ -94,7 +86,7 @@ function svgToMesh({ paths }: SVGResult, translateProps = {} as TranslateProps) 
     return group;
 }
 
-function sliceCubeTexture(img: HTMLImageElement, imgSize = 1024) {
+export function sliceCubeTexture(img: HTMLImageElement, imgSize = 1024) {
     const cubeTextureMap = [
         { x: 2, y: 1 },
         { x: 0, y: 1 },
@@ -153,8 +145,22 @@ export function throttle(fnc: VoidFnc, timeToWaitBeforeNextCall = 200) {
 
 const mobileUserAgentRegExp = /Android|iPhone|iPad/i;
 
-function isMobileDevice() {
+export function isMobileDevice() {
     return mobileUserAgentRegExp.test(window.navigator.userAgent);
+}
+
+export function formatTime(time: number) {
+    const milSec = Math.floor(time % 1000);
+    const sec = Math.floor(time / 1000 % 60);
+    const min = Math.floor(time / 60000 % 60);
+
+    return `${appendLeadingZero(min)}:${appendLeadingZero(sec)}.${milSec}`;
+}
+
+function appendLeadingZero(value: number) {
+    const str = value.toString();
+
+    return str.length < 2 ? `0${value}` : str;
 }
 
 export function degToRad(deg: number) {
@@ -172,3 +178,28 @@ export function round(n: number) {
 export function valueBetween(value: number, min: number, max: number) {
     return Math.max(min, Math.min(value, max));
 }
+
+function omit<O extends Record<K, unknown>, K extends keyof O = keyof O>(obj: O, ...keysToOmit: K[]) {
+    return Object.keys(obj).reduce((targetObj, key) => {
+        if (!keysToOmit.includes(key as K)) {
+            targetObj[key] = obj[key];
+        }
+
+        return targetObj;
+    }, {} as Omit<O, K>);
+}
+
+function pick<O extends Record<K, unknown>, K extends keyof O = keyof O>(obj: O, ...keysToPick: K[]) {
+    return keysToPick.reduce((targetObj, key) => {
+        if (obj.hasOwnProperty(key)) {
+            targetObj[key] = obj[key];
+        }
+
+        return targetObj;
+    }, {} as Pick<O, K>);
+}
+
+Object.defineProperties(Object, {
+    omit: { value: omit },
+    pick: { value: pick },
+});

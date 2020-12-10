@@ -1,34 +1,19 @@
-import {
-    Body,
-    Box,
-    ContactEquation,
-    ContactMaterial,
-    ConvexPolyhedron,
-    Cylinder,
-    Material,
-    Shape,
-    Sphere,
-    Vec3,
-    World,
-} from 'cannon-es';
-import {
-    BoxBufferGeometry,
-    BufferGeometry,
-    CylinderBufferGeometry,
-    Geometry,
-    Mesh,
-    MeshLambertMaterial,
-    Scene,
-    SphereBufferGeometry,
-    Vector3,
-} from 'three';
-import { ConvexBufferGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
+import { Body, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
+import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler } from 'three';
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
 import { renderEditor } from '../mapEditorUI/editor';
 import { degToRad, NOP } from '../utils';
-import { generateLoop, generateSlopeTransition } from './compoundPlatformGenerator';
+import { getBaseElementComponents } from './baseMapElementComponents';
+import {
+    compoundShapes,
+    getCompoundElementChildrenPropertyList,
+    loopPropKeys,
+    LoopProps,
+    slopeTransitionPropKeys,
+    SlopeTransitionProps,
+} from './compoundMapElementComponents';
 
 export enum MapBuilderEvent {
     select = 'select',
@@ -41,13 +26,20 @@ export enum MapTriggerElementEvent {
 }
 
 export enum MapElementType {
+    default = 'default',
+    compound = 'compound',
+    trigger = 'trigger',
+    vehicle = 'vehicle',
+}
+
+export enum MapElementShape {
     box = 'box',
     cylinder = 'cylinder',
     ramp = 'ramp',
     sphere = 'sphere',
     triangularRamp = 'triangularRamp',
-    trigger = 'trigger',
-    vehicle = 'vehicle',
+    loop = 'loop',
+    slopeTransition = 'slopeTransition',
 }
 
 export interface MapElementOrientationProps {
@@ -61,6 +53,7 @@ export interface MapElementOrientationProps {
 
 interface CommonMapElementProps extends MapElementOrientationProps {
     type?: MapElementType;
+    shape?: MapElementShape;
     mass?: number;
     lowFriction?: boolean;
     fixedRotation?: boolean;
@@ -72,7 +65,7 @@ interface BoxShapeProps {
     length?: number;
 }
 
-interface BoxShapePropsSimple {
+interface SphereShapeProps {
     size?: number;
 }
 
@@ -85,10 +78,6 @@ interface CylinderShapeProps {
 
 interface EventTriggerProps {
     event?: MapTriggerElementEvent|string;
-    size?: number;
-    position_x?: number;
-    position_y?: number;
-    position_z?: number;
     dataSet?: string;
 }
 
@@ -107,10 +96,11 @@ export interface TriggeredEvent {
 
 type MapElementId = string;
 type BoxProps = CommonMapElementProps & BoxShapeProps;
-type BoxPropsSimple = CommonMapElementProps & BoxShapePropsSimple;
 type CylinderProps = CommonMapElementProps & CylinderShapeProps;
-export type MapElementProps = BoxProps & CylinderProps & EventTriggerProps;
-export type PlatformComponentStore = Map<string, Mesh|Body|VoidFnc|MapElementProps>;
+type SphereProps = CommonMapElementProps & SphereShapeProps;
+type CompoundProps = LoopProps & SlopeTransitionProps;
+export type MapElementProps = BoxProps & CylinderProps & SphereProps & EventTriggerProps & CompoundProps;
+export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps>;
 
 const defaultPlatformColor = 0xDDDDDD;
 const dynamicPlatformColor = 0x95C0E5;
@@ -123,6 +113,8 @@ const normal_to_lowFriction_cm = new ContactMaterial(normalMaterial, lowFriction
     friction: 0,
     contactEquationStiffness: 1e8,
 });
+const tmp_euler = new Euler();
+
 let gId = 0;
 
 export class MapBuilder {
@@ -130,7 +122,7 @@ export class MapBuilder {
     world: World;
     selectedMapElementId: MapElementId;
     perviousSelectedMapElementId: MapElementId;
-    private mapElementComponentStore: PlatformComponentStore = new Map();
+    private mapElementComponentStore: MapElementComponentStore = new Map();
     private mapElementIdStore = new Set<string>();
     listeners = new EventListener<MapBuilderEvent>();
     eventTriggerListeners = new EventListener<MapTriggerElementEvent>();
@@ -140,9 +132,6 @@ export class MapBuilder {
     constructor(scene: Scene, world: World) {
         this.scene = scene;
         this.world = world;
-
-        window.importMap = this.importMap;
-        window.exportMap = this.exportMap;
 
         world.addContactMaterial(normal_to_normal_cm);
         world.addContactMaterial(normal_to_lowFriction_cm);
@@ -157,34 +146,22 @@ export class MapBuilder {
     }
 
     getMeshFromStore(id: MapElementId) {
-        return this.mapElementComponentStore.get(`${id}_mesh`) as Mesh;
+        return this.mapElementComponentStore.get(`${id}_mesh`) as Mesh|Group;
     }
 
     getPropsFromStore(id: MapElementId) {
         return this.mapElementComponentStore.get(`${id}_props`) as MapElementProps;
     }
 
-    private addToWorld(visualShape: Geometry | BufferGeometry, physicalShape: Shape, props: MapElementProps) {
-        const mapElementId = `${props.type}_${gId++}`;
+    private addToWorld(body: Body, mesh: Mesh|Group, props: MapElementProps) {
+        const mapElementId = `${props.type || props.shape}_${gId++}`;
         const {
-            position_x = 0,
-            position_y = 0,
-            position_z = 0,
-            rotation_x = 0,
-            rotation_y = 0,
-            rotation_z = 0,
             mass = 0,
-            lowFriction = false,
+            position_x = 0, position_y = 0, position_z = 0,
+            rotation_x = 0, rotation_y = 0, rotation_z = 0,
             fixedRotation = false,
         } = props;
 
-        const color = mass ? dynamicPlatformColor : defaultPlatformColor;
-        const mesh = new Mesh(visualShape, new MeshLambertMaterial({ color }));
-        const body = new Body({
-            shape: physicalShape,
-            mass,
-            material: lowFriction ? lowFrictionMaterial : normalMaterial,
-        });
         const updateVisuals = () => {
             mesh.position.copy(body.position as unknown as Vector3);
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
@@ -228,7 +205,7 @@ export class MapBuilder {
         this.mapElementComponentStore.set(`${mapElementId}_props`, props);
 
         if (this.editMode) {
-            this.selectPlatform(mapElementId);
+            this.selectMapElement(mapElementId);
         }
 
         return mapElementId;
@@ -238,17 +215,21 @@ export class MapBuilder {
         if (id === 'vehicle_0') {
             return;
         }
-        const [type] = id.split('_');
         const body = this.getBodyFromStore(id);
         const mesh = this.getMeshFromStore(id);
-        mesh.geometry.dispose();
-        (mesh.material as MeshLambertMaterial).dispose();
+        const { type } = this.getPropsFromStore(id);
 
         this.scene.remove(mesh);
         this.world.removeBody(body);
         this.world.removeEventListener('postStep', this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc);
 
-        if (type === 'trigger') {
+        if (isCompound(mesh)) {
+            (mesh.children as Mesh[]).forEach(disposeGeometryAndMaterial);
+        } else {
+            disposeGeometryAndMaterial(mesh);
+        }
+
+        if (type === MapElementType.trigger) {
             const listener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
             body.removeEventListener(Body.COLLIDE_EVENT_NAME, listener);
             this.mapElementComponentStore.delete(`${id}_listener`);
@@ -269,7 +250,7 @@ export class MapBuilder {
         }
     }
 
-    selectPlatform = (id: MapElementId) => {
+    selectMapElement = (id: MapElementId) => {
         if (this.selectedMapElementId) {
             this.perviousSelectedMapElementId = this.selectedMapElementId;
         }
@@ -277,22 +258,19 @@ export class MapBuilder {
         this.selectedMapElementId = id;
         this.listeners.dispatch(MapBuilderEvent.select, this.selectedMapElementId);
 
-        this.highlightSelectedPlatform();
+        this.highlightSelectedMapElement();
     }
 
-    private highlightSelectedPlatform() {
+    private highlightSelectedMapElement() {
         if (this.perviousSelectedMapElementId) {
-            const previousSelected = this.getMeshFromStore(this.perviousSelectedMapElementId);
-            if (previousSelected) {
-                const material = previousSelected.material as MeshLambertMaterial;
-                material.color.setHex(0xFFFFFF);
-                // material.transparent = true;
-                // material.opacity = 0.7;
+            const previousSelectedMesh = this.getMeshFromStore(this.perviousSelectedMapElementId);
+            if (previousSelectedMesh) {
+                setMeshColor(previousSelectedMesh, 0xFFFFFF);
             }
         }
-        const selected = this.getMeshFromStore(this.selectedMapElementId);
-        if (selected) {
-            (selected.material as MeshLambertMaterial).color.setHex(0xFFC266);
+        const selectedMesh = this.getMeshFromStore(this.selectedMapElementId);
+        if (selectedMesh) {
+            setMeshColor(selectedMesh, 0xFFC266);
         }
     }
 
@@ -314,94 +292,59 @@ export class MapBuilder {
     }
 
     clone(id: MapElementId) {
-        const props = { ...this.getPropsFromStore(id) };
-
-        return this.build(props.type, props);
+        return this.build({ ...this.getPropsFromStore(id) });
     }
 
-    build(type: MapElementType, props: BoxPropsSimple|BoxProps|CylinderProps = {}) {
-        switch (type) {
-            case MapElementType.box:
-                return this.buildBox(props);
-            case MapElementType.cylinder:
-                return this.buildCylinder(props);
-            case MapElementType.ramp:
-                return this.buildRamp(props);
-            case MapElementType.sphere:
-                return this.buildSphere(props);
-            case MapElementType.triangularRamp:
-                return this.buildTriangularRamp(props);
-            case MapElementType.trigger:
-                return this.placeEventTrigger(props);
-            default:
-                return '';
+    build(props: MapElementProps) {
+        const color = props.mass ? dynamicPlatformColor : defaultPlatformColor;
+        const meshMaterial = new MeshLambertMaterial({ color });
+        const bodyMaterial = props.lowFriction ? lowFrictionMaterial : normalMaterial;
+        const mapElementBody = new Body({ mass: props.mass, material: bodyMaterial });
+        let mapElementMesh: Mesh|Group;
+
+        if (compoundShapes.includes(props.shape) && !props.type) {
+            props.type = MapElementType.compound;
         }
+
+        if (props.type === MapElementType.compound) {
+            mapElementMesh = new Group();
+            getCompoundElementChildrenPropertyList(props).forEach((childProps) => {
+                const [shape, geometry] = getBaseElementComponents(childProps);
+                const mesh = new Mesh(geometry, meshMaterial);
+                tmp_euler.set(
+                    degToRad(childProps.rotation_x || 0),
+                    degToRad(childProps.rotation_y || 0),
+                    degToRad(childProps.rotation_z || 0),
+                );
+                mesh.quaternion.setFromEuler(tmp_euler);
+                mesh.position.set(childProps.position_x, childProps.position_y, childProps.position_z);
+                mapElementMesh.add(mesh);
+                mapElementBody.addShape(
+                    shape,
+                    mesh.position as unknown as Vec3,
+                    mesh.quaternion as unknown as Quaternion,
+                );
+            });
+        } else {
+            const [shape, geometry] = getBaseElementComponents(props);
+            mapElementBody.addShape(shape);
+            mapElementMesh = new Mesh(geometry, meshMaterial);
+        }
+
+        const mapElementId = this
+            .addToWorld(mapElementBody, mapElementMesh, props);
+
+        if (props.type === MapElementType.trigger) {
+            this.setUpEventTrigger(mapElementId, props);
+        }
+
+        return mapElementId;
     }
 
-    buildBox(props: BoxPropsSimple): string;
-    buildBox(props: BoxProps): string;
-    buildBox(props: BoxPropsSimple & BoxProps) {
-        const { size = 1, width = size, height = size, length = size } = props;
-
-        return this.addToWorld(
-            new BoxBufferGeometry(width * 2, height * 2, length * 2),
-            new Box(new Vec3(width, height, length)),
-            { type: MapElementType.box, ...props },
-        );
-    }
-
-    buildCylinder(props: CylinderProps) {
-        const { radiusTop = 1, radiusBottom = 1, height = 1, sides = 6 } = props;
-        const cylinderSides = Math.max(3, sides);
-
-        return this.addToWorld(
-            new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides),
-            new Cylinder(radiusTop, radiusBottom, height * 2, cylinderSides),
-            { type: MapElementType.cylinder, ...props },
-        );
-    }
-
-    buildRamp(props: BoxProps) {
-        const shape = getRampShape(props.width, props.height, props.length);
-
-        return this.addToWorld(
-            new ConvexBufferGeometry(shape.vertices.map(({ x, y, z }) => new Vector3(x, y, z))),
-            shape,
-            { type: MapElementType.ramp, ...props },
-        );
-    }
-
-    buildSphere(props: BoxPropsSimple) {
-        const { size = 1 } = props;
-
-        return this.addToWorld(
-            new SphereBufferGeometry(size),
-            new Sphere(size),
-            { type: MapElementType.sphere, ...props },
-        );
-    }
-
-    buildTriangularRamp(props: BoxProps) {
-        const shape = getTriangularRampShape(props.width, props.height, props.length);
-
-        return this.addToWorld(
-            new ConvexBufferGeometry(shape.vertices.map(({ x, y, z }) => new Vector3(x, y, z))),
-            shape,
-            { type: MapElementType.triangularRamp, ...props },
-        );
-    }
-
-    placeEventTrigger(props: EventTriggerProps) {
-        const { event = MapTriggerElementEvent.setCameraPosition, dataSet = '', size = 1 } = props;
-
-        const triggerId = this.addToWorld(
-            new SphereBufferGeometry(size),
-            new Sphere(size),
-            { type: MapElementType.trigger, ...props },
-        );
-        const triggerElement = this.getBodyFromStore(triggerId);
-        const mesh = this.getMeshFromStore(triggerId);
-        const material = mesh.material as MeshLambertMaterial;
+    setUpEventTrigger(id: MapElementId, props: MapElementProps) {
+        const { event = MapTriggerElementEvent.setCameraPosition, dataSet = '' } = props;
+        const triggerElementBody = this.getBodyFromStore(id);
+        const triggerElementMesh = this.getMeshFromStore(id) as Mesh;
         const listener = ({ target, body }: CollisionEvent) => {
             this.eventTriggerListeners.dispatch(
                 event as MapTriggerElementEvent,
@@ -409,20 +352,16 @@ export class MapBuilder {
             );
         };
 
-        this.mapElementComponentStore.set(`${triggerId}_listener`, listener);
+        this.mapElementComponentStore.set(`${id}_listener`, listener);
 
-        triggerElement.collisionResponse = false;
-        triggerElement.addEventListener(Body.COLLIDE_EVENT_NAME, listener);
+        triggerElementBody.collisionResponse = false;
+        triggerElementBody.addEventListener(Body.COLLIDE_EVENT_NAME, listener);
 
-        material.color.setHex(0xCD72D3);
-        material.transparent = true;
-        material.opacity = 0.3;
+        setMeshColor(triggerElementMesh, 0xCD72D3, 0.3);
 
         if (!this.editMode) {
-            mesh.visible = false;
+            triggerElementMesh.visible = false;
         }
-
-        return triggerId;
     }
 
     placeVehicle(props: CommonMapElementProps) {
@@ -432,7 +371,7 @@ export class MapBuilder {
         } = props;
 
         this.mapElementIdStore.add(mapElementId);
-        this.mapElementComponentStore.set(`${mapElementId}_props`, { type: MapElementType.vehicle, ...props });
+        this.mapElementComponentStore.set(`${mapElementId}_props`, { ...props });
         this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, () => {
             const {
                 position_x, position_y, position_z, rotation_x, rotation_y, rotation_z,
@@ -456,14 +395,9 @@ export class MapBuilder {
 
     resetElementIfDynamic = (id: MapElementId) => {
         const {
-            type,
-            mass,
-            position_x = 0,
-            position_y = 0,
-            position_z = 0,
-            rotation_x = 0,
-            rotation_y = 0,
-            rotation_z = 0,
+            type, mass,
+            position_x = 0, position_y = 0, position_z = 0,
+            rotation_x = 0, rotation_y = 0, rotation_z = 0,
         } = this.getPropsFromStore(id);
 
         if (type === MapElementType.vehicle) {
@@ -485,98 +419,106 @@ export class MapBuilder {
         );
     }
 
-    translate(id: MapElementId, props: CommonMapElementProps) {
+    translate(id: MapElementId, translateProps: MapElementOrientationProps) {
         const body = this.getBodyFromStore(id);
         const mapElementProps = this.getPropsFromStore(id);
         const updateVisuals = this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc;
 
-        Object.assign(mapElementProps, { ...props });
+        Object.assign(mapElementProps, { ...translateProps });
 
         if (body) {
             const {
-                position_x = 0,
-                position_y = 0,
-                position_z = 0,
-                rotation_x = 0,
-                rotation_y = 0,
-                rotation_z = 0,
+                position_x = 0, position_y = 0, position_z = 0,
+                rotation_x = 0, rotation_y = 0, rotation_z = 0,
             } = mapElementProps;
 
-            body.position.set(
-                position_x,
-                position_y,
-                position_z,
-            );
-            body.quaternion.setFromEuler(
-                degToRad(rotation_x),
-                degToRad(rotation_y),
-                degToRad(rotation_z),
-            );
+            body.position.set(position_x, position_y, position_z);
+            body.quaternion.setFromEuler(degToRad(rotation_x), degToRad(rotation_y), degToRad(rotation_z));
             body.aabbNeedsUpdate = true;
         }
 
         updateVisuals();
     }
 
-    transform(id: MapElementId, props: BoxProps & BoxPropsSimple & CylinderProps) {
-        const mesh = this.getMeshFromStore(id);
-        const body = this.getBodyFromStore(id);
-        const storedProps = this.getPropsFromStore(id);
-        const shape = body.shapes[0];
-        const {
-            size = storedProps.size || 1,
-            width = storedProps.width || size,
-            height = storedProps.height || size,
-            length = storedProps.length || size,
-            radiusBottom = storedProps.radiusBottom || 1,
-            radiusTop = storedProps.radiusTop || 1,
-            sides = storedProps.sides || 6,
-        } = props;
-        const cylinderSides = Math.max(3, sides);
-        let transformedShape: Shape;
-        let transformedGeometry: BufferGeometry;
+    transform(id: MapElementId, transformProps: MapElementProps) {
+        const mapElementMesh = this.getMeshFromStore(id);
+        const mapElementBody = this.getBodyFromStore(id);
+        const mapElementProps = this.getPropsFromStore(id);
 
-        switch (storedProps.type) {
-            case MapElementType.box:
-                (shape as Box).halfExtents.set(width, height, length);
-                (shape as Box).updateConvexPolyhedronRepresentation();
-                transformedShape = shape;
-                transformedGeometry = new BoxBufferGeometry(width * 2, height * 2, length * 2);
-                Object.assign(this.getPropsFromStore(id), { width, height, length });
+        switch (mapElementProps.shape) {
+            case MapElementShape.box:
+            case MapElementShape.ramp:
+            case MapElementShape.triangularRamp:
+                Object.assign(mapElementProps, Object.pick(transformProps, 'width', 'height', 'length'));
                 break;
-            case MapElementType.cylinder:
-                transformedShape = new Cylinder(radiusTop, radiusBottom, height * 2, cylinderSides);
-                transformedGeometry = new CylinderBufferGeometry(radiusTop, radiusBottom, height * 2, cylinderSides);
-                Object.assign(this.getPropsFromStore(id), { radiusTop, radiusBottom, height, sides: cylinderSides });
-                break;
-            case MapElementType.ramp:
-                transformedShape = getRampShape(width, height, length);
-                transformedGeometry = new ConvexBufferGeometry(
-                    (transformedShape as ConvexPolyhedron).vertices.map(({ x, y, z }) => new Vector3(x, y, z)),
+            case MapElementShape.cylinder:
+                Object.assign(
+                    mapElementProps,
+                    Object.pick(transformProps, 'radiusTop', 'radiusBottom', 'height', 'sides'),
                 );
-                Object.assign(this.getPropsFromStore(id), { width, height, length });
                 break;
-            case MapElementType.sphere:
-            case MapElementType.trigger:
-                transformedShape = new Sphere(size);
-                transformedGeometry = new SphereBufferGeometry(size);
-                Object.assign(this.getPropsFromStore(id), { size });
+            case MapElementShape.sphere:
+                Object.assign(mapElementProps, Object.pick(transformProps, 'size'));
                 break;
-            case MapElementType.triangularRamp:
-                transformedShape = getTriangularRampShape(width, height, length);
-                transformedGeometry = new ConvexBufferGeometry(
-                    (transformedShape as ConvexPolyhedron).vertices.map(({ x, y, z }) => new Vector3(x, y, z)),
-                );
-                Object.assign(this.getPropsFromStore(id), { width, height, length });
+            case MapElementShape.loop:
+                Object.assign(mapElementProps, Object.pick(transformProps, ...loopPropKeys));
+                break;
+            case MapElementShape.slopeTransition:
+                Object.assign(mapElementProps, Object.pick(transformProps, ...slopeTransitionPropKeys));
                 break;
             default:
         }
+        /*  remove current shape(s)  */
+        mapElementBody.shapes.length = 0;
+        mapElementBody.shapeOffsets.length = 0;
+        mapElementBody.shapeOrientations.length = 0;
 
-        body.shapes.length = 0;
-        body.addShape(transformedShape);
+        if (isCompound(mapElementMesh)) {
+            const compoundElementChildrenPropertyList = getCompoundElementChildrenPropertyList(mapElementProps);
+            const compoundElementChildrenCount = compoundElementChildrenPropertyList.length;
+            const leftoverMeshCount = Math.max(0, mapElementMesh.children.length - compoundElementChildrenCount);
 
-        mesh.geometry.dispose();
-        mesh.geometry = transformedGeometry;
+            for (let i = 0; i < leftoverMeshCount; i++) {
+                const lastChildIndex = mapElementMesh.children.length - 1;
+                const childMesh = (mapElementMesh.children as Mesh[])[lastChildIndex];
+                childMesh.geometry.dispose();
+                mapElementMesh.remove(childMesh);
+            }
+
+            for (let i = 0; i < compoundElementChildrenCount; i++) {
+                const childProps = compoundElementChildrenPropertyList[i];
+                const [transformedShape, transformedGeometry] = getBaseElementComponents(childProps);
+                let childMesh = (mapElementMesh.children as Mesh[])[i];
+
+                if (childMesh) {
+                    childMesh.geometry.dispose();
+                } else {
+                    childMesh = new Mesh();
+                    childMesh.material = (mapElementMesh.children as Mesh[])[0].material;
+                    mapElementMesh.add(childMesh);
+                }
+
+                tmp_euler.set(
+                    degToRad(childProps.rotation_x || 0),
+                    degToRad(childProps.rotation_y || 0),
+                    degToRad(childProps.rotation_z || 0),
+                );
+                childMesh.quaternion.setFromEuler(tmp_euler);
+                childMesh.position.set(childProps.position_x, childProps.position_y, childProps.position_z);
+                childMesh.geometry = transformedGeometry;
+                mapElementBody.addShape(
+                    transformedShape,
+                    childMesh.position as unknown as Vec3,
+                    childMesh.quaternion as unknown as Quaternion,
+                );
+            }
+        } else {
+            const [transformedShape, transformedGeometry] = getBaseElementComponents(mapElementProps);
+
+            mapElementBody.addShape(transformedShape);
+            mapElementMesh.geometry.dispose();
+            mapElementMesh.geometry = transformedGeometry;
+        }
     }
 
     // ToDo
@@ -584,90 +526,45 @@ export class MapBuilder {
         Object.assign(this.getPropsFromStore(id), { mass });
     }
 
-    importMap = (mapData: Record<string, MapElementProps>) => {
+    importMap = (mapData: MapElementProps[]) => {
         this.mapElementIdStore.forEach(this.destroy);
         gId = 0;
 
-        Object.entries(mapData).forEach(([id, props]) => {
-            const [type] = id.split('_') as [MapElementType];
-
-            if (type === MapElementType.vehicle) {
+        mapData.forEach((props) => {
+            if (props.type === MapElementType.vehicle) {
                 this.placeVehicle(props);
             } else {
-                this.build(type, props);
+                this.build(props);
             }
         });
-
-        // generateLoop.call(this, {
-        //     position: new Vec3(40, 2, -50),
-        //     segmentWidth: 3,
-        //     segmentHeight: 0.3,
-        //     segmentLength: 1,
-        //     segmentCount: 10,
-        //     width: 10,
-        //     radius: 10,
-        // });
-
-        // generateSlopeTransition.call(this, {
-        //     position: new Vec3(20, 0.1, 1),
-        //     segmentCount: 15,
-        //     segmentWidth: 3,
-        //     segmentHeight: 0.2,
-        //     segmentLength: 2,
-        // });
     }
 
-    exportMap = () => {
-        const exportData = Array.from(this.mapElementComponentStore.entries())
+    exportMap = () => (
+        Array.from(this.mapElementComponentStore.entries())
             .filter(([key]) => key.endsWith('props'))
-            .reduce((data, [key, props]) => {
-                const id = key.replace('_props', '');
-                const { type, ...mapElementProps } = props as MapElementProps;
-                data[id] = mapElementProps;
+            .map(([, value]) => value)
+    )
+}
 
-                return data;
-            }, {} as Record<string, Omit<MapElementProps, 'type'>>);
+function disposeGeometryAndMaterial(mesh: Mesh) {
+    mesh.geometry.dispose();
+    (mesh.material as MeshLambertMaterial).dispose();
+}
 
-        return exportData;
+function setMeshColor(mesh: Mesh|Group, colorHexValue?: number, opacity?: number) {
+    const material = (isCompound(mesh)
+        ? (mesh.children[0] as Mesh).material
+        : mesh.material) as MeshLambertMaterial;
+
+    if (colorHexValue) {
+        material.color.setHex(colorHexValue);
+    }
+    if (opacity) {
+        material.transparent = true;
+        material.opacity = opacity;
     }
 }
 
-function getRampShape(width = 1, height = 1, length = 1) {
-    // List of vertices that can be assigned to a face
-    const vertices = [
-        new Vec3(0, 0, 0),
-        new Vec3(width * 2, 0, 0),
-        new Vec3(width * 2, height * 2, 0),
-        new Vec3(0, height * 2, 0),
-        new Vec3(0, 0, length * 2),
-        new Vec3(width * 2, 0, length * 2),
-    ];
-    // List of vertex index groups that are assigned to individual faces
-    // ! CCW order is important for correct normals !
-    const faces = [
-        [0, 3, 2, 1],
-        [2, 3, 4, 5],
-        [0, 1, 5, 4],
-        [5, 1, 2],
-        [4, 3, 0],
-    ];
-
-    return new ConvexPolyhedron({ vertices, faces });
-}
-
-function getTriangularRampShape(width = 1, height = 1, length = 1) {
-    const vertices = [
-        new Vec3(0, 0, 0),
-        new Vec3(width * 2, 0, 0),
-        new Vec3(0, height * 2, 0),
-        new Vec3(0, 0, length * 2),
-    ];
-    const faces = [
-        [0, 2, 1],
-        [1, 2, 3],
-        [0, 1, 3],
-        [3, 2, 0],
-    ];
-
-    return new ConvexPolyhedron({ vertices, faces });
+function isCompound(mesh: Mesh|Group): mesh is Group {
+    return !!mesh.children.length;
 }

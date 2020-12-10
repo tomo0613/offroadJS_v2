@@ -53,15 +53,6 @@ const worldStep = 1 / 60;
         aVehicle.initialRotation.setFromEuler(utils.degToRad(rX), utils.degToRad(rY), utils.degToRad(rZ));
         aVehicle.resetPosition();
     };
-
-    const checkpointManager = new CheckpointManager(scene, {
-        finish: finishIcon3d,
-        checkpoint: checkpointIcon3d,
-    });
-
-    const gameProgress = new GameProgressManager(mapBuilder, checkpointManager);
-    gameProgress.loadMap();
-
     mapBuilder.eventTriggerListeners.add(
         MapTriggerElementEvent.setCameraPosition,
         ({ relatedTarget, dataSet }: TriggeredEvent) => {
@@ -71,6 +62,14 @@ const worldStep = 1 / 60;
             }
         },
     );
+
+    const checkpointManager = new CheckpointManager(scene, {
+        finish: finishIcon3d,
+        checkpoint: checkpointIcon3d,
+    });
+
+    const gameProgress = new GameProgressManager(mapBuilder, checkpointManager);
+    gameProgress.loadMap();
 
     inputHandler.addKeyPressListener(() => {
         if (inputHandler.isKeyPressed('M')) {
@@ -94,25 +93,25 @@ const worldStep = 1 / 60;
             cameraHelper.switchMode();
         }
 
-        let engineForce = 0;
-        let steeringValue = 0;
+        let engineForceDirection: -1|0|1 = 0;
+        let steeringDirection: -1|0|1 = 0;
 
         if (inputHandler.isKeyPressed('W', 'ArrowUp')) {
-            engineForce = 1;
+            engineForceDirection = 1;
         } else if (inputHandler.isKeyPressed('S', 'ArrowDown')) {
-            engineForce = -1;
+            engineForceDirection = -1;
         }
         if (inputHandler.isKeyPressed('A', 'ArrowLeft')) {
-            steeringValue = 1;
+            steeringDirection = 1;
         } else if (inputHandler.isKeyPressed('D', 'ArrowRight')) {
-            steeringValue = -1;
+            steeringDirection = -1;
         }
-        if (!gameProgress.started && engineForce) {
+        if (!gameProgress.started && engineForceDirection) {
             gameProgress.start();
         }
 
-        aVehicle.setEngineForce(engineForce);
-        aVehicle.setSteeringValue(steeringValue);
+        aVehicle.setEngineForceDirection(engineForceDirection);
+        aVehicle.setSteeringDirection(steeringDirection);
         aVehicle.setBrakeForce(Number(inputHandler.isKeyPressed(' ')));
     });
 

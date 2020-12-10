@@ -29,7 +29,9 @@ export function List({ label, contentList, selected, onSelect = NOP }: ListPorps
             <ul
                 className="list"
                 onClick={({ target }: React.MouseEvent<HTMLUListElement>) => {
-                    onSelect((target as HTMLLIElement).dataset.content);
+                    if ((target as HTMLElement).tagName === 'LI') {
+                        onSelect((target as HTMLLIElement).dataset.content);
+                    }
                 }}
             >
                 {contentList.map((content) => (

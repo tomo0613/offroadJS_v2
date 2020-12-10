@@ -12,11 +12,8 @@ interface MapElementAttributesPanelProps {
 
 const attributesPanelLabel = 'Attributes';
 const editableAttributesByType: Record<MapElementType, string[]> = {
-    box: ['mass'/* , noFriction */],
-    cylinder: ['mass'],
-    ramp: ['mass'],
-    sphere: ['mass'],
-    triangularRamp: ['mass'],
+    default: [],
+    compound: [],
     trigger: ['event', 'dataSet'],
     vehicle: [],
 };
@@ -25,7 +22,7 @@ const triggerEventOptionList = ['setCameraPosition', 'checkpoint', 'finish'] as 
 export function MapElementAttributesPanel({ mapElementProps }: MapElementAttributesPanelProps) {
     const mapBuilder = useContext(MapBuilderContext);
     const {
-        type, mass = 0, event = MapTriggerElementEvent.setCameraPosition, dataSet = '',
+        type = MapElementType.default, mass = 0, event = MapTriggerElementEvent.setCameraPosition, dataSet = '',
     } = mapElementProps;
 
     return (

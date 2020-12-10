@@ -4,21 +4,27 @@ import { MapElementProps } from '../mapModules/mapBuilder';
 import { MapBuilderContext } from './editor';
 
 const importButtonText = 'import';
-const importTextAreaPlaceholder = `{
-    "box_0": {
-        "width": 15,
-        "height": 0.1,
-        "length": 15
+const importTextAreaPlaceholder = `[
+    {
+        "type": "vehicle",
+        "position_y": 2,
+        "position_z": 10
     },
-    "ramp_1": {
-        "width": 2,
-        "length": 2,
-        "position_x": -5,
-        "position_y": 0.1,
-        "position_z": -5,
-        "rotation_y": 90
+    {
+        "shape": "box",
+        "width": 20,
+        "height": 0.1,
+        "length": 20
+    },
+    {
+        "shape": "ramp",
+        "width": 3,
+        "height": 1,
+        "length": 3,
+        "position_x": -3,
+        "position_y": 0.1
     }
-}`;
+]`;
 
 export function MapDataImportModal({ closeModal }: { closeModal: VoidFnc }) {
     const mapBuilder = useContext(MapBuilderContext);
@@ -37,7 +43,7 @@ export function MapDataImportModal({ closeModal }: { closeModal: VoidFnc }) {
 
     function executeImport() {
         const mapDataString = inputRef.current.value;
-        let mapData: Record<string, MapElementProps>;
+        let mapData: MapElementProps[];
 
         try {
             mapData = JSON.parse(mapDataString);

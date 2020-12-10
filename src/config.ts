@@ -24,8 +24,7 @@ export default {
         steeringSpeed: 0.05,
         maxSteeringValue: 0.8,
         maxBrakeForce: 1,
-        maxEngineForceFront: 70,
-        maxEngineForceRear: 65,
+        maxEngineForce: 140,
         cameraMountPosition: {
             x: 0,
             y: 4,

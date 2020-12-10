@@ -12,7 +12,7 @@ export function MapElementList({ selectedMapElementId }: { selectedMapElementId:
             contentList={mapBuilder.mapElementIdList}
             selected={selectedMapElementId}
             onSelect={(mapElementId) => {
-                mapBuilder.selectPlatform(mapElementId);
+                mapBuilder.selectMapElement(mapElementId);
             }}
         />
     );

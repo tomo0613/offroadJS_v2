@@ -1,25 +1,30 @@
-export default {
-    vehicle_0: {
+export default [
+    {
+        type: 'vehicle',
         position_x: 10,
         position_y: 1,
         position_z: 10,
         rotation_y: 90,
     },
-    box_0: {
+    {
+        shape: 'box',
         width: 6,
         height: 0.1,
         length: 5,
         position_x: 8,
         position_z: 10,
     },
-    ramp_1: {
+    {
+        shape: 'ramp',
         position_x: 6,
         position_z: 5,
         width: 2,
         height: 1,
         length: 2,
     },
-    trigger_2: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '39,13,-6',
         size: 3,
@@ -27,7 +32,8 @@ export default {
         position_y: 1,
         position_z: 10,
     },
-    box_3: {
+    {
+        shape: 'box',
         mass: 20,
         position_x: -1,
         position_y: -2.06,
@@ -36,7 +42,8 @@ export default {
         height: 2,
         length: 3,
     },
-    box_4: {
+    {
+        shape: 'box',
         position_x: -3,
         position_y: -9,
         position_z: 6.9,
@@ -44,7 +51,8 @@ export default {
         height: 10,
         length: 0.1,
     },
-    box_5: {
+    {
+        shape: 'box',
         position_x: 1,
         position_y: -9,
         position_z: 6.9,
@@ -52,7 +60,8 @@ export default {
         height: 10,
         length: 0.1,
     },
-    box_6: {
+    {
+        shape: 'box',
         position_x: 1,
         position_y: -9,
         position_z: 13.1,
@@ -60,7 +69,8 @@ export default {
         height: 10,
         length: 0.1,
     },
-    box_7: {
+    {
+        shape: 'box',
         position_x: -3,
         position_y: -9,
         position_z: 13.1,
@@ -68,7 +78,8 @@ export default {
         height: 10,
         length: 0.1,
     },
-    box_8: {
+    {
+        shape: 'box',
         position_x: -4.1,
         position_y: -9,
         position_z: 12,
@@ -76,7 +87,8 @@ export default {
         height: 10,
         length: 0.3,
     },
-    box_9: {
+    {
+        shape: 'box',
         position_x: -4.1,
         position_y: -9,
         position_z: 8,
@@ -84,7 +96,8 @@ export default {
         height: 10,
         length: 0.3,
     },
-    box_10: {
+    {
+        shape: 'box',
         position_x: 2.1,
         position_y: -9,
         position_z: 12,
@@ -92,7 +105,8 @@ export default {
         height: 10,
         length: 0.3,
     },
-    box_11: {
+    {
+        shape: 'box',
         position_x: 2.1,
         position_y: -9,
         position_z: 8,
@@ -100,7 +114,8 @@ export default {
         height: 10,
         length: 0.3,
     },
-    box_12: {
+    {
+        shape: 'box',
         width: 6,
         height: 0.1,
         length: 5,
@@ -108,7 +123,8 @@ export default {
         position_z: 10,
         position_y: -17,
     },
-    box_13: {
+    {
+        shape: 'box',
         width: 3,
         height: 0.1,
         length: 3,
@@ -116,7 +132,8 @@ export default {
         position_z: 10,
         position_y: -21,
     },
-    box_14: {
+    {
+        shape: 'box',
         position_x: 2.3,
         position_y: -7,
         position_z: 10,
@@ -124,14 +141,16 @@ export default {
         height: 7,
         length: 2,
     },
-    box_15: {
+    {
+        shape: 'box',
         width: 6,
         height: 0.1,
         length: 5,
         position_x: 8,
         position_z: 21,
     },
-    box_16: {
+    {
+        shape: 'box',
         width: 2,
         height: 5,
         length: 0.3,
@@ -142,7 +161,8 @@ export default {
         lowFriction: true,
         fixedRotation: true,
     },
-    box_17: {
+    {
+        shape: 'box',
         width: 2,
         height: 7,
         length: 0.5,
@@ -150,7 +170,8 @@ export default {
         position_z: 15.5,
         position_y: -3,
     },
-    box_18: {
+    {
+        shape: 'box',
         width: 2,
         height: 7,
         length: 0.5,
@@ -158,7 +179,8 @@ export default {
         position_z: 15.5,
         position_y: -3,
     },
-    box_19: {
+    {
+        shape: 'box',
         width: 0.5,
         height: 0.5,
         length: 1,
@@ -169,7 +191,8 @@ export default {
         lowFriction: true,
         fixedRotation: true,
     },
-    box_20: {
+    {
+        shape: 'box',
         width: 1,
         height: 0.5,
         length: 1.5,
@@ -177,7 +200,8 @@ export default {
         position_z: 13.5,
         position_y: -7.5,
     },
-    box_21: {
+    {
+        shape: 'box',
         width: 1,
         height: 0.5,
         length: 1,
@@ -185,7 +209,8 @@ export default {
         position_z: 17,
         position_y: -7.5,
     },
-    box_22: {
+    {
+        shape: 'box',
         width: 1,
         height: 0.5,
         length: 1,
@@ -193,7 +218,8 @@ export default {
         position_z: 17,
         position_y: -5.5,
     },
-    box_23: {
+    {
+        shape: 'box',
         width: 0.25,
         height: 0.5,
         length: 1,
@@ -201,7 +227,8 @@ export default {
         position_z: 17,
         position_y: -6.5,
     },
-    box_24: {
+    {
+        shape: 'box',
         width: 0.25,
         height: 0.5,
         length: 1,
@@ -209,7 +236,8 @@ export default {
         position_z: 17,
         position_y: -6.5,
     },
-    box_25: {
+    {
+        shape: 'box',
         width: 5,
         height: 0.1,
         length: 4,
@@ -217,7 +245,8 @@ export default {
         position_z: 9,
         position_y: -8,
     },
-    box_26: {
+    {
+        shape: 'box',
         width: 2,
         height: 3,
         length: 0.1,
@@ -225,7 +254,8 @@ export default {
         position_z: 15.1,
         position_y: -3,
     },
-    box_27: {
+    {
+        shape: 'box',
         width: 2,
         height: 3,
         length: 0.1,
@@ -233,7 +263,8 @@ export default {
         position_z: 15.9,
         position_y: -3,
     },
-    box_28: {
+    {
+        shape: 'box',
         width: 0.25,
         height: 0.5,
         length: 1.5,
@@ -241,7 +272,8 @@ export default {
         position_z: 13.5,
         position_y: -6.5,
     },
-    box_29: {
+    {
+        shape: 'box',
         width: 0.25,
         height: 0.5,
         length: 1.5,
@@ -249,7 +281,8 @@ export default {
         position_z: 13.5,
         position_y: -6.5,
     },
-    box_30: {
+    {
+        shape: 'box',
         width: 2.5,
         height: 1,
         length: 0.5,
@@ -257,7 +290,8 @@ export default {
         position_z: 15.5,
         position_y: -11,
     },
-    box_31: {
+    {
+        shape: 'box',
         width: 2.5,
         height: 1,
         length: 0.5,
@@ -265,7 +299,8 @@ export default {
         position_z: 15.5,
         position_y: -11,
     },
-    box_32: {
+    {
+        shape: 'box',
         width: 6,
         height: 2.5,
         length: 0.5,
@@ -273,14 +308,16 @@ export default {
         position_z: 15.5,
         position_y: -14.5,
     },
-    sphere_33: {
+    {
+        shape: 'sphere',
         size: 0.5,
         position_x: 8,
         position_z: 14,
         position_y: -6.5,
         mass: 1,
     },
-    box_34: {
+    {
+        shape: 'box',
         width: 1,
         height: 0.5,
         length: 1.5,
@@ -288,7 +325,8 @@ export default {
         position_y: -5.5,
         position_z: 13.5,
     },
-    box_35: {
+    {
+        shape: 'box',
         width: 0.5,
         height: 0.5,
         length: 1.5,
@@ -298,7 +336,8 @@ export default {
         mass: 10,
         fixedRotation: true,
     },
-    box_36: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 2,
@@ -306,7 +345,8 @@ export default {
         position_z: 7,
         position_y: -17,
     },
-    box_37: {
+    {
+        shape: 'box',
         width: 4,
         height: 0.1,
         length: 2,
@@ -314,7 +354,8 @@ export default {
         position_z: 7,
         position_y: -8,
     },
-    box_38: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 13,
@@ -323,7 +364,8 @@ export default {
         position_y: -10.25,
         rotation_x: 10,
     },
-    box_39: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 13,
@@ -332,7 +374,8 @@ export default {
         position_y: -14.75,
         rotation_x: -10,
     },
-    box_40: {
+    {
+        shape: 'box',
         width: 4,
         height: 0.1,
         length: 2,
@@ -340,7 +383,8 @@ export default {
         position_z: 36.35,
         position_y: -12.5,
     },
-    box_41: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 13,
@@ -349,7 +393,8 @@ export default {
         position_y: -5.76,
         rotation_x: -10,
     },
-    box_42: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 2,
@@ -357,7 +402,8 @@ export default {
         position_z: 36.35,
         position_y: -3.5,
     },
-    box_43: {
+    {
+        shape: 'box',
         width: 1,
         height: 1.5,
         length: 0.5,
@@ -365,7 +411,8 @@ export default {
         position_y: -6.5,
         position_z: 18.5,
     },
-    box_44: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 2,
@@ -373,7 +420,8 @@ export default {
         position_z: 36.35,
         position_y: -2,
     },
-    box_45: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 4.4,
@@ -382,7 +430,8 @@ export default {
         position_y: -1,
         rotation_x: 13.4,
     },
-    box_46: {
+    {
+        shape: 'box',
         width: 4.1,
         height: 0.1,
         length: 2,
@@ -391,7 +440,8 @@ export default {
         position_y: -2.75,
         rotation_z: -10.5,
     },
-    box_47: {
+    {
+        shape: 'box',
         width: 0.1,
         height: 2,
         length: 0.1,
@@ -399,7 +449,8 @@ export default {
         position_z: 15.1,
         position_y: 2,
     },
-    box_48: {
+    {
+        shape: 'box',
         width: 0.1,
         height: 2,
         length: 0.1,
@@ -407,7 +458,8 @@ export default {
         position_z: 15.1,
         position_y: 2,
     },
-    box_49: {
+    {
+        shape: 'box',
         width: 0.1,
         height: 2,
         length: 0.1,
@@ -415,7 +467,8 @@ export default {
         position_z: 15.9,
         position_y: 2,
     },
-    box_50: {
+    {
+        shape: 'box',
         width: 0.1,
         height: 2,
         length: 0.1,
@@ -423,7 +476,9 @@ export default {
         position_z: 15.9,
         position_y: 2,
     },
-    trigger_51: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '-13,4,1',
         size: 3,
@@ -431,7 +486,8 @@ export default {
         position_y: 1,
         position_z: 10,
     },
-    box_52: {
+    {
+        shape: 'box',
         width: 2,
         height: 0.1,
         length: 6,
@@ -439,7 +495,9 @@ export default {
         position_z: -17,
         position_y: 2,
     },
-    trigger_53: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'finish',
         dataSet: '',
         size: 1,
@@ -447,7 +505,9 @@ export default {
         position_y: 3,
         position_z: -21,
     },
-    trigger_54: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '-21,-9,8',
         size: 3,
@@ -455,7 +515,9 @@ export default {
         position_y: -9,
         position_z: 10,
     },
-    trigger_55: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '19,-10,-11',
         size: 3,
@@ -463,7 +525,9 @@ export default {
         position_y: -16,
         position_z: 10,
     },
-    trigger_56: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '30,-3,52',
         size: 3,
@@ -471,7 +535,9 @@ export default {
         position_y: -13,
         position_z: 23,
     },
-    trigger_560: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '43,2,0',
         size: 3,
@@ -479,7 +545,9 @@ export default {
         position_y: -14,
         position_z: 17,
     },
-    trigger_57: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '32,8,-11',
         size: 3,
@@ -487,7 +555,9 @@ export default {
         position_y: -9,
         position_z: 20,
     },
-    trigger_58: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '27,7,43',
         size: 3,
@@ -495,7 +565,9 @@ export default {
         position_y: -4,
         position_z: 26,
     },
-    trigger_59: {
+    {
+        type: 'trigger',
+        shape: 'sphere',
         event: 'setCameraPosition',
         dataSet: '8,12,52',
         size: 3,
@@ -503,4 +575,4 @@ export default {
         position_y: -2,
         position_z: 36,
     },
-};
+];

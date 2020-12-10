@@ -1,28 +1,28 @@
 import React, { useContext, useState } from 'react';
 
-import { MapElementType } from '../mapModules/mapBuilder';
+import { MapElementShape } from '../mapModules/mapBuilder';
 import { SelectInput } from '../uiComponents/selectInput';
 import { MapBuilderContext } from './editor';
 
 const createButtonText = 'create';
-const mapElementTypeSelectorOptionList = [
-    'box', 'cylinder', 'ramp', 'sphere', 'triangularRamp', 'trigger',
-] as MapElementType[];
+const mapElementShapeSelectorOptionList = [
+    'box', 'cylinder', 'ramp', 'sphere', 'triangularRamp', 'loop', 'slopeTransition',
+] as MapElementShape[];
 
 export function MapBuilderActionButtons() {
     const mapBuilder = useContext(MapBuilderContext);
-    const [selectedMapElementType, setSelectedMapElementType] = useState<MapElementType>(MapElementType.box);
+    const [selectedMapElementShape, setSelectedMapElementShape] = useState<MapElementShape>(MapElementShape.box);
 
     return (
         <div>
-            <button onClick={() => { mapBuilder.build(selectedMapElementType); }}>
+            <button onClick={() => { mapBuilder.build({ shape: selectedMapElementShape }); }}>
                 {createButtonText}
             </button>
             <SelectInput
-                value={selectedMapElementType}
-                optionList={mapElementTypeSelectorOptionList}
+                value={selectedMapElementShape}
+                optionList={mapElementShapeSelectorOptionList}
                 onChange={(value) => {
-                    setSelectedMapElementType(value as MapElementType);
+                    setSelectedMapElementShape(value as MapElementShape);
                 }}
             />
         </div>

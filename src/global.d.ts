@@ -3,6 +3,9 @@ type VoidFnc = (...args: any[]) => void;
 
 interface Window {
     aspectRatio: number;
-    importMap: (mapData: any) => void;
-    exportMap: () => void;
  }
+
+ interface ObjectConstructor {
+    omit: <O, K extends keyof O = keyof O>(obj: O, ...keysToOmit: K[]) => Omit<O, K>;
+    pick: <O, K extends keyof O = keyof O>(obj: O, ...keysToPick: K[]) => Pick<O, K>;
+}

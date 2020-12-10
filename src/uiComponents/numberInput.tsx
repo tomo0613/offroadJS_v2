@@ -9,6 +9,7 @@ interface NumberInputProps {
     value?: number;
     onChange?: (value: number, name: string) => void;
     step?: number;
+    sensitivity?: number;
     min?: number;
     max?: number;
 }
@@ -20,7 +21,6 @@ interface NumberInputState {
 const numericValuePattern = '^-?((?!0\\d)\\d+)(\\.\\d+)?$';
 const stepStartDelay = 200;
 const stepRate = 100;
-const mouseMoveValueMultiplier = 0.1;
 
 const stepButtonLeftText = '◄';
 const stepButtonRightText = '►';
@@ -28,10 +28,10 @@ const stepButtonRightText = '►';
 export class NumberInput extends Component<NumberInputProps, NumberInputState> {
     private inputRef = createRef<HTMLInputElement>();
     private changed = false;
-    private stepDirection: -1|1;
     private stepIntervalId = 0;
     private stepStartTimeoutId = 0;
     private valueIncrementBuffer = 0;
+    private stepDirection: -1|1;
 
     static defaultProps = {
         label: '',
@@ -39,6 +39,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         value: 0,
         onChange: NOP,
         step: 0.01,
+        sensitivity: 1,
         min: -Infinity,
         max: Infinity,
     };
@@ -70,6 +71,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
                         onBlur={this.onInputFieldBlur}
                         onKeyUp={this.onInputFieldKeyUp}
                         onMouseDown={this.onInputFieldMouseDown}
+                        onWheel={this.onInputFieldScroll}
                         ref={this.inputRef}
                     />
                     <span
@@ -129,8 +131,8 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         this.setValue(round(this.numericValue + this.props.step * this.stepDirection));
     }
 
-    private stepValueOnMouseMove = throttle(() => {
-        this.setValue(round(this.numericValue + this.valueIncrementBuffer * mouseMoveValueMultiplier));
+    private stepValueByBuffer = throttle(() => {
+        this.setValue(round(this.numericValue + this.valueIncrementBuffer * this.props.step * this.props.sensitivity));
 
         this.valueIncrementBuffer = 0;
     }, stepRate)
@@ -186,31 +188,43 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         e.preventDefault();
 
         this.inputElement.addEventListener('mouseup', this.onInputFieldFocus);
-        this.inputElement.addEventListener('mousemove', this.onInputFieldMouseMove);
-        this.inputElement.addEventListener('mousemove', this.stepValueOnMouseMove);
+        this.inputElement.addEventListener('mousemove', this.onInputFieldInitialMouseMove);
     }
 
     private onInputFieldFocus = () => {
         this.inputElement.removeEventListener('mouseup', this.onInputFieldFocus);
-        this.inputElement.removeEventListener('mousemove', this.onInputFieldMouseMove);
-        this.inputElement.removeEventListener('mousemove', this.stepValueOnMouseMove);
+        this.inputElement.removeEventListener('mousemove', this.onInputFieldInitialMouseMove);
 
         this.inputElement.focus();
     }
 
+    private onInputFieldInitialMouseMove = (e: MouseEvent) => {
+        this.inputElement.removeEventListener('mousemove', this.onInputFieldInitialMouseMove);
+        this.inputElement.removeEventListener('mouseup', this.onInputFieldFocus);
+
+        this.inputElement.parentElement.addEventListener('mouseup', this.onInputFieldMouseMoveFinish);
+        this.inputElement.parentElement.addEventListener('mouseleave', this.onInputFieldMouseMoveFinish);
+        this.inputElement.parentElement.addEventListener('mousemove', this.onInputFieldMouseMove);
+        this.inputElement.parentElement.addEventListener('mousemove', this.stepValueByBuffer);
+
+        this.onInputFieldMouseMove(e);
+        this.stepValueByBuffer();
+    }
+
     private onInputFieldMouseMoveFinish = () => {
-        this.inputElement.removeEventListener('mousemove', this.onInputFieldMouseMove);
-        this.inputElement.removeEventListener('mousemove', this.stepValueOnMouseMove);
-        this.inputElement.removeEventListener('mouseup', this.onInputFieldMouseMoveFinish);
-        this.inputElement.removeEventListener('mouseleave', this.onInputFieldMouseMoveFinish);
+        this.inputElement.parentElement.removeEventListener('mousemove', this.onInputFieldMouseMove);
+        this.inputElement.parentElement.removeEventListener('mousemove', this.stepValueByBuffer);
+        this.inputElement.parentElement.removeEventListener('mouseup', this.onInputFieldMouseMoveFinish);
+        this.inputElement.parentElement.removeEventListener('mouseleave', this.onInputFieldMouseMoveFinish);
     }
 
     private onInputFieldMouseMove = ({ movementX }: MouseEvent) => {
-        this.inputElement.removeEventListener('mouseup', this.onInputFieldFocus);
-
-        this.inputElement.addEventListener('mouseup', this.onInputFieldMouseMoveFinish);
-        this.inputElement.addEventListener('mouseleave', this.onInputFieldMouseMoveFinish);
-
         this.valueIncrementBuffer += movementX;
+    }
+
+    private onInputFieldScroll = (e: React.WheelEvent<HTMLInputElement>) => {
+        // e.preventDefault();
+        this.valueIncrementBuffer -= e.deltaY;
+        this.stepValueByBuffer();
     }
 }

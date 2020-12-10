@@ -21,27 +21,27 @@ export function MapElementTranslatePanel({ mapElementProps }: MapElementTranslat
         <>
             <span className="label">{translatePanelLabel}</span>
             <NumberInput
-                label="position.X:" name="position_x" value={position_x}
+                label="position.X:" name="position_x" value={position_x} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label="position.Y:" name="position_y" value={position_y}
+                label="position.Y:" name="position_y" value={position_y} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label="position.Z:" name="position_z" value={position_z}
+                label="position.Z:" name="position_z" value={position_z} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label="rotation.X:" name="rotation_x" value={rotation_x}
+                label="rotation.X:" name="rotation_x" value={rotation_x} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
             <NumberInput
-                label="rotation.Y:" name="rotation_y" value={rotation_y}
+                label="rotation.Y:" name="rotation_y" value={rotation_y} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
             <NumberInput
-                label="rotation.Z:" name="rotation_z" value={rotation_z}
+                label="rotation.Z:" name="rotation_z" value={rotation_z} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
         </>

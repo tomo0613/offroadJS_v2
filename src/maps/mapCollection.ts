@@ -1,23 +1,28 @@
 import map01 from './map_01';
 import map02 from './map_02';
+import map03 from './map_03';
 
 export const mapCollection = {
     map01,
     map02,
-    test: {
-        vehicle_0: {
+    map03,
+    test: [
+        {
+            type: 'vehicle',
             position_x: 10,
             position_y: 2,
             position_z: 15,
         },
-        box_0: {
+        {
+            shape: 'box',
             width: 12,
             height: 0.1,
             length: 20,
             position_x: 14,
             position_z: 22,
         },
-        box_1: {
+        {
+            shape: 'box',
             size: 1,
             position_x: 15,
             position_y: 2,
@@ -26,22 +31,63 @@ export const mapCollection = {
             fixedRotation: true,
             rotation_x: 45,
         },
-    },
-    map03: {
-        vehicle_0: {
+        {
+            type: 'compound',
+            shape: 'loop',
+            segmentPositionOffset: 0.6,
+            position_x: 5,
+            position_y: 8.2,
+            position_z: 4,
+            rotation_x: 12,
+        },
+        {
+            type: 'compound',
+            shape: 'slopeTransition',
+            segmentHeight: 0.5,
+            position_x: 10,
+            position_z: -2,
+        },
+        {
+            type: 'trigger',
+            shape: 'sphere',
+            event: 'setCameraPosition',
+            dataSet: '-6,10,26',
+            size: 3,
+            position_x: 10,
+            position_y: 1,
+            position_z: 15,
+        },
+        {
+            type: 'trigger',
+            shape: 'sphere',
+            event: 'finish',
+            dataSet: 'checkpoints:1',
+            size: 1,
+            position_x: 12,
+            position_y: 3,
+            position_z: -12,
+        },
+    ],
+    map04: [
+        {
+            type: 'vehicle',
             position_x: 10,
             position_y: 2,
             position_z: 15,
         },
-        triangularRamp_0: {
+        {
+            shape: 'triangularRamp',
             position_z: 5,
             position_x: 8,
         },
-        ramp_0: {
+        {
+            shape: 'ramp',
             position_z: 5,
             position_x: 10,
         },
-        trigger_0: {
+        {
+            type: 'trigger',
+            shape: 'sphere',
             event: 'setCameraPosition',
             dataSet: '0,7,27',
             size: 3,
@@ -49,7 +95,9 @@ export const mapCollection = {
             position_y: 1,
             position_z: 10,
         },
-        trigger_1: {
+        {
+            type: 'trigger',
+            shape: 'sphere',
             event: 'setCameraPosition',
             dataSet: '2,13,9',
             size: 3,
@@ -57,7 +105,9 @@ export const mapCollection = {
             position_y: 1,
             position_z: -14,
         },
-        trigger_2: {
+        {
+            type: 'trigger',
+            shape: 'sphere',
             event: 'setCameraPosition',
             dataSet: '-3,-1,-16',
             size: 3,
@@ -65,7 +115,9 @@ export const mapCollection = {
             position_y: 5,
             position_z: -32,
         },
-        trigger_3: {
+        {
+            type: 'trigger',
+            shape: 'sphere',
             event: 'setCameraPosition',
             dataSet: '-6,10,-36',
             size: 3,
@@ -73,7 +125,9 @@ export const mapCollection = {
             position_y: 19,
             position_z: -27,
         },
-        trigger_4: {
+        {
+            type: 'trigger',
+            shape: 'sphere',
             event: 'setCameraPosition',
             dataSet: '-9,13,-16',
             size: 3,
@@ -81,14 +135,16 @@ export const mapCollection = {
             position_y: 5,
             position_z: -18,
         },
-        box_0: {
+        {
+            shape: 'box',
             width: 12,
             height: 0.1,
             length: 20,
             position_x: 14,
             position_z: 22,
         },
-        box_1: {
+        {
+            shape: 'box',
             size: 1,
             position_x: 15,
             position_y: 2,
@@ -97,7 +153,8 @@ export const mapCollection = {
             fixedRotation: true,
             rotation_x: 45,
         },
-        box_2: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -106,7 +163,8 @@ export const mapCollection = {
             rotation_x: 18,
             position_z: -28.090169943749473,
         },
-        box_3: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -115,7 +173,8 @@ export const mapCollection = {
             rotation_x: 36,
             position_z: -30.87785252292473,
         },
-        box_4: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -124,7 +183,8 @@ export const mapCollection = {
             rotation_x: 54,
             position_z: -33.09016994374947,
         },
-        box_5: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -133,7 +193,8 @@ export const mapCollection = {
             rotation_x: 72,
             position_z: -34.510565162951536,
         },
-        box_6: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -142,7 +203,8 @@ export const mapCollection = {
             rotation_x: 90,
             position_z: -35,
         },
-        box_7: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -151,7 +213,8 @@ export const mapCollection = {
             rotation_x: 108,
             position_z: -34.510565162951536,
         },
-        box_8: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -160,7 +223,8 @@ export const mapCollection = {
             rotation_x: 126,
             position_z: -33.09016994374947,
         },
-        box_9: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -169,7 +233,8 @@ export const mapCollection = {
             rotation_x: 144,
             position_z: -30.877852522924734,
         },
-        box_10: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -178,7 +243,8 @@ export const mapCollection = {
             rotation_x: 162,
             position_z: -28.090169943749476,
         },
-        box_11: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -187,7 +253,8 @@ export const mapCollection = {
             rotation_x: 180,
             position_z: -25,
         },
-        box_12: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -196,7 +263,8 @@ export const mapCollection = {
             rotation_x: 198,
             position_z: -21.909830056250524,
         },
-        box_13: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -205,7 +273,8 @@ export const mapCollection = {
             rotation_x: 216,
             position_z: -19.12214747707527,
         },
-        box_14: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -214,7 +283,8 @@ export const mapCollection = {
             rotation_x: 234,
             position_z: -16.909830056250527,
         },
-        box_15: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -223,7 +293,8 @@ export const mapCollection = {
             rotation_x: 252,
             position_z: -15.489434837048465,
         },
-        box_16: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -232,7 +303,8 @@ export const mapCollection = {
             rotation_x: 270,
             position_z: -15,
         },
-        box_17: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -241,7 +313,8 @@ export const mapCollection = {
             rotation_x: 288,
             position_z: -15.489434837048464,
         },
-        box_18: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -250,7 +323,8 @@ export const mapCollection = {
             rotation_x: 306,
             position_z: -16.909830056250524,
         },
-        box_19: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -259,7 +333,8 @@ export const mapCollection = {
             rotation_x: 324,
             position_z: -19.122147477075266,
         },
-        box_20: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 1.6707963267948966,
@@ -268,19 +343,21 @@ export const mapCollection = {
             rotation_x: 342,
             position_z: -21.909830056250524,
         },
-        box_21: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 14.5,
             position_z: -12.5,
             position_x: 5,
         },
-        box_22: {
+        {
+            shape: 'box',
             width: 3,
             height: 0.1,
             length: 13,
             position_z: -36,
             position_x: 15,
         },
-    },
+    ],
 };

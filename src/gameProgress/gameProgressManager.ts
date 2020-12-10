@@ -3,6 +3,7 @@ import Timer from '../common/Timer';
 import { CheckpointManager } from '../mapModules/checkpointManager';
 import { MapBuilder } from '../mapModules/mapBuilder';
 import { mapCollection } from '../maps/mapCollection';
+import { formatTime } from '../utils';
 import { GameProgressModal, mountModalController } from './gameProgressModalController';
 
 export enum GameProgressEvent {
@@ -44,7 +45,7 @@ export class GameProgressManager {
 
     stop() {
         this.timer.stop();
-        this.result = this.getElapsedTimeFormatted();
+        this.result = formatTime(this.timer.time);
     }
 
     reset() {
@@ -88,25 +89,10 @@ export class GameProgressManager {
             return;
         }
 
-        timeDisplay.textContent = this.getElapsedTimeFormatted();
-    }
-
-    getElapsedTimeFormatted() {
-        const dt = this.timer.time;
-        const milSec = Math.floor(dt % 1000);
-        const sec = Math.floor(dt / 1000 % 60);
-        const min = Math.floor(dt / 60000 % 60);
-
-        return `${appendLeadingZero(min)}:${appendLeadingZero(sec)}.${milSec}`;
+        timeDisplay.textContent = formatTime(this.timer.time);
     }
 
     openModal(modalId: GameProgressModal) {
         this.listeners.dispatch(GameProgressEvent.openModal, modalId);
     }
-}
-
-function appendLeadingZero(value: number) {
-    const str = value.toString();
-
-    return str.length < 2 ? `0${value}` : str;
 }

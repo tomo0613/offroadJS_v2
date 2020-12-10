@@ -13,7 +13,7 @@ let aWheelBody: Body;
 const frontWheelIndices = [0, 1];
 const rearWheelIndices = [2, 3];
 
-const { steeringSpeed } = cfg.vehicle;
+const { maxEngineForce, maxSteeringValue, steeringSpeed } = cfg.vehicle;
 
 export default class Vehicle {
     base: RaycastVehicle;
@@ -125,8 +125,6 @@ export default class Vehicle {
         for (let i = 0; i < this.base.wheelInfos.length; i++) {
             if (frontWheelIndices.includes(i)) {
                 this.steerWheel(i);
-            } else {
-                // increase engine force gradually ?
             }
 
             this.base.updateWheelTransform(i);
@@ -146,18 +144,24 @@ export default class Vehicle {
         this.chassisMesh.translateOnAxis(translateAxis, 0.6);
     }
 
-    setEngineForce(engineForce: number) {
-        this.state.engineForce = engineForce;
+    setEngineForceDirection(engineForceDirection: -1|0|1) {
+        this.state.engineForce = maxEngineForce * engineForceDirection;
+
+        if (engineForceDirection === -1) {
+            // reverse
+            this.state.engineForce *= 0.9;
+        }
+
         frontWheelIndices.forEach(this.applyEngineForceOnFrontWheels);
         rearWheelIndices.forEach(this.applyEngineForceOnRearWheels);
     }
 
     private applyEngineForceOnFrontWheels = (wheelIndex: number) => {
-        this.base.applyEngineForce(cfg.vehicle.maxEngineForceFront * this.state.engineForce, wheelIndex);
+        this.base.applyEngineForce(this.state.engineForce * 0.6, wheelIndex);
     }
 
     private applyEngineForceOnRearWheels = (wheelIndex: number) => {
-        this.base.applyEngineForce(cfg.vehicle.maxEngineForceRear * this.state.engineForce, wheelIndex);
+        this.base.applyEngineForce(this.state.engineForce * 0.4, wheelIndex);
     }
 
     setBrakeForce(brakeForce: number) {
@@ -169,12 +173,12 @@ export default class Vehicle {
         this.base.setBrake(this.state.brakeForce, wheelIndex);
     }
 
-    setSteeringValue(steeringValue: number) {
-        this.state.steeringValue = steeringValue;
+    setSteeringDirection(steeringDirection: -1|0|1) {
+        this.state.steeringValue = maxSteeringValue * steeringDirection;
     }
 
     private steerWheel = (wheelIndex: number) => {
-        const currentSteeringValue = this.base.wheelInfos[wheelIndex].steering;
+        const { steering: currentSteeringValue } = this.base.wheelInfos[wheelIndex];
         const { steeringValue } = this.state;
 
         if (currentSteeringValue < steeringValue) {

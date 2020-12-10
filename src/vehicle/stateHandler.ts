@@ -3,8 +3,8 @@ import { valueBetween } from '../utils';
 import Vehicle from './vehicle';
 
 const stateValueLimits = {
-    engineForceMin: -0.8, // reverse
-    engineForceMax: 1,
+    engineForceMin: -cfg.vehicle.maxEngineForce,
+    engineForceMax: cfg.vehicle.maxEngineForce,
     brakeForceMin: 0,
     brakeForceMax: 1,
     steeringValueMin: -cfg.vehicle.maxSteeringValue,
