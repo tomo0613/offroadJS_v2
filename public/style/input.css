@@ -6,16 +6,22 @@ input, select, button {
     color: whitesmoke;
 }
 
-button {
-    border-radius: 5px;
-    margin: 5px;
+input[type="range"] + input {
+    width: 3em;
+    margin-left: 4px;
+}
+
+button:disabled {
+    color: gray;
 }
 
 .inputContainer {
     display: flex;
+    align-items: center;
+    line-height: 26px;
 }
 
-.inputContainer span {
+.inputContainer label:first-child {
     margin-right: auto;
 }
 
@@ -31,7 +37,7 @@ button {
 .numberInputControlGroup .stepButton {
     position: absolute;
     color: whitesmoke;
-    padding: 4px 5px 0 5px;
+    padding: 1px 5px 0 5px;
 }
 
 .numberInputControlGroup .stepButton-left {
@@ -51,6 +57,40 @@ button {
     cursor: text;
 }
 
+.switch__input {
+    height: 0;
+	width: 0;
+	visibility: hidden;
+}
+
+.switch__label {
+    cursor: pointer;
+    width: 28px;
+    height: 12px;
+    position: relative;
+    background: rgb(89, 89, 89);
+    border-radius: 2px;
+    padding: 2px;
+}
+
+.switch__input:checked + .switch__label {
+	background: rgb(129, 129, 129);
+}
+
+.switch__label:after {
+	content: '';
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	background: rgb(215, 215, 215);
+	transition: 0.3s;
+}
+
+.switch__input:checked + .switch__label:after {
+    background: rgb(255, 255, 255);
+	transform: translateX(16px);
+}
+
 .list {
     border-top: 4px solid rgb(30, 30, 30);
     border-bottom: 4px solid rgb(30, 30, 30);
@@ -66,11 +106,18 @@ button {
     background-color: rgba(128, 128, 128, 0.8);
 }
 
-.virtualKey {
+.screenKey {
     width: 60px; 
-    /* width: 42px;  */
     height: 60px;
     font-size: 42px;
     line-height: 42px;
+    padding: 0 2px 2px 0;
+}
+
+.screenButton {
+    width: 42px;
+    height: 42px;
+    font-size: 24px;
+    line-height: 24px;
     padding: 0 2px 2px 0;
 }

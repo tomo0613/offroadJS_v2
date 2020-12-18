@@ -1,14 +1,15 @@
 import React, { useContext } from 'react';
 
 import { MapElementProps } from '../mapModules/mapBuilder';
-import { NumberInput } from '../uiComponents/numberInput';
+import { NumberInput } from '../uiComponents/index';
 import { MapBuilderContext } from './editor';
+import uiTexts from './uiTexts';
 
 interface MapElementTranslatePanelProps {
     mapElementProps: MapElementProps;
 }
 
-const translatePanelLabel = 'Translate';
+const { translatePanelLabel, positionLabel, rotationLabel } = uiTexts;
 
 export function MapElementTranslatePanel({ mapElementProps }: MapElementTranslatePanelProps) {
     const mapBuilder = useContext(MapBuilderContext);
@@ -21,33 +22,33 @@ export function MapElementTranslatePanel({ mapElementProps }: MapElementTranslat
         <>
             <span className="label">{translatePanelLabel}</span>
             <NumberInput
-                label="position.X:" name="position_x" value={position_x} sensitivity={10}
+                label={`${positionLabel}.X:`} id="position_x" value={position_x} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label="position.Y:" name="position_y" value={position_y} sensitivity={10}
+                label={`${positionLabel}.Y:`} id="position_y" value={position_y} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label="position.Z:" name="position_z" value={position_z} sensitivity={10}
+                label={`${positionLabel}.Z:`} id="position_z" value={position_z} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label="rotation.X:" name="rotation_x" value={rotation_x} sensitivity={10}
+                label={`${rotationLabel}.X:`} id="rotation_x" value={rotation_x} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
             <NumberInput
-                label="rotation.Y:" name="rotation_y" value={rotation_y} sensitivity={10}
+                label={`${rotationLabel}.Y:`} id="rotation_y" value={rotation_y} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
             <NumberInput
-                label="rotation.Z:" name="rotation_z" value={rotation_z} sensitivity={10}
+                label={`${rotationLabel}.Z:`} id="rotation_z" value={rotation_z} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
         </>
     );
 
-    function onInputChange(value: number, name: string) {
-        mapBuilder.translate(mapBuilder.selectedMapElementId, { [name]: value });
+    function onInputChange(value: number, prop: string) {
+        mapBuilder.translate(mapBuilder.selectedMapElementId, { [prop]: value });
     }
 }

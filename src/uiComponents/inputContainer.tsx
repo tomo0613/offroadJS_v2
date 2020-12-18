@@ -2,12 +2,13 @@ import React from 'react';
 
 interface InputContainerProps {
     label?: string;
+    id?: string;
 }
 
-export const InputContainer: React.FunctionComponent<InputContainerProps> = function ({ label, children }) {
+export const InputContainer: React.FunctionComponent<InputContainerProps> = function ({ label, id, children }) {
     return label ? (
         <div className="inputContainer">
-            <span>{label}</span>
+            <label htmlFor={id}>{label}</label>
             {children}
         </div>
     ) : (

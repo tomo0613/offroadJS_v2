@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 
-import { Modal } from '../uiComponents/modal';
+import { Modal } from '../uiComponents/index';
 import { MapDataExportModal } from './mapDataExportModal';
 import { MapDataImportModal } from './mapDataImportModal';
+import uiTexts from './uiTexts';
 
-const importButtonText = 'import';
-const exportButtonText = 'export';
+const { importButtonLabel, exportButtonLabel } = uiTexts;
 
 export function MapDataActionButtons() {
     const [activeModal, setActiveModal] = useState<'import'|'export'>();
@@ -13,10 +13,10 @@ export function MapDataActionButtons() {
     return (
         <div>
             <button onClick={() => { setActiveModal('import'); }}>
-                {importButtonText}
+                {importButtonLabel}
             </button>
             <button onClick={() => { setActiveModal('export'); }}>
-                {exportButtonText}
+                {exportButtonLabel}
             </button>
             {activeModal && (
                 <Modal onClose={closeModal}>

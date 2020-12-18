@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
+import inputHandler from '../inputHandler';
+
 interface ModalProps {
     onClose?: VoidFnc;
 }
@@ -8,7 +10,7 @@ interface ModalProps {
 const closeButtonText = '⨯';
 const gModalRoot = document.createElement('aside');
 gModalRoot.classList.add('hidden');
-gModalRoot.id = 'modal-root';
+gModalRoot.id = 'modal__root';
 gModalRoot.tabIndex = -1;
 document.body.appendChild(gModalRoot);
 
@@ -30,12 +32,16 @@ export const Modal: React.FunctionComponent<ModalProps> = function ({ onClose, c
     // const focusableChildElements = [...gModalRoot.querySelectorAll('input, textarea, select, button')];
 
     useEffect(() => {
+        inputHandler.clearKeysDown();
+
         gModalRoot.classList.remove('hidden');
         gModalRoot.addEventListener('keydown', onKeyDown);
+        gModalRoot.addEventListener('keyup', onKeyUp);
         gModalRoot.focus();
 
         return () => {
             gModalRoot.removeEventListener('keydown', onKeyDown);
+            gModalRoot.removeEventListener('keyup', onKeyUp);
             gModalRoot.classList.add('hidden');
             previousActiveElement.focus();
         };
@@ -48,6 +54,10 @@ export const Modal: React.FunctionComponent<ModalProps> = function ({ onClose, c
     ), gModalRoot);
 
     function onKeyDown(e: globalThis.KeyboardEvent) {
+        e.stopPropagation();
+    }
+
+    function onKeyUp(e: globalThis.KeyboardEvent) {
         e.stopPropagation();
 
         if (onClose && e.key === 'Escape') {

@@ -1,9 +1,9 @@
 import React, { useContext } from 'react';
 
 import { MapBuilderContext } from './editor';
+import uiTexts from './uiTexts';
 
-const cloneButtonText = 'clone';
-const removeButtonText = 'remove';
+const { cloneButtonLabel, removeButtonLabel } = uiTexts;
 
 export function MapElementActionButtons() {
     const mapBuilder = useContext(MapBuilderContext);
@@ -11,10 +11,10 @@ export function MapElementActionButtons() {
     return (
         <div>
             <button onClick={() => { mapBuilder.clone(mapBuilder.selectedMapElementId); }}>
-                {cloneButtonText}
+                {cloneButtonLabel}
             </button>
             <button onClick={() => { mapBuilder.destroy(mapBuilder.selectedMapElementId); }}>
-                {removeButtonText}
+                {removeButtonLabel}
             </button>
         </div>
     );

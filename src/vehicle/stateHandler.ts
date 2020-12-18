@@ -1,6 +1,6 @@
 import cfg from '../config';
 import { valueBetween } from '../utils';
-import Vehicle from './vehicle';
+import Vehicle from './Vehicle';
 
 const stateValueLimits = {
     engineForceMin: -cfg.vehicle.maxEngineForce,

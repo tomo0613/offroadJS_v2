@@ -4,13 +4,13 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import cfg from './config';
 import { showNotification } from './notificationModules/notificationManager';
 import { NOP, valueBetween } from './utils';
-import Vehicle from './vehicle/vehicle';
+import Vehicle from './vehicle/Vehicle';
 
-enum CameraMode {
-    'dynamic',
-    'free',
-    'chase',
-    'hood',
+export enum CameraMode {
+    dynamic = 'dynamic',
+    free = 'free',
+    chase = 'chase',
+    hood = 'hood',
 }
 
 const cameraModeList = [
@@ -30,7 +30,6 @@ export class CameraHelper {
     cameraPosition = new Vector3();
     cameraSpeed = 0.03;
     private currentCameraMode?: CameraMode;
-    private previousCameraMode?: CameraMode;
     chaseCameraMountPositionHelper = new Object3D();
     update = NOP;
 
@@ -47,14 +46,11 @@ export class CameraHelper {
     }
 
     set cameraMode(mode: CameraMode) {
-        if (this.previousCameraMode === mode) {
+        if (this.currentCameraMode === mode) {
             return;
         }
 
-        this.previousCameraMode = this.currentCameraMode;
-        this.currentCameraMode = mode;
-
-        switch (this.previousCameraMode) {
+        switch (this.currentCameraMode) {
             case CameraMode.dynamic:
             case CameraMode.chase:
                 this.update = NOP;
@@ -70,7 +66,7 @@ export class CameraHelper {
             default:
         }
 
-        switch (this.currentCameraMode) {
+        switch (mode) {
             case CameraMode.dynamic:
                 this.update = this.updateDynamicCamera;
                 showNotification('Camera mode is set to: "dynamic"');
@@ -94,6 +90,8 @@ export class CameraHelper {
                 break;
             default:
         }
+
+        this.currentCameraMode = mode;
     }
 
     updateDynamicCamera() {

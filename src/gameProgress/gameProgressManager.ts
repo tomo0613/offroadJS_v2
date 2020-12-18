@@ -4,10 +4,11 @@ import { CheckpointManager } from '../mapModules/checkpointManager';
 import { MapBuilder } from '../mapModules/mapBuilder';
 import { mapCollection } from '../maps/mapCollection';
 import { formatTime } from '../utils';
-import { GameProgressModal, mountModalController } from './gameProgressModalController';
+import { mountModalController } from './gameProgressModalController';
 
 export enum GameProgressEvent {
     openModal = 'openModal',
+    openMapSelectorPanel = 'openMapSelectorPanel',
 }
 
 const hud = document.createElement('aside');
@@ -92,7 +93,7 @@ export class GameProgressManager {
         timeDisplay.textContent = formatTime(this.timer.time);
     }
 
-    openModal(modalId: GameProgressModal) {
-        this.listeners.dispatch(GameProgressEvent.openModal, modalId);
+    openModal() {
+        this.listeners.dispatch(GameProgressEvent.openModal);
     }
 }

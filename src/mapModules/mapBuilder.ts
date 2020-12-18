@@ -1,5 +1,7 @@
-import { Body, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
+import { Body, BODY_TYPES, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
 import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler } from 'three';
+// import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+// https://threejs.org/examples/#misc_controls_transform
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
@@ -16,12 +18,15 @@ import {
 } from './compoundMapElementComponents';
 
 export enum MapBuilderEvent {
-    select = 'select',
+    mapElementSelect = 'mapElementSelect',
+    mapElementChange = 'mapElementChange',
 }
 
-export enum MapTriggerElementEvent {
+export enum TriggerMapElementEvent {
     checkpoint = 'checkpoint',
     finish = 'finish',
+    reset = 'reset',
+    setCameraMode = 'setCameraMode',
     setCameraPosition = 'setCameraPosition',
 }
 
@@ -77,7 +82,7 @@ interface CylinderShapeProps {
 }
 
 interface EventTriggerProps {
-    event?: MapTriggerElementEvent|string;
+    event?: TriggerMapElementEvent|string;
     dataSet?: string;
 }
 
@@ -102,8 +107,10 @@ type CompoundProps = LoopProps & SlopeTransitionProps;
 export type MapElementProps = BoxProps & CylinderProps & SphereProps & EventTriggerProps & CompoundProps;
 export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps>;
 
+const selectedPlatformColor = 0xFFC266;
 const defaultPlatformColor = 0xDDDDDD;
 const dynamicPlatformColor = 0x95C0E5;
+const triggerOutlieColor = 0xCD72D3;
 const normalMaterial = new Material('normalMaterial');
 const lowFrictionMaterial = new Material('lowFrictionMaterial');
 const normal_to_normal_cm = new ContactMaterial(normalMaterial, normalMaterial, {
@@ -125,7 +132,7 @@ export class MapBuilder {
     private mapElementComponentStore: MapElementComponentStore = new Map();
     private mapElementIdStore = new Set<string>();
     listeners = new EventListener<MapBuilderEvent>();
-    eventTriggerListeners = new EventListener<MapTriggerElementEvent>();
+    eventTriggerListeners = new EventListener<TriggerMapElementEvent>();
     editMode = false;
     onPlaceVehicle = NOP as (pX: number, pY: number, pZ: number, rX: number, rY: number, rZ: number) => void;
 
@@ -153,6 +160,10 @@ export class MapBuilder {
         return this.mapElementComponentStore.get(`${id}_props`) as MapElementProps;
     }
 
+    getUpdateMethodFromStore(id: MapElementId) {
+        return this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc;
+    }
+
     private addToWorld(body: Body, mesh: Mesh|Group, props: MapElementProps) {
         const mapElementId = `${props.type || props.shape}_${gId++}`;
         const {
@@ -162,7 +173,7 @@ export class MapBuilder {
             fixedRotation = false,
         } = props;
 
-        const updateVisuals = () => {
+        const updateOrientation = () => {
             mesh.position.copy(body.position as unknown as Vector3);
             mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
         };
@@ -193,7 +204,7 @@ export class MapBuilder {
         this.scene.add(mesh);
 
         if (mass) {
-            this.world.addEventListener('postStep', updateVisuals);
+            this.world.addEventListener('postStep', updateOrientation);
         }
 
         body.aabbNeedsUpdate = true;
@@ -201,7 +212,7 @@ export class MapBuilder {
         this.mapElementIdStore.add(mapElementId);
         this.mapElementComponentStore.set(`${mapElementId}_mesh`, mesh);
         this.mapElementComponentStore.set(`${mapElementId}_body`, body);
-        this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, updateVisuals);
+        this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, updateOrientation);
         this.mapElementComponentStore.set(`${mapElementId}_props`, props);
 
         if (this.editMode) {
@@ -221,7 +232,7 @@ export class MapBuilder {
 
         this.scene.remove(mesh);
         this.world.removeBody(body);
-        this.world.removeEventListener('postStep', this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc);
+        this.world.removeEventListener('postStep', this.getUpdateMethodFromStore(id));
 
         if (isCompound(mesh)) {
             (mesh.children as Mesh[]).forEach(disposeGeometryAndMaterial);
@@ -243,7 +254,7 @@ export class MapBuilder {
 
         if (this.selectedMapElementId === id) {
             this.selectedMapElementId = undefined;
-            this.listeners.dispatch(MapBuilderEvent.select, this.selectedMapElementId);
+            this.listeners.dispatch(MapBuilderEvent.mapElementSelect, this.selectedMapElementId);
         }
         if (this.perviousSelectedMapElementId === id) {
             this.perviousSelectedMapElementId = undefined;
@@ -256,8 +267,8 @@ export class MapBuilder {
         }
 
         this.selectedMapElementId = id;
-        this.listeners.dispatch(MapBuilderEvent.select, this.selectedMapElementId);
 
+        this.listeners.dispatch(MapBuilderEvent.mapElementSelect, this.selectedMapElementId);
         this.highlightSelectedMapElement();
     }
 
@@ -265,12 +276,12 @@ export class MapBuilder {
         if (this.perviousSelectedMapElementId) {
             const previousSelectedMesh = this.getMeshFromStore(this.perviousSelectedMapElementId);
             if (previousSelectedMesh) {
-                setMeshColor(previousSelectedMesh, 0xFFFFFF);
+                setMeshColor(previousSelectedMesh, defaultPlatformColor);
             }
         }
         const selectedMesh = this.getMeshFromStore(this.selectedMapElementId);
         if (selectedMesh) {
-            setMeshColor(selectedMesh, 0xFFC266);
+            setMeshColor(selectedMesh, selectedPlatformColor);
         }
     }
 
@@ -342,26 +353,44 @@ export class MapBuilder {
     }
 
     setUpEventTrigger(id: MapElementId, props: MapElementProps) {
-        const { event = MapTriggerElementEvent.setCameraPosition, dataSet = '' } = props;
+        const { event = TriggerMapElementEvent.setCameraPosition, dataSet = '' } = props;
         const triggerElementBody = this.getBodyFromStore(id);
         const triggerElementMesh = this.getMeshFromStore(id) as Mesh;
+        const oldListener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
         const listener = ({ target, body }: CollisionEvent) => {
             this.eventTriggerListeners.dispatch(
-                event as MapTriggerElementEvent,
+                event as TriggerMapElementEvent,
                 { target, dataSet, relatedTarget: body },
             );
         };
+
+        if (oldListener) {
+            triggerElementBody.removeEventListener(Body.COLLIDE_EVENT_NAME, oldListener);
+        }
 
         this.mapElementComponentStore.set(`${id}_listener`, listener);
 
         triggerElementBody.collisionResponse = false;
         triggerElementBody.addEventListener(Body.COLLIDE_EVENT_NAME, listener);
 
-        setMeshColor(triggerElementMesh, 0xCD72D3, 0.3);
+        setMeshColor(triggerElementMesh, triggerOutlieColor, 0.3);
 
         if (!this.editMode) {
             triggerElementMesh.visible = false;
         }
+    }
+
+    convertEventTriggerToDefaultElement(id: MapElementId) {
+        const mapElementBody = this.getBodyFromStore(id);
+        const triggerElementMesh = this.getMeshFromStore(id) as Mesh;
+
+        const listener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
+        mapElementBody.removeEventListener(Body.COLLIDE_EVENT_NAME, listener);
+        this.mapElementComponentStore.delete(`${id}_listener`);
+
+        mapElementBody.collisionResponse = true;
+
+        setMeshColor(triggerElementMesh, defaultPlatformColor, 1);
     }
 
     placeVehicle(props: CommonMapElementProps) {
@@ -422,7 +451,7 @@ export class MapBuilder {
     translate(id: MapElementId, translateProps: MapElementOrientationProps) {
         const body = this.getBodyFromStore(id);
         const mapElementProps = this.getPropsFromStore(id);
-        const updateVisuals = this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc;
+        const mapElementUpdateMethod = this.getUpdateMethodFromStore(id);
 
         Object.assign(mapElementProps, { ...translateProps });
 
@@ -437,7 +466,8 @@ export class MapBuilder {
             body.aabbNeedsUpdate = true;
         }
 
-        updateVisuals();
+        mapElementUpdateMethod();
+        this.listeners.dispatch(MapBuilderEvent.mapElementChange, { ...mapElementProps });
     }
 
     transform(id: MapElementId, transformProps: MapElementProps) {
@@ -519,11 +549,48 @@ export class MapBuilder {
             mapElementMesh.geometry.dispose();
             mapElementMesh.geometry = transformedGeometry;
         }
+        this.listeners.dispatch(MapBuilderEvent.mapElementChange, { ...mapElementProps });
     }
 
-    // ToDo
-    setMass(id: MapElementId, mass: number) {
-        Object.assign(this.getPropsFromStore(id), { mass });
+    setAttribute(id: MapElementId, attributeProps: MapElementProps) {
+        // console.log('setAttribute', id, attributeProps);
+        // 'lowFriction'
+        // 'fixedRotation'
+
+        const mapElementProps = this.getPropsFromStore(id);
+        const mapElementBody = this.getBodyFromStore(id);
+        const prevType = mapElementProps.type;
+
+        Object.assign(mapElementProps, { ...attributeProps });
+
+        if (prevType === MapElementType.trigger && attributeProps.type === MapElementType.default) {
+            this.convertEventTriggerToDefaultElement(id);
+        } else if ('type' in attributeProps || 'event' in attributeProps || 'dataSet' in attributeProps) {
+            this.setUpEventTrigger(id, mapElementProps);
+
+            if (mapElementProps.mass) {
+                attributeProps.mass = 0;
+            }
+        }
+
+        if ('mass' in attributeProps) {
+            const mapElementUpdateMethod = this.getUpdateMethodFromStore(id);
+
+            mapElementBody.mass = attributeProps.mass;
+            mapElementBody.updateMassProperties();
+            mapElementBody.velocity.set(0, 0, 0);
+            mapElementBody.angularVelocity.set(0, 0, 0);
+
+            if (attributeProps.mass > 0 && mapElementBody.type === BODY_TYPES.STATIC) {
+                mapElementBody.type = BODY_TYPES.DYNAMIC;
+                this.world.addEventListener('postStep', mapElementUpdateMethod);
+            } else if (!attributeProps.mass && mapElementBody.type === BODY_TYPES.DYNAMIC) {
+                mapElementBody.type = BODY_TYPES.STATIC;
+                this.world.removeEventListener('postStep', mapElementUpdateMethod);
+            }
+        }
+
+        this.listeners.dispatch(MapBuilderEvent.mapElementChange, { ...mapElementProps });
     }
 
     importMap = (mapData: MapElementProps[]) => {
@@ -560,7 +627,7 @@ function setMeshColor(mesh: Mesh|Group, colorHexValue?: number, opacity?: number
         material.color.setHex(colorHexValue);
     }
     if (opacity) {
-        material.transparent = true;
+        material.transparent = opacity < 1;
         material.opacity = opacity;
     }
 }

@@ -1,6 +1,6 @@
 @charset "UTF-8";
 
-#modal-root {
+#modal__root {
     position: absolute;
     z-index: 1;
     width: 100%;
@@ -8,7 +8,7 @@
     background: rgba(0, 0, 0, 0.7);
 }
 
-#modal-root:not(.hidden) {
+#modal__root:not(.hidden) {
     display: flex;
 }
 

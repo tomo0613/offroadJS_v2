@@ -5,15 +5,16 @@ import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerat
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 
-import { CameraHelper } from './cameraHelper';
+import { CameraHelper, CameraMode } from './cameraHelper';
 import cfg from './config';
 import { GameProgressManager } from './gameProgress/gameProgressManager';
 import inputHandler from './inputHandler';
 import { CheckpointManager } from './mapModules/checkpointManager';
-import { MapBuilder, MapTriggerElementEvent, TriggeredEvent } from './mapModules/mapBuilder';
+import { MapBuilder, TriggerMapElementEvent, TriggeredEvent } from './mapModules/mapBuilder';
+import { mountMenuRoot } from './menu/menu';
 import { showNotification } from './notificationModules/notificationManager';
 import * as utils from './utils';
-import Vehicle from './vehicle/vehicle';
+import Vehicle from './vehicle/Vehicle';
 
 const worldStep = 1 / 60;
 
@@ -33,7 +34,7 @@ const worldStep = 1 / 60;
     world.broadphase = new SAPBroadphase(world);
     world.defaultContactMaterial.friction = 0.001;
 
-    const renderer = new WebGLRenderer({ antialias: cfg.antialias });
+    const renderer = new WebGLRenderer({ antialias: cfg.antialias, powerPreference: cfg.powerPreference });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = cfg.renderShadows;
@@ -48,20 +49,6 @@ const worldStep = 1 / 60;
     cameraHelper.setCameraTarget(aVehicle);
 
     const mapBuilder = new MapBuilder(scene, world);
-    mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
-        aVehicle.initialPosition.set(pX, pY, pZ);
-        aVehicle.initialRotation.setFromEuler(utils.degToRad(rX), utils.degToRad(rY), utils.degToRad(rZ));
-        aVehicle.resetPosition();
-    };
-    mapBuilder.eventTriggerListeners.add(
-        MapTriggerElementEvent.setCameraPosition,
-        ({ relatedTarget, dataSet }: TriggeredEvent) => {
-            if (relatedTarget === aVehicle.chassisBody) {
-                const [x, y, z] = dataSet.split(',');
-                cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
-            }
-        },
-    );
 
     const checkpointManager = new CheckpointManager(scene, {
         finish: finishIcon3d,
@@ -69,41 +56,76 @@ const worldStep = 1 / 60;
     });
 
     const gameProgress = new GameProgressManager(mapBuilder, checkpointManager);
-    gameProgress.loadMap();
 
-    inputHandler.addKeyPressListener(() => {
-        if (inputHandler.isKeyPressed('M')) {
-            mapBuilder.toggleEditMode();
+    mountMenuRoot(gameProgress, renderer);
+
+    mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
+        aVehicle.initialPosition.set(pX, pY, pZ);
+        aVehicle.initialRotation.setFromEuler(utils.degToRad(rX), utils.degToRad(rY), utils.degToRad(rZ));
+        aVehicle.resetPosition();
+    };
+    mapBuilder.eventTriggerListeners.add(
+        TriggerMapElementEvent.setCameraPosition,
+        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+            if (relatedTarget === aVehicle.chassisBody) {
+                const [x, y, z] = dataSet.split(',');
+                cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
+            }
+        },
+    );
+    mapBuilder.eventTriggerListeners.add(
+        TriggerMapElementEvent.setCameraMode,
+        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+            if (relatedTarget === aVehicle.chassisBody) {
+                const [cameraMode, x, y, z] = dataSet.split(',');
+                cameraHelper.cameraMode = cameraMode as CameraMode;
+                if (x || y || z) {
+                    cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
+                }
+            }
+        },
+    );
+    mapBuilder.eventTriggerListeners.add(
+        TriggerMapElementEvent.reset,
+        ({ relatedTarget }: TriggeredEvent) => {
+            if (relatedTarget === aVehicle.chassisBody) {
+                gameProgress.reset();
+            }
+        },
+    );
+    inputHandler.addKeyPressListener((keyPressed) => {
+        switch (keyPressed) {
+            case 'M':
+                mapBuilder.toggleEditMode();
+                break;
+            case 'P':
+                pause();
+                break;
+            case 'O':
+                // console.log(cameraHelper.camera.position);
+                // gameProgress.openModal('mapFinished');
+                break;
+            case 'R':
+                reset();
+                break;
+            case 'C':
+                cameraHelper.switchMode();
+                break;
+            default:
         }
-
-        if (inputHandler.isKeyPressed('P')) {
-            pause();
-        }
-
-        if (inputHandler.isKeyPressed('O')) {
-            // console.log(cameraHelper.camera.position);
-            // gameProgress.openModal('mapFinished');
-        }
-
-        if (inputHandler.isKeyPressed('R')) {
-            reset();
-        }
-
-        if (inputHandler.isKeyPressed('C')) {
-            cameraHelper.switchMode();
-        }
-
+    });
+    inputHandler.addKeyDownListener((keysDown) => {
         let engineForceDirection: -1|0|1 = 0;
         let steeringDirection: -1|0|1 = 0;
 
-        if (inputHandler.isKeyPressed('W', 'ArrowUp')) {
+        if (keysDown.has('W') || keysDown.has('ArrowUp')) {
             engineForceDirection = 1;
-        } else if (inputHandler.isKeyPressed('S', 'ArrowDown')) {
+        } else if (keysDown.has('S') || keysDown.has('ArrowDown')) {
             engineForceDirection = -1;
         }
-        if (inputHandler.isKeyPressed('A', 'ArrowLeft')) {
+        if (keysDown.has('A') || keysDown.has('ArrowLeft')) {
             steeringDirection = 1;
-        } else if (inputHandler.isKeyPressed('D', 'ArrowRight')) {
+        } else if (keysDown.has('D') || keysDown.has('ArrowRight')) {
             steeringDirection = -1;
         }
         if (!gameProgress.started && engineForceDirection) {
@@ -112,8 +134,10 @@ const worldStep = 1 / 60;
 
         aVehicle.setEngineForceDirection(engineForceDirection);
         aVehicle.setSteeringDirection(steeringDirection);
-        aVehicle.setBrakeForce(Number(inputHandler.isKeyPressed(' ')));
+        aVehicle.setBrakeForce(Number(keysDown.has(' ')));
     });
+
+    gameProgress.loadMap();
 
     function reset() {
         gameProgress.reset();
@@ -146,15 +170,15 @@ const worldStep = 1 / 60;
         }
         requestAnimationFrame(render);
 
-        // update physics
-        world.step(worldStep);
-
         cameraHelper.update();
         gameProgress.updateHUD();
 
         checkpointManager.updateVisuals(dt);
 
         renderer.render(scene, cameraHelper.camera);
+
+        // update physics
+        world.step(worldStep);
     }
 
     function onWindowResize() {

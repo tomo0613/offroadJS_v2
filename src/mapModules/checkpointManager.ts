@@ -3,8 +3,7 @@ import { Mesh, Scene, Vector3 } from 'three';
 
 import ObjectPool from '../common/ObjectPool';
 import { GameProgressManager } from '../gameProgress/gameProgressManager';
-import { GameProgressModal } from '../gameProgress/gameProgressModalController';
-import { MapBuilder, MapTriggerElementEvent, TriggeredEvent } from './mapBuilder';
+import { MapBuilder, TriggerMapElementEvent, TriggeredEvent } from './mapBuilder';
 
 interface Icon3dList {
     checkpoint: Mesh;
@@ -46,8 +45,8 @@ export class CheckpointManager {
     init(mapBuilder: MapBuilder, gameProgress: GameProgressManager) {
         this.gameProgress = gameProgress;
 
-        mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.checkpoint, this.checkpointEventHandler);
-        mapBuilder.eventTriggerListeners.add(MapTriggerElementEvent.finish, this.finishEventHandler);
+        mapBuilder.eventTriggerListeners.add(TriggerMapElementEvent.checkpoint, this.checkpointEventHandler);
+        mapBuilder.eventTriggerListeners.add(TriggerMapElementEvent.finish, this.finishEventHandler);
 
         if (this.checkpointIcon3dPool.activeCount) {
             this.checkpointIcon3dPool.releaseAll();
@@ -99,7 +98,7 @@ export class CheckpointManager {
         // if (relatedTarget === aVehicle.chassisBody) {
         if (parseCheckpointCount(dataSet) === this.gameProgress.checkpointsReached) {
             this.gameProgress.stop();
-            this.gameProgress.openModal(GameProgressModal.mapFinished);
+            this.gameProgress.openModal();
         }
     }
 

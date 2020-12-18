@@ -1,13 +1,13 @@
 import React, { Component, createRef } from 'react';
 
 import { NOP, round, throttle, valueBetween } from '../utils';
-import { InputContainer } from './inputContainer';
+import { InputContainer } from './InputContainer';
 
 interface NumberInputProps {
     label: string;
-    name: string;
+    id: string;
     value?: number;
-    onChange?: (value: number, name: string) => void;
+    onChange?: (value: number, id: string) => void;
     step?: number;
     sensitivity?: number;
     min?: number;
@@ -34,8 +34,8 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
     private stepDirection: -1|1;
 
     static defaultProps = {
+        id: '',
         label: '',
-        name: '',
         value: 0,
         onChange: NOP,
         step: 0.01,
@@ -51,11 +51,11 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
     }
 
     render() {
-        const { label } = this.props;
+        const { label, id } = this.props;
         const { value } = this.state;
 
         return (
-            <InputContainer label={label}>
+            <InputContainer label={label} id={id}>
                 <div className="numberInputControlGroup">
                     <span
                         className="stepButton stepButton-left"
@@ -65,6 +65,8 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
                         {stepButtonLeftText}
                     </span>
                     <input
+                        id={id}
+                        name={id}
                         value={value}
                         pattern={numericValuePattern}
                         onChange={this.onInputFieldChange}
@@ -96,12 +98,12 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         return this.inputRef.current;
     }
 
-    get valid() {
-        return !this.inputElement.validity.patternMismatch;
+    get validNumericValue() {
+        return this.inputElement.value && !this.inputElement.validity.patternMismatch;
     }
 
     get numericValue() {
-        if (this.valid) {
+        if (this.validNumericValue) {
             return Number(this.state.value);
         }
         const value = parseInt((this.state.value as string), 10);
@@ -110,7 +112,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
     }
 
     setValue(value: number|string, allowString = false) {
-        if (this.valid && !allowString) {
+        if (this.validNumericValue && !allowString) {
             value = valueBetween((value as number), this.props.min, this.props.max);
         }
         if (this.state.value === value) {
@@ -123,7 +125,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
     }
 
     private onSetValue = () => {
-        this.props.onChange(this.numericValue, this.props.name);
+        this.props.onChange(this.numericValue, this.props.id);
         this.changed = false;
     }
 
@@ -174,7 +176,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         if (!this.changed) {
             return;
         }
-        if (this.valid) {
+        if (this.validNumericValue && this.numericValue >= this.props.min && this.numericValue <= this.props.max) {
             this.onSetValue();
         } else {
             this.setValue(this.numericValue);

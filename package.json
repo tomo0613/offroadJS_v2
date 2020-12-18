@@ -1,11 +1,20 @@
 {
   "name": "offroad-js",
-  "description": "3d puzzle platformer game with a car, runs in browser, written in js (typescript)",
+  "description": "3d platformer game with a car",
   "keywords": [
     "3d",
     "game",
+    "arcade",
+    "racing",
+    "driving",
+    "platform",
+    "html5",
+    "javascript",
+    "cannon",
+    "cannon.es",
+    "cannon.js",
     "three",
-    "cannon"
+    "three.js"
   ],
   "repository": {
     "type": "git",

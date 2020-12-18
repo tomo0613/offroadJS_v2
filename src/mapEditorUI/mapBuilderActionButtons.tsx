@@ -1,10 +1,11 @@
 import React, { useContext, useState } from 'react';
 
 import { MapElementShape } from '../mapModules/mapBuilder';
-import { SelectInput } from '../uiComponents/selectInput';
+import { SelectInput } from '../uiComponents/index';
 import { MapBuilderContext } from './editor';
+import uiTexts from './uiTexts';
 
-const createButtonText = 'create';
+const { createButtonLabel } = uiTexts;
 const mapElementShapeSelectorOptionList = [
     'box', 'cylinder', 'ramp', 'sphere', 'triangularRamp', 'loop', 'slopeTransition',
 ] as MapElementShape[];
@@ -16,7 +17,7 @@ export function MapBuilderActionButtons() {
     return (
         <div>
             <button onClick={() => { mapBuilder.build({ shape: selectedMapElementShape }); }}>
-                {createButtonText}
+                {createButtonLabel}
             </button>
             <SelectInput
                 value={selectedMapElementShape}

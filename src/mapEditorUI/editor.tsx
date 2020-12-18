@@ -11,8 +11,8 @@ import { MapElementTransformPanel } from './mapElementTransformPanel';
 import { MapElementTranslatePanel } from './mapElementTranslatePanel';
 
 const gEditorPanel = document.createElement('aside');
-gEditorPanel.classList.add('floatingPanel', 'hidden');
 gEditorPanel.id = 'editorPanel';
+gEditorPanel.classList.add('floatingPanel', 'hidden');
 document.body.appendChild(gEditorPanel);
 
 export const MapBuilderContext = createContext<MapBuilder>(undefined);
@@ -40,14 +40,17 @@ function Editor() {
     const [mapElementProps, setMapElementProps] = useState<MapElementProps>();
 
     useEffect(() => {
-        mapBuilder.listeners.add(MapBuilderEvent.select, setMapElementId);
+        mapBuilder.listeners.add(MapBuilderEvent.mapElementSelect, setMapElementId);
+        mapBuilder.listeners.add(MapBuilderEvent.mapElementChange, setMapElementProps);
 
         return () => {
-            mapBuilder.listeners.remove(MapBuilderEvent.select, setMapElementId);
+            mapBuilder.listeners.remove(MapBuilderEvent.mapElementSelect, setMapElementId);
+            mapBuilder.listeners.remove(MapBuilderEvent.mapElementChange, setMapElementProps);
         };
     }, []);
     useEffect(() => {
-        setMapElementProps(mapBuilder.getPropsFromStore(mapElementId));
+        // ToDo ? maybe prevent 2nd render ?
+        setMapElementProps({ ...mapBuilder.getPropsFromStore(mapElementId) });
     }, [mapElementId]);
 
     return (
