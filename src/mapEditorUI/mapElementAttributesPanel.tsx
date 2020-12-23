@@ -1,7 +1,10 @@
 import React, { useContext } from 'react';
 
-import { MapElementProps, MapElementType, TriggerMapElementEvent } from '../mapModules/mapBuilder';
-import { NumberInput, SelectInput, Switch, TextInput } from '../uiComponents/index';
+import {
+    getColorValueByProps, MapElementProps, MapElementType, setMeshColor, TriggerMapElementEvent,
+} from '../mapModules/mapBuilder';
+import { ColorPicker, NumberInput, SelectInput, Switch, TextInput } from '../uiComponents/index';
+import { numberToHexString } from '../utils';
 import { MapBuilderContext } from './editor';
 
 interface MapElementAttributesPanelProps {
@@ -10,8 +13,8 @@ interface MapElementAttributesPanelProps {
 
 const attributesPanelLabel = 'Attributes';
 const editableAttributesByType: Record<MapElementType, string[]> = {
-    default: ['type', 'mass'],
-    compound: [],
+    default: ['type', 'mass', 'color'],
+    compound: ['color'],
     trigger: ['type', 'event', 'dataSet'],
     vehicle: [],
 };
@@ -28,6 +31,8 @@ export function MapElementAttributesPanel({ mapElementProps }: MapElementAttribu
     const {
         type = MapElementType.default, mass = 0, event = TriggerMapElementEvent.setCameraPosition, dataSet = '',
     } = mapElementProps;
+    const colorValue = getColorValueByProps(mapElementProps);
+    const hexColorValue = typeof colorValue === 'number' ? numberToHexString(colorValue) : colorValue;
 
     return (
         <>
@@ -46,6 +51,9 @@ export function MapElementAttributesPanel({ mapElementProps }: MapElementAttribu
             {isAttributeEditable(type, 'dataSet') && (
                 <TextInput label="dataSet:" id="dataSet" value={dataSet} onChange={onChange}/>
             )}
+            {isAttributeEditable(type, 'color') && (
+                <ColorPicker label="color:" id="color" value={hexColorValue} onChange={onChange} onInput={onColor}/>
+            )}
         </>
     );
 
@@ -57,6 +65,10 @@ export function MapElementAttributesPanel({ mapElementProps }: MapElementAttribu
         mapBuilder.setAttribute(mapBuilder.selectedMapElementId, {
             [attr]: isTrigger ? MapElementType.trigger : MapElementType.default,
         });
+    }
+
+    function onColor(value: string) {
+        setMeshColor(mapBuilder.getMeshFromStore(mapBuilder.selectedMapElementId), value);
     }
 }
 

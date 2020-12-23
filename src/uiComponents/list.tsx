@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { NOP } from '../utils';
 
-interface ListPorps {
+interface ListProps {
     contentList: string[];
     label?: string;
     selected?: string;
@@ -14,7 +14,7 @@ const scrollIntoViewOptions = {
     block: 'nearest' as const,
 };
 
-export function List({ label, contentList, selected, onSelect = NOP }: ListPorps) {
+export function List({ label, contentList, selected, onSelect = NOP }: ListProps) {
     const selectionRef = useRef<HTMLLIElement>(null);
 
     useEffect(() => {

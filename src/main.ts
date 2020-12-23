@@ -1,16 +1,21 @@
 import { SAPBroadphase, World } from 'cannon-es';
 import wireframeRenderer from 'cannon-es-debugger';
-import { CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, WebGLRenderer } from 'three';
+import { CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, Vector2, WebGLRenderer } from 'three';
 import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 
 import { CameraHelper, CameraMode } from './cameraHelper';
 import cfg from './config';
 import { GameProgressManager } from './gameProgress/gameProgressManager';
 import inputHandler from './inputHandler';
 import { CheckpointManager } from './mapModules/checkpointManager';
-import { MapBuilder, TriggerMapElementEvent, TriggeredEvent } from './mapModules/mapBuilder';
+import {
+    MapBuilder, TriggerMapElementEvent, TriggeredEvent, MapBuilderEvent, vehicleMapElementId,
+} from './mapModules/mapBuilder';
 import { mountMenuRoot } from './menu/menu';
 import { showNotification } from './notificationModules/notificationManager';
 import * as utils from './utils';
@@ -35,26 +40,34 @@ const worldStep = 1 / 60;
     world.defaultContactMaterial.friction = 0.001;
 
     const renderer = new WebGLRenderer({ antialias: cfg.antialias, powerPreference: cfg.powerPreference });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(window.devicePixelRatio); // cfg.renderScale;
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = cfg.renderShadows;
 
-    document.body.appendChild(renderer.domElement);
+    const cameraHelper = new CameraHelper(renderer.domElement);
 
+    // setup postprocessing
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, cameraHelper.camera);
+    const outlinePass = new OutlinePass(new Vector2(window.innerWidth, window.innerHeight), scene, cameraHelper.camera);
+    outlinePass.visibleEdgeColor.setHex(0xE67300);
+    outlinePass.hiddenEdgeColor.setHex(0x663300);
+    composer.addPass(renderPass);
+
+    document.body.appendChild(renderer.domElement);
     window.onresize = utils.debounce(onWindowResize, 500);
 
     const [aVehicle, finishIcon3d, checkpointIcon3d] = await loadAssets() as [Vehicle, Mesh, Mesh];
 
-    const cameraHelper = new CameraHelper(renderer.domElement);
     cameraHelper.setCameraTarget(aVehicle);
+    cameraHelper.camera.aspect = window.aspectRatio;
+    cameraHelper.camera.updateProjectionMatrix();
 
     const mapBuilder = new MapBuilder(scene, world);
-
     const checkpointManager = new CheckpointManager(scene, {
         finish: finishIcon3d,
         checkpoint: checkpointIcon3d,
     });
-
     const gameProgress = new GameProgressManager(mapBuilder, checkpointManager);
 
     mountMenuRoot(gameProgress, renderer);
@@ -93,10 +106,17 @@ const worldStep = 1 / 60;
             }
         },
     );
+    mapBuilder.listeners.add(MapBuilderEvent.mapElementSelect, (selectedMapElementId: string) => {
+        const selectedObject = selectedMapElementId === vehicleMapElementId
+            ? aVehicle.chassisMesh
+            : mapBuilder.getMeshFromStore(selectedMapElementId);
+
+        outlinePass.selectedObjects.splice(0, 1, selectedObject);
+    });
     inputHandler.addKeyPressListener((keyPressed) => {
         switch (keyPressed) {
             case 'M':
-                mapBuilder.toggleEditMode();
+                toggleEditMode();
                 break;
             case 'P':
                 pause();
@@ -139,6 +159,16 @@ const worldStep = 1 / 60;
 
     gameProgress.loadMap();
 
+    function toggleEditMode() {
+        mapBuilder.toggleEditMode();
+
+        if (mapBuilder.editMode) {
+            composer.addPass(outlinePass);
+        } else {
+            composer.passes.splice(1, 1);
+        }
+    }
+
     function reset() {
         gameProgress.reset();
     }
@@ -162,6 +192,7 @@ const worldStep = 1 / 60;
     if (cfg.renderWireFrame) {
         wireframeRenderer(scene, world.bodies);
     }
+
     render();
 
     function render(dt = performance.now()) {
@@ -175,7 +206,7 @@ const worldStep = 1 / 60;
 
         checkpointManager.updateVisuals(dt);
 
-        renderer.render(scene, cameraHelper.camera);
+        composer.render();
 
         // update physics
         world.step(worldStep);
@@ -185,6 +216,8 @@ const worldStep = 1 / 60;
         cameraHelper.camera.aspect = window.aspectRatio;
         cameraHelper.camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+        outlinePass.setSize(window.innerWidth, window.innerHeight);
     }
 
     async function loadAssets() {

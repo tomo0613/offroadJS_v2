@@ -1,7 +1,7 @@
 import React, { StrictMode, createContext, useState, useContext, useEffect } from 'react';
 import { render } from 'react-dom';
 
-import { MapBuilder, MapBuilderEvent, MapElementProps } from '../mapModules/mapBuilder';
+import { MapBuilder, MapBuilderEvent, MapElementProps, vehicleMapElementId } from '../mapModules/mapBuilder';
 import { MapBuilderActionButtons } from './mapBuilderActionButtons';
 import { MapDataActionButtons } from './mapDataActionButtons';
 import { MapElementActionButtons } from './mapElementActionButtons';
@@ -59,7 +59,7 @@ function Editor() {
             <MapElementList selectedMapElementId={mapElementId}/>
             {mapElementId && mapElementProps && <>
                 <MapElementTranslatePanel mapElementProps={mapElementProps}/>
-                {mapElementId !== 'vehicle_0' && <>
+                {mapElementId !== vehicleMapElementId && <>
                     <MapElementTransformPanel mapElementProps={mapElementProps}/>
                     <MapElementAttributesPanel mapElementProps={mapElementProps}/>
                     <MapElementActionButtons/>

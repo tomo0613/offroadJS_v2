@@ -46,6 +46,10 @@ body {
     flex-direction: column;
 }
 
+.screenButton, .screenKey {
+    border-radius: 5px;
+}
+
 .screenButton + .screenButton,
 .screenKey + .screenKey {
     margin: 0 0 0 10px;

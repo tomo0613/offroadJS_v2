@@ -163,6 +163,10 @@ function appendLeadingZero(value: number) {
     return str.length < 2 ? `0${value}` : str;
 }
 
+export function numberToHexString(colorValue: number) {
+    return `#${colorValue.toString(16).toUpperCase()}`;
+}
+
 export function degToRad(deg: number) {
     return deg / 180 * Math.PI;
 }

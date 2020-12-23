@@ -1,4 +1,5 @@
 export * from './Checkbox';
+export * from './ColorPicker';
 export * from './List';
 export * from './Modal';
 export * from './NumberInput';

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { NOP } from '../utils';
 import { InputContainer } from './InputContainer';
 
-interface Porps {
+interface Props {
     label?: string;
     id?: string;
     defaultValue?: number;
@@ -13,7 +13,7 @@ interface Porps {
     onChange?: (value: number, id?: string) => void;
 }
 
-export function RangeInput({ id, label, defaultValue, onChange = NOP, ...props }: Porps) {
+export function RangeInput({ id, label, defaultValue, onChange = NOP, ...props }: Props) {
     const [displayValue, setDisplayValue] = useState(defaultValue);
 
     return (
@@ -30,6 +30,6 @@ export function RangeInput({ id, label, defaultValue, onChange = NOP, ...props }
         const value = Number(e.currentTarget.value);
 
         setDisplayValue(value);
-        onChange(value);
+        onChange(value, id);
     }
 }

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { InputContainer } from './InputContainer';
 
-interface Porps {
+interface Props {
     label?: string;
     id?: string;
     value?: string;
@@ -11,7 +11,7 @@ interface Porps {
     onChange?: (value: string, id?: string) => void;
 }
 
-export function Checkbox({ id, label, value = '', defaultValue = '', checked = false, onChange }: Porps) {
+export function Checkbox({ id, label, value = '', defaultValue = '', checked = false, onChange }: Props) {
     const valueHandlerProps = onChange ? {
         checked,
         onChange: onInputChange,

@@ -1,20 +1,32 @@
 import React, { Component, createRef } from 'react';
 
-import { NOP } from '../utils';
+import { NOP, numberToHexString } from '../utils';
 import { InputContainer } from './InputContainer';
 
-interface TextInputProps {
+interface ColorPickerProps {
     label?: string;
     id?: string;
     value?: string;
     onChange?: (value: string, id?: string) => void;
+    onInput?: (value: string, id?: string) => void;
 }
 
-interface TextInputState {
+interface ColorPickerState {
     value: string;
 }
 
-export class TextInput extends Component<TextInputProps, TextInputState> {
+const colorValueDataList = document.createElement('datalist');
+colorValueDataList.id = 'colorValueList';
+document.documentElement.appendChild(colorValueDataList);
+
+function addColorValueToList(colorValue: number) {
+    const option = document.createElement('option');
+    option.textContent = numberToHexString(colorValue);
+
+    colorValueDataList.appendChild(option);
+}
+
+export class ColorPicker extends Component<ColorPickerProps, ColorPickerState> {
     private inputRef = createRef<HTMLInputElement>();
 
     static defaultProps = {
@@ -24,10 +36,14 @@ export class TextInput extends Component<TextInputProps, TextInputState> {
         onChange: NOP,
     };
 
-    constructor(props: TextInputProps) {
+    static addColorValues = (...colorValues: number[]) => {
+        colorValues.forEach(addColorValueToList);
+    };
+
+    constructor(props: ColorPickerProps) {
         super(props);
 
-        this.state = { value: props.value };
+        this.state = { value: props.value.toLowerCase() };
     }
 
     render() {
@@ -37,6 +53,8 @@ export class TextInput extends Component<TextInputProps, TextInputState> {
         return (
             <InputContainer label={label} id={id}>
                 <input
+                    type="color"
+                    list={colorValueDataList.id}
                     value={value}
                     id={id}
                     name={id}
@@ -49,7 +67,7 @@ export class TextInput extends Component<TextInputProps, TextInputState> {
         );
     }
 
-    componentDidUpdate(prevProps: TextInputProps) {
+    componentDidUpdate(prevProps: ColorPickerProps) {
         if (this.props.value !== prevProps.value) {
             this.setState({ value: this.props.value });
         }
@@ -60,6 +78,9 @@ export class TextInput extends Component<TextInputProps, TextInputState> {
     }
 
     private onInputFieldChange = ({ currentTarget }: React.ChangeEvent<HTMLInputElement>) => {
+        if (this.props.onInput) {
+            this.props.onInput(currentTarget.value);
+        }
         this.setState({ value: currentTarget.value });
     }
 
@@ -70,7 +91,7 @@ export class TextInput extends Component<TextInputProps, TextInputState> {
     }
 
     private onInputFieldBlur = () => {
-        if (this.state.value !== this.props.value) {
+        if (this.state.value !== this.props.value.toLowerCase()) {
             this.props.onChange(this.state.value, this.props.id);
         }
     }

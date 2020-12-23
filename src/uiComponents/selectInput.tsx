@@ -3,7 +3,7 @@ import React from 'react';
 import { NOP } from '../utils';
 import { InputContainer } from './InputContainer';
 
-interface SelectPorps {
+interface SelectProps {
     label?: string;
     id?: string;
     value?: string;
@@ -11,7 +11,7 @@ interface SelectPorps {
     onChange?: (option: string, id?: string) => void;
 }
 
-export function SelectInput({ optionList, id, label, value = '', onChange = NOP }: SelectPorps) {
+export function SelectInput({ optionList, id, label, value = '', onChange = NOP }: SelectProps) {
     return (
         <InputContainer label={label} id={id}>
             <select value={value} id={id} name={id} onChange={onSelect}>

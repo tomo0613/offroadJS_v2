@@ -6,6 +6,7 @@ import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler } from 'three';
 import EventListener from '../common/EventListener';
 import cfg from '../config';
 import { renderEditor } from '../mapEditorUI/editor';
+import { ColorPicker } from '../uiComponents';
 import { degToRad, NOP } from '../utils';
 import { getBaseElementComponents } from './baseMapElementComponents';
 import {
@@ -60,6 +61,7 @@ interface CommonMapElementProps extends MapElementOrientationProps {
     type?: MapElementType;
     shape?: MapElementShape;
     mass?: number;
+    color?: string;
     lowFriction?: boolean;
     fixedRotation?: boolean;
 }
@@ -107,7 +109,7 @@ type CompoundProps = LoopProps & SlopeTransitionProps;
 export type MapElementProps = BoxProps & CylinderProps & SphereProps & EventTriggerProps & CompoundProps;
 export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps>;
 
-const selectedPlatformColor = 0xFFC266;
+export const vehicleMapElementId = 'vehicle_0';
 const defaultPlatformColor = 0xDDDDDD;
 const dynamicPlatformColor = 0x95C0E5;
 const triggerOutlieColor = 0xCD72D3;
@@ -123,6 +125,8 @@ const normal_to_lowFriction_cm = new ContactMaterial(normalMaterial, lowFriction
 const tmp_euler = new Euler();
 
 let gId = 0;
+
+ColorPicker.addColorValues(defaultPlatformColor, dynamicPlatformColor);
 
 export class MapBuilder {
     scene: Scene;
@@ -223,7 +227,7 @@ export class MapBuilder {
     }
 
     destroy = (id: MapElementId) => {
-        if (id === 'vehicle_0') {
+        if (id === vehicleMapElementId) {
             return;
         }
         const body = this.getBodyFromStore(id);
@@ -269,20 +273,6 @@ export class MapBuilder {
         this.selectedMapElementId = id;
 
         this.listeners.dispatch(MapBuilderEvent.mapElementSelect, this.selectedMapElementId);
-        this.highlightSelectedMapElement();
-    }
-
-    private highlightSelectedMapElement() {
-        if (this.perviousSelectedMapElementId) {
-            const previousSelectedMesh = this.getMeshFromStore(this.perviousSelectedMapElementId);
-            if (previousSelectedMesh) {
-                setMeshColor(previousSelectedMesh, defaultPlatformColor);
-            }
-        }
-        const selectedMesh = this.getMeshFromStore(this.selectedMapElementId);
-        if (selectedMesh) {
-            setMeshColor(selectedMesh, selectedPlatformColor);
-        }
     }
 
     toggleEditMode() {
@@ -307,8 +297,7 @@ export class MapBuilder {
     }
 
     build(props: MapElementProps) {
-        const color = props.mass ? dynamicPlatformColor : defaultPlatformColor;
-        const meshMaterial = new MeshLambertMaterial({ color });
+        const meshMaterial = new MeshLambertMaterial({ color: getColorValueByProps(props) });
         const bodyMaterial = props.lowFriction ? lowFrictionMaterial : normalMaterial;
         const mapElementBody = new Body({ mass: props.mass, material: bodyMaterial });
         let mapElementMesh: Mesh|Group;
@@ -394,17 +383,16 @@ export class MapBuilder {
     }
 
     placeVehicle(props: CommonMapElementProps) {
-        const mapElementId = 'vehicle_0';
         const {
             position_x: pX, position_y: pY, position_z: pZ, rotation_x: rX, rotation_y: rY, rotation_z: rZ,
         } = props;
 
-        this.mapElementIdStore.add(mapElementId);
-        this.mapElementComponentStore.set(`${mapElementId}_props`, { ...props });
-        this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, () => {
+        this.mapElementIdStore.add(vehicleMapElementId);
+        this.mapElementComponentStore.set(`${vehicleMapElementId}_props`, { ...props });
+        this.mapElementComponentStore.set(`${vehicleMapElementId}_updateMethod`, () => {
             const {
                 position_x, position_y, position_z, rotation_x, rotation_y, rotation_z,
-            } = this.getPropsFromStore(mapElementId);
+            } = this.getPropsFromStore(vehicleMapElementId);
             this.onPlaceVehicle(position_x, position_y, position_z, rotation_x, rotation_y, rotation_z);
         });
 
@@ -553,7 +541,6 @@ export class MapBuilder {
     }
 
     setAttribute(id: MapElementId, attributeProps: MapElementProps) {
-        // console.log('setAttribute', id, attributeProps);
         // 'lowFriction'
         // 'fixedRotation'
 
@@ -562,6 +549,10 @@ export class MapBuilder {
         const prevType = mapElementProps.type;
 
         Object.assign(mapElementProps, { ...attributeProps });
+
+        if ('color' in attributeProps) {
+            setMeshColor(this.getMeshFromStore(id), attributeProps.color);
+        }
 
         if (prevType === MapElementType.trigger && attributeProps.type === MapElementType.default) {
             this.convertEventTriggerToDefaultElement(id);
@@ -618,18 +609,29 @@ function disposeGeometryAndMaterial(mesh: Mesh) {
     (mesh.material as MeshLambertMaterial).dispose();
 }
 
-function setMeshColor(mesh: Mesh|Group, colorHexValue?: number, opacity?: number) {
+export function setMeshColor(mesh: Mesh|Group, hexColorValue?: number|string, opacity?: number) {
     const material = (isCompound(mesh)
         ? (mesh.children[0] as Mesh).material
         : mesh.material) as MeshLambertMaterial;
 
-    if (colorHexValue) {
-        material.color.setHex(colorHexValue);
+    if (hexColorValue) {
+        material.color.set(hexColorValue);
     }
     if (opacity) {
         material.transparent = opacity < 1;
         material.opacity = opacity;
     }
+}
+
+export function getColorValueByProps(mapElementProps: MapElementProps) {
+    if (mapElementProps.type === MapElementType.trigger) {
+        return triggerOutlieColor;
+    }
+    if (mapElementProps.color) {
+        return mapElementProps.color;
+    }
+
+    return mapElementProps.mass ? dynamicPlatformColor : defaultPlatformColor;
 }
 
 function isCompound(mesh: Mesh|Group): mesh is Group {

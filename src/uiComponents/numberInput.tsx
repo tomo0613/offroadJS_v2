@@ -27,7 +27,6 @@ const stepButtonRightText = '►';
 
 export class NumberInput extends Component<NumberInputProps, NumberInputState> {
     private inputRef = createRef<HTMLInputElement>();
-    private changed = false;
     private stepIntervalId = 0;
     private stepStartTimeoutId = 0;
     private valueIncrementBuffer = 0;
@@ -120,13 +119,11 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         }
         const onSetState = allowString ? NOP : this.onSetValue;
 
-        this.changed = true;
         this.setState({ value }, onSetState);
     }
 
     private onSetValue = () => {
         this.props.onChange(this.numericValue, this.props.id);
-        this.changed = false;
     }
 
     private stepValue = () => {
@@ -173,7 +170,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
     }
 
     private onInputFieldBlur = (/* React.FocusEvent<HTMLInputElement> */) => {
-        if (!this.changed) {
+        if (this.state.value === this.props.value || this.state.value === this.props.value.toString()) {
             return;
         }
         if (this.validNumericValue && this.numericValue >= this.props.min && this.numericValue <= this.props.max) {
