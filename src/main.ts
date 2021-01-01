@@ -99,6 +99,20 @@ const worldStep = 1 / 60;
         },
     );
     mapBuilder.eventTriggerListeners.add(
+        TriggerMapElementEvent.startAnimation,
+        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+            if (relatedTarget === aVehicle.chassisBody) {
+                const animatedMapElementId = dataSet;
+                const body = mapBuilder.getBodyFromStore(animatedMapElementId);
+                const {
+                    velocity_x, velocity_y, velocity_z,
+                } = mapBuilder.getAnimationPropsFromStore(animatedMapElementId);
+
+                body.velocity.set(velocity_x, velocity_y, velocity_z);
+            }
+        },
+    );
+    mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.reset,
         ({ relatedTarget }: TriggeredEvent) => {
             if (relatedTarget === aVehicle.chassisBody) {
@@ -107,11 +121,13 @@ const worldStep = 1 / 60;
         },
     );
     mapBuilder.listeners.add(MapBuilderEvent.mapElementSelect, (selectedMapElementId: string) => {
-        const selectedObject = selectedMapElementId === vehicleMapElementId
-            ? aVehicle.chassisMesh
-            : mapBuilder.getMeshFromStore(selectedMapElementId);
+        outlinePass.selectedObjects.length = 0;
 
-        outlinePass.selectedObjects.splice(0, 1, selectedObject);
+        if (selectedMapElementId === vehicleMapElementId) {
+            outlinePass.selectedObjects.push(aVehicle.chassisMesh, ...aVehicle.wheelMeshes);
+        } else if (selectedMapElementId) {
+            outlinePass.selectedObjects.push(mapBuilder.getMeshFromStore(selectedMapElementId));
+        }
     });
     inputHandler.addKeyPressListener((keyPressed) => {
         switch (keyPressed) {
@@ -122,8 +138,7 @@ const worldStep = 1 / 60;
                 pause();
                 break;
             case 'O':
-                // console.log(cameraHelper.camera.position);
-                // gameProgress.openModal('mapFinished');
+                console.log(cameraHelper.camera.position);
                 break;
             case 'R':
                 reset();

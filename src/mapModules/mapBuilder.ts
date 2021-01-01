@@ -8,6 +8,7 @@ import cfg from '../config';
 import { renderEditor } from '../mapEditorUI/editor';
 import { ColorPicker } from '../uiComponents';
 import { degToRad, NOP } from '../utils';
+import { AnimationProps, defineAnimationProps } from './animatedMapElementHelper';
 import { getBaseElementComponents } from './baseMapElementComponents';
 import {
     compoundShapes,
@@ -29,11 +30,13 @@ export enum TriggerMapElementEvent {
     reset = 'reset',
     setCameraMode = 'setCameraMode',
     setCameraPosition = 'setCameraPosition',
+    startAnimation = 'startAnimation',
 }
 
 export enum MapElementType {
     default = 'default',
     compound = 'compound',
+    animated = 'animated',
     trigger = 'trigger',
     vehicle = 'vehicle',
 }
@@ -107,11 +110,12 @@ type CylinderProps = CommonMapElementProps & CylinderShapeProps;
 type SphereProps = CommonMapElementProps & SphereShapeProps;
 type CompoundProps = LoopProps & SlopeTransitionProps;
 export type MapElementProps = BoxProps & CylinderProps & SphereProps & EventTriggerProps & CompoundProps;
-export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps>;
+export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps|AnimationProps>;
 
 export const vehicleMapElementId = 'vehicle_0';
-const defaultPlatformColor = 0xDDDDDD;
+const defaultPlatformColor = 0xD6D6D6;
 const dynamicPlatformColor = 0x95C0E5;
+const kinematicPlatformColor = 0x9FA8BB;
 const triggerOutlieColor = 0xCD72D3;
 const normalMaterial = new Material('normalMaterial');
 const lowFrictionMaterial = new Material('lowFrictionMaterial');
@@ -126,7 +130,7 @@ const tmp_euler = new Euler();
 
 let gId = 0;
 
-ColorPicker.addColorValues(defaultPlatformColor, dynamicPlatformColor);
+ColorPicker.addColorValues(defaultPlatformColor, dynamicPlatformColor, kinematicPlatformColor);
 
 export class MapBuilder {
     scene: Scene;
@@ -168,10 +172,14 @@ export class MapBuilder {
         return this.mapElementComponentStore.get(`${id}_updateMethod`) as VoidFnc;
     }
 
+    getAnimationPropsFromStore(id: MapElementId) {
+        return this.mapElementComponentStore.get(`${id}_animationProps`) as AnimationProps;
+    }
+
     private addToWorld(body: Body, mesh: Mesh|Group, props: MapElementProps) {
         const mapElementId = `${props.type || props.shape}_${gId++}`;
         const {
-            mass = 0,
+            type, mass = 0,
             position_x = 0, position_y = 0, position_z = 0,
             rotation_x = 0, rotation_y = 0, rotation_z = 0,
             fixedRotation = false,
@@ -207,7 +215,19 @@ export class MapBuilder {
         this.world.addBody(body);
         this.scene.add(mesh);
 
-        if (mass) {
+        if (type === MapElementType.animated) {
+            const animationProps = defineAnimationProps(body, props.dataSet);
+
+            body.type = BODY_TYPES.KINEMATIC;
+            body.preStep = animationProps.movementHandler;
+            if (!animationProps.triggerStart) {
+                body.velocity.set(animationProps.velocity_x, animationProps.velocity_y, animationProps.velocity_z);
+            }
+
+            this.mapElementComponentStore.set(`${mapElementId}_animationProps`, animationProps);
+        }
+
+        if (mass || type === MapElementType.animated) {
             this.world.addEventListener('postStep', updateOrientation);
         }
 
@@ -216,8 +236,8 @@ export class MapBuilder {
         this.mapElementIdStore.add(mapElementId);
         this.mapElementComponentStore.set(`${mapElementId}_mesh`, mesh);
         this.mapElementComponentStore.set(`${mapElementId}_body`, body);
-        this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, updateOrientation);
         this.mapElementComponentStore.set(`${mapElementId}_props`, props);
+        this.mapElementComponentStore.set(`${mapElementId}_updateMethod`, updateOrientation);
 
         if (this.editMode) {
             this.selectMapElement(mapElementId);
@@ -238,7 +258,7 @@ export class MapBuilder {
         this.world.removeBody(body);
         this.world.removeEventListener('postStep', this.getUpdateMethodFromStore(id));
 
-        if (isCompound(mesh)) {
+        if (isCompoundMesh(mesh)) {
             (mesh.children as Mesh[]).forEach(disposeGeometryAndMaterial);
         } else {
             disposeGeometryAndMaterial(mesh);
@@ -309,6 +329,7 @@ export class MapBuilder {
         if (props.type === MapElementType.compound) {
             mapElementMesh = new Group();
             getCompoundElementChildrenPropertyList(props).forEach((childProps) => {
+                // ToDo reuse geometries|shapes ?
                 const [shape, geometry] = getBaseElementComponents(childProps);
                 const mesh = new Mesh(geometry, meshMaterial);
                 tmp_euler.set(
@@ -421,12 +442,26 @@ export class MapBuilder {
             this.onPlaceVehicle(position_x, position_y, position_z, rotation_x, rotation_y, rotation_z);
             return;
         }
-        if (!mass) {
+        if (!mass && type !== MapElementType.animated) {
             return;
         }
         const body = this.getBodyFromStore(id);
-        body.velocity.copy(Vec3.ZERO);
-        body.angularVelocity.copy(Vec3.ZERO);
+
+        if (type === MapElementType.animated) {
+            const {
+                triggerStart,
+                velocity_x, velocity_y, velocity_z,
+            } = this.getAnimationPropsFromStore(id);
+
+            if (triggerStart) {
+                body.velocity.setZero();
+            } else {
+                body.velocity.set(velocity_x, velocity_y, velocity_z);
+            }
+        } else {
+            body.velocity.setZero();
+            body.angularVelocity.setZero();
+        }
 
         body.position.set(position_x, position_y, position_z);
         body.quaternion.setFromEuler(
@@ -491,7 +526,7 @@ export class MapBuilder {
         mapElementBody.shapeOffsets.length = 0;
         mapElementBody.shapeOrientations.length = 0;
 
-        if (isCompound(mapElementMesh)) {
+        if (isCompoundMesh(mapElementMesh)) {
             const compoundElementChildrenPropertyList = getCompoundElementChildrenPropertyList(mapElementProps);
             const compoundElementChildrenCount = compoundElementChildrenPropertyList.length;
             const leftoverMeshCount = Math.max(0, mapElementMesh.children.length - compoundElementChildrenCount);
@@ -610,7 +645,7 @@ function disposeGeometryAndMaterial(mesh: Mesh) {
 }
 
 export function setMeshColor(mesh: Mesh|Group, hexColorValue?: number|string, opacity?: number) {
-    const material = (isCompound(mesh)
+    const material = (isCompoundMesh(mesh)
         ? (mesh.children[0] as Mesh).material
         : mesh.material) as MeshLambertMaterial;
 
@@ -627,6 +662,9 @@ export function getColorValueByProps(mapElementProps: MapElementProps) {
     if (mapElementProps.type === MapElementType.trigger) {
         return triggerOutlieColor;
     }
+    if (mapElementProps.type === MapElementType.animated) {
+        return kinematicPlatformColor;
+    }
     if (mapElementProps.color) {
         return mapElementProps.color;
     }
@@ -634,6 +672,6 @@ export function getColorValueByProps(mapElementProps: MapElementProps) {
     return mapElementProps.mass ? dynamicPlatformColor : defaultPlatformColor;
 }
 
-function isCompound(mesh: Mesh|Group): mesh is Group {
+function isCompoundMesh(mesh: Mesh|Group): mesh is Group {
     return !!mesh.children.length;
 }

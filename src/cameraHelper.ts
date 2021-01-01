@@ -56,6 +56,10 @@ export class CameraHelper {
                 this.update = NOP;
                 break;
             case CameraMode.hood:
+                this.chaseCameraMountPositionHelper.getWorldPosition(chaseCameraMountPosition);
+                this.camera.position.copy(chaseCameraMountPosition);
+                this.cameraPosition.copy(chaseCameraMountPosition);
+
                 this.cameraTarget.chassisMesh.remove(this.camera);
                 this.camera.fov = cfg.camera.fov;
                 this.camera.updateProjectionMatrix();
@@ -95,8 +99,9 @@ export class CameraHelper {
     }
 
     updateDynamicCamera() {
-        this.camera.position.lerp(this.cameraPosition, this.cameraSpeed);
-
+        if (!this.camera.position.equals(this.cameraPosition)) {
+            this.camera.position.lerp(this.cameraPosition, this.cameraSpeed);
+        }
         if (this.cameraTarget) {
             this.camera.lookAt(this.cameraTarget.chassisMesh.position);
         }

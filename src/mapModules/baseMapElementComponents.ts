@@ -76,23 +76,23 @@ function getConvexGeometryByShape(convexShape: ConvexPolyhedron) {
 function getRampShape(width = 1, height = 1, length = 1) {
     /*  List of vertices that can be assigned to a face  */
     const vertices = [
-        new Vec3(0, 0, 0),
-        new Vec3(width * 2, 0, 0),
-        new Vec3(width * 2, height * 2, 0),
-        new Vec3(0, height * 2, 0),
-        new Vec3(0, 0, length * 2),
-        new Vec3(width * 2, 0, length * 2),
+        new Vec3(-width, -height, -length),
+        new Vec3(width, -height, -length),
+        new Vec3(width, height, -length),
+        new Vec3(-width, height, -length),
+        new Vec3(-width, -height, length),
+        new Vec3(width, -height, length),
     ];
     /*
      * List of vertex index groups that are assigned to individual faces
      * ! CCW order is important for correct face normals !
      */
     const faces = [
-        [0, 3, 2, 1],
-        [2, 3, 4, 5],
-        [0, 1, 5, 4],
-        [5, 1, 2],
-        [4, 3, 0],
+        [3, 2, 1, 0],
+        [4, 5, 2, 3],
+        [5, 4, 0, 1],
+        [0, 4, 3],
+        [1, 2, 5],
     ];
 
     return new ConvexPolyhedron({ vertices, faces });
@@ -112,6 +112,19 @@ function getTriangularRampShape(width = 1, height = 1, length = 1) {
         [0, 1, 3],
         [3, 2, 0],
     ];
+    // ToDo
+    // const vertices = [
+    //     new Vec3(-width, -height, -length),
+    //     new Vec3(width, -height, -length),
+    //     new Vec3(-width, height, -length),
+    //     new Vec3(-width, -height, length),
+    // ];
+    // const faces = [
+    //     [2, 1, 0],
+    //     [3, 0, 1],
+    //     [0, 3, 2],
+    //     [3, 1, 2],
+    // ];
 
     return new ConvexPolyhedron({ vertices, faces });
 }

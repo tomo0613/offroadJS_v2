@@ -15,6 +15,7 @@ const attributesPanelLabel = 'Attributes';
 const editableAttributesByType: Record<MapElementType, string[]> = {
     default: ['type', 'mass', 'color'],
     compound: ['color'],
+    animated: ['dataSet'],
     trigger: ['type', 'event', 'dataSet'],
     vehicle: [],
 };
@@ -24,6 +25,7 @@ const triggerEventOptionList: TriggerMapElementEvent[] = [
     'reset' as TriggerMapElementEvent.reset,
     'setCameraMode' as TriggerMapElementEvent.setCameraMode,
     'setCameraPosition' as TriggerMapElementEvent.setCameraPosition,
+    'startAnimation' as TriggerMapElementEvent.startAnimation,
 ];
 
 export function MapElementAttributesPanel({ mapElementProps }: MapElementAttributesPanelProps) {
