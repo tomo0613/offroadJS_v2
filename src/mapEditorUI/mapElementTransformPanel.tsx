@@ -3,8 +3,8 @@ import React, { useContext } from 'react';
 import { loopDefaultProps, slopeTransitionDefaultProps } from '../mapModules/compoundMapElementComponents';
 import { MapElementProps, MapElementShape } from '../mapModules/mapBuilder';
 import { NumberInput } from '../uiComponents/index';
+import uiTexts from '../uiTexts';
 import { MapBuilderContext } from './editor';
-import uiTexts from './uiTexts';
 
 interface MapElementTransformPanelProps {
     mapElementProps: MapElementProps;

@@ -8,7 +8,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 
-import { CameraHelper, CameraMode } from './cameraHelper';
+import { CameraHandler, CameraMode } from './cameraHandler';
 import cfg from './config';
 import { GameProgressManager } from './gameProgress/gameProgressManager';
 import inputHandler from './inputHandler';
@@ -16,12 +16,24 @@ import { CheckpointManager } from './mapModules/checkpointManager';
 import {
     MapBuilder, TriggerMapElementEvent, TriggeredEvent, MapBuilderEvent, vehicleMapElementId,
 } from './mapModules/mapBuilder';
+import { MouseSelectHandler } from './mapModules/mouseSelectHandler';
+import { initTransformControls } from './mapModules/transformControls';
 import { mountMenuRoot } from './menu/menu';
-import { showNotification } from './notificationModules/notificationManager';
+import { confirmDialog, showNotification } from './notificationModules/notificationManager';
 import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
 
 const worldStep = 1 / 60;
+
+if (cfg.fullscreen) {
+    confirmDialog('Allow fullscreen?').then((confirmed) => {
+        if (confirmed) {
+            document.documentElement.requestFullscreen();
+        } else {
+            cfg.fullscreen = false;
+        }
+    });
+}
 
 (async function init() {
     let paused = false;
@@ -44,12 +56,13 @@ const worldStep = 1 / 60;
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = cfg.renderShadows;
 
-    const cameraHelper = new CameraHelper(renderer.domElement);
+    const cameraHandler = new CameraHandler(renderer.domElement);
 
     // setup postprocessing
     const composer = new EffectComposer(renderer);
-    const renderPass = new RenderPass(scene, cameraHelper.camera);
-    const outlinePass = new OutlinePass(new Vector2(window.innerWidth, window.innerHeight), scene, cameraHelper.camera);
+    const renderPass = new RenderPass(scene, cameraHandler.camera);
+    const resolution = new Vector2(window.innerWidth, window.innerHeight);
+    const outlinePass = new OutlinePass(resolution, scene, cameraHandler.camera);
     outlinePass.visibleEdgeColor.setHex(0xE67300);
     outlinePass.hiddenEdgeColor.setHex(0x663300);
     composer.addPass(renderPass);
@@ -59,9 +72,9 @@ const worldStep = 1 / 60;
 
     const [aVehicle, finishIcon3d, checkpointIcon3d] = await loadAssets() as [Vehicle, Mesh, Mesh];
 
-    cameraHelper.setCameraTarget(aVehicle);
-    cameraHelper.camera.aspect = window.aspectRatio;
-    cameraHelper.camera.updateProjectionMatrix();
+    cameraHandler.setCameraTarget(aVehicle);
+    cameraHandler.camera.aspect = window.aspectRatio;
+    cameraHandler.camera.updateProjectionMatrix();
 
     const mapBuilder = new MapBuilder(scene, world);
     const checkpointManager = new CheckpointManager(scene, {
@@ -69,6 +82,10 @@ const worldStep = 1 / 60;
         checkpoint: checkpointIcon3d,
     });
     const gameProgress = new GameProgressManager(mapBuilder, checkpointManager);
+
+    const mouseSelectHandler = new MouseSelectHandler(scene, cameraHandler.camera, renderer.domElement, mapBuilder);
+    const transformControls = initTransformControls(cameraHandler, mapBuilder);
+    scene.add(transformControls);
 
     mountMenuRoot(gameProgress, renderer);
 
@@ -82,7 +99,7 @@ const worldStep = 1 / 60;
         ({ relatedTarget, dataSet }: TriggeredEvent) => {
             if (relatedTarget === aVehicle.chassisBody) {
                 const [x, y, z] = dataSet.split(',');
-                cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
+                cameraHandler.cameraPosition.set(Number(x), Number(y), Number(z));
             }
         },
     );
@@ -91,9 +108,9 @@ const worldStep = 1 / 60;
         ({ relatedTarget, dataSet }: TriggeredEvent) => {
             if (relatedTarget === aVehicle.chassisBody) {
                 const [cameraMode, x, y, z] = dataSet.split(',');
-                cameraHelper.cameraMode = cameraMode as CameraMode;
+                cameraHandler.cameraMode = cameraMode as CameraMode;
                 if (x || y || z) {
-                    cameraHelper.cameraPosition.set(Number(x), Number(y), Number(z));
+                    cameraHandler.cameraPosition.set(Number(x), Number(y), Number(z));
                 }
             }
         },
@@ -122,11 +139,14 @@ const worldStep = 1 / 60;
     );
     mapBuilder.listeners.add(MapBuilderEvent.mapElementSelect, (selectedMapElementId: string) => {
         outlinePass.selectedObjects.length = 0;
+        transformControls.detach();
 
         if (selectedMapElementId === vehicleMapElementId) {
             outlinePass.selectedObjects.push(aVehicle.chassisMesh, ...aVehicle.wheelMeshes);
         } else if (selectedMapElementId) {
-            outlinePass.selectedObjects.push(mapBuilder.getMeshFromStore(selectedMapElementId));
+            const selectedMesh = mapBuilder.getMeshFromStore(selectedMapElementId);
+            outlinePass.selectedObjects.push(selectedMesh);
+            transformControls.attach(selectedMesh);
         }
     });
     inputHandler.addKeyPressListener((keyPressed) => {
@@ -138,13 +158,13 @@ const worldStep = 1 / 60;
                 pause();
                 break;
             case 'O':
-                console.log(cameraHelper.camera.position);
+                console.log(cameraHandler.camera.position);
                 break;
             case 'R':
                 reset();
                 break;
             case 'C':
-                cameraHelper.switchMode();
+                cameraHandler.switchMode();
                 break;
             default:
         }
@@ -179,8 +199,16 @@ const worldStep = 1 / 60;
 
         if (mapBuilder.editMode) {
             composer.addPass(outlinePass);
+            transformControls.enabled = true;
+            mouseSelectHandler.enabled = true;
+            if (mapBuilder.selectedMapElementId) {
+                transformControls.attach(mapBuilder.getMeshFromStore(mapBuilder.selectedMapElementId));
+            }
         } else {
             composer.passes.splice(1, 1);
+            transformControls.detach();
+            transformControls.enabled = false;
+            mouseSelectHandler.enabled = false;
         }
     }
 
@@ -216,7 +244,7 @@ const worldStep = 1 / 60;
         }
         requestAnimationFrame(render);
 
-        cameraHelper.update();
+        cameraHandler.update();
         gameProgress.updateHUD();
 
         checkpointManager.updateVisuals(dt);
@@ -228,8 +256,8 @@ const worldStep = 1 / 60;
     }
 
     function onWindowResize() {
-        cameraHelper.camera.aspect = window.aspectRatio;
-        cameraHelper.camera.updateProjectionMatrix();
+        cameraHandler.camera.aspect = window.aspectRatio;
+        cameraHandler.camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
         composer.setSize(window.innerWidth, window.innerHeight);
         outlinePass.setSize(window.innerWidth, window.innerHeight);

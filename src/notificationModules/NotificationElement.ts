@@ -1,32 +1,30 @@
 export class NotificationElement {
-    domElement = document.createElement('div');
-    testText: string;
-    private domElement_textContent = document.createElement('span');
+    notificationElement = document.createElement('div');
+    private notificationElementBody = document.createElement('span');
 
     constructor() {
-        this.domElement.classList.add('notificationElement', 'hidden');
-        this.domElement.appendChild(this.domElement_textContent);
+        this.notificationElement.classList.add('notificationElement', 'hidden');
+        this.notificationElement.appendChild(this.notificationElementBody);
     }
 
     get hidden() {
-        return this.domElement.classList.contains('hidden');
+        return this.notificationElement.classList.contains('hidden');
     }
 
     show() {
-        this.domElement.classList.remove('hidden');
+        this.notificationElement.classList.remove('hidden');
     }
 
     fadeOut() {
-        this.domElement.classList.add('fade-out');
+        this.notificationElement.classList.add('fade-out');
     }
 
     hide() {
-        this.domElement.classList.remove('fade-out');
-        this.domElement.classList.add('hidden');
+        this.notificationElement.classList.remove('fade-out');
+        this.notificationElement.classList.add('hidden');
     }
 
     setContent(content: string) {
-        this.testText = content;
-        this.domElement_textContent.textContent = content;
+        this.notificationElementBody.textContent = content;
     }
 }

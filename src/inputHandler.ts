@@ -11,6 +11,7 @@ const navigationKeys = [
     'ArrowRight',
     'ArrowDown',
     'Escape',
+    'Tab',
 ];
 const keysDown = new Set<KeyboardEvent['key']>();
 
@@ -76,7 +77,7 @@ onkeydown = onkeyup = (e) => {
     keyDownListeners.forEach(invokeKeyDownHandler);
 };
 
-appendScreenButton('topLeftPanel', 'Escape', '⋮');
+appendScreenButton('topLeftPanel', 'Tab', '⋮');
 
 if (isMobileDevice()) {
     appendScreenKey('bottomLeftPanel', 'ArrowUp', '▲');

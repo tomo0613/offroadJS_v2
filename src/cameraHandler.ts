@@ -23,17 +23,19 @@ const cameraModeList = [
 const chaseCameraMountPosition = new Vector3();
 const chaseCameraLookPosition = new Vector3();
 
-export class CameraHelper {
+export class CameraHandler {
+    domElement: HTMLElement;
     camera: PerspectiveCamera;
     orbitControls: OrbitControls;
     cameraTarget?: Vehicle;
     cameraPosition = new Vector3();
     cameraSpeed = 0.03;
     private currentCameraMode?: CameraMode;
-    chaseCameraMountPositionHelper = new Object3D();
+    private chaseCameraMountPositionHelper = new Object3D();
     update = NOP;
 
     constructor(domElement: HTMLElement) {
+        this.domElement = domElement;
         this.camera = new PerspectiveCamera(cfg.camera.fov, window.aspectRatio, cfg.camera.near, cfg.camera.far);
         this.camera.position.set(
             cfg.camera.initialPosition.x, cfg.camera.initialPosition.y, cfg.camera.initialPosition.z,

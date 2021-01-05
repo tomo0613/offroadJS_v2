@@ -5,6 +5,7 @@
         "Raycast",
         "Unmount",
         "lerp",
+        "raycaster",
         "skybox"
     ],
     "typescript.tsdk": "node_modules\\typescript\\lib"

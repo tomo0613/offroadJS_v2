@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 
+import uiTexts from '../uiTexts';
 import { MapBuilderContext } from './editor';
-import uiTexts from './uiTexts';
 
 const { cloneButtonLabel, removeButtonLabel } = uiTexts;
 

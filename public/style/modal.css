@@ -32,7 +32,7 @@
 }
 
 .modal__header {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.3);
     padding: 10px;
     border-bottom: 1px solid;
     border-top-left-radius: 5px;
@@ -44,8 +44,11 @@
 }
 
 .modal__footer {
+    background: rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: space-evenly;
     margin-top: auto;
-    margin-bottom: 10px;
+    padding: 10px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
 }

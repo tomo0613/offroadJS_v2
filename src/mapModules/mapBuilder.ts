@@ -1,7 +1,5 @@
 import { Body, BODY_TYPES, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
 import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler } from 'three';
-// import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-// https://threejs.org/examples/#misc_controls_transform
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
@@ -20,8 +18,8 @@ import {
 } from './compoundMapElementComponents';
 
 export enum MapBuilderEvent {
-    mapElementSelect = 'mapElementSelect',
     mapElementChange = 'mapElementChange',
+    mapElementSelect = 'mapElementSelect',
 }
 
 export enum TriggerMapElementEvent {

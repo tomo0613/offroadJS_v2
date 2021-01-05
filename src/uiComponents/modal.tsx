@@ -45,7 +45,7 @@ export const Modal: React.FunctionComponent<ModalProps> = function ({ onClose, c
             gModalRoot.classList.add('hidden');
             previousActiveElement.focus();
         };
-    });
+    }, []);
 
     return createPortal((
         <ModalContainer onClose={onClose}>

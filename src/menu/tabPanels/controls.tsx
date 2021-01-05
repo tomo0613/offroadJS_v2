@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { TabPanel } from '../../uiComponents/index';
 
@@ -18,7 +18,8 @@ export default function ControlsTabPanel({ tabLabel }: ControlsTabPanelProps) {
             <p>{'Reset vehicle: '}<span>{'R'}</span></p>
             <p>{'Pause: '}<span>{'P'}</span></p>
             <p>{'Open/close editor panel: '}<span>{'M'}</span></p>
-            <p>{'Open/close menu: '}<span>{'Escape'}</span></p>
+            <p>{'Toggle edit mouse action move/rotate: '}<span>{'G'}</span></p>
+            <p>{'Open/close menu: '}<span>{'Tab'}</span></p>
         </TabPanel>
     );
 }

@@ -52,7 +52,7 @@ function ModalStateController() {
             inputHandler.removeKeyPressListener(openModalOnKeyPress);
             gameProgressManager.listeners.remove(GameProgressEvent.openMapSelectorPanel, openMapSelectorPanel);
         };
-    });
+    }, []);
 
     return hidden ? null : (
         <MenuModal closeModal={closeModal}/>
@@ -63,7 +63,7 @@ function ModalStateController() {
     }
 
     function openModalOnKeyPress(key: KeyboardEvent['key']) {
-        if (key === 'Escape') {
+        if (key === 'Tab') {
             if (hidden) {
                 setHidden(false);
             }

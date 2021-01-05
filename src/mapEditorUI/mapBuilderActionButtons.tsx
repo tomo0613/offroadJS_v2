@@ -2,8 +2,8 @@ import React, { useContext, useState } from 'react';
 
 import { MapElementShape } from '../mapModules/mapBuilder';
 import { SelectInput } from '../uiComponents/index';
+import uiTexts from '../uiTexts';
 import { MapBuilderContext } from './editor';
-import uiTexts from './uiTexts';
 
 const { createButtonLabel } = uiTexts;
 const mapElementShapeSelectorOptionList = [

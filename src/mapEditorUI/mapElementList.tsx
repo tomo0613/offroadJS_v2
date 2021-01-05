@@ -1,8 +1,8 @@
 import React, { useContext } from 'react';
 
 import { List } from '../uiComponents/index';
+import uiTexts from '../uiTexts';
 import { MapBuilderContext } from './editor';
-import uiTexts from './uiTexts';
 
 const { mapElementListLabel } = uiTexts;
 

@@ -34,7 +34,7 @@ function ModalStateController() {
         return () => {
             gameProgress.listeners.remove(GameProgressEvent.openModal, openModal);
         };
-    });
+    }, []);
 
     return hidden ? null : (
         <MapFinishedModal closeModal={closeModal}/>

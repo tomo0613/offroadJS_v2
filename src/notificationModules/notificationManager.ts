@@ -1,4 +1,5 @@
 import ObjectPool from '../common/ObjectPool';
+import { DialogEvent, dialogListener, mountDialogRoot } from './Dialog';
 import { NotificationElement } from './NotificationElement';
 
 const popUpMessageDuration = 1500;
@@ -19,7 +20,7 @@ const notificationElementPool = new ObjectPool<NotificationElement>(1, {
     },
     itemActivator(item) {
         item.show();
-        popUpMessageContainer.appendChild(item.domElement);
+        popUpMessageContainer.appendChild(item.notificationElement);
     },
     itemDeactivator(item) {
         item.hide();
@@ -36,4 +37,37 @@ export function showNotification(content: string) {
         }, popUpMessageFadeOutDuration);
         notificationElement.fadeOut();
     }, popUpMessageDuration);
+}
+
+let dialogModalMounted = false;
+
+dialogListener.add(DialogEvent.didMount, () => {
+    dialogModalMounted = true;
+});
+dialogListener.add(DialogEvent.willUnmount, () => {
+    dialogModalMounted = false;
+});
+
+mountDialogRoot();
+
+export function confirmDialog(message: string): Promise<boolean> {
+    if (dialogModalMounted) {
+        dialogListener.dispatch(DialogEvent.open, message);
+    } else {
+        const openDialogWhenMounted = () => {
+            dialogListener.remove(DialogEvent.didMount, openDialogWhenMounted);
+            dialogListener.dispatch(DialogEvent.open, message);
+        };
+        dialogListener.add(DialogEvent.didMount, openDialogWhenMounted);
+    }
+
+    return new Promise((resolve) => {
+        dialogListener.add(DialogEvent.confirm, onConfirm);
+
+        function onConfirm(confirmed: boolean) {
+            dialogListener.remove(DialogEvent.confirm, onConfirm);
+
+            resolve(confirmed);
+        }
+    });
 }

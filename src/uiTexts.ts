@@ -11,8 +11,11 @@ export function setLocale(locale: Locale) {
 }
 
 const uiTexts = {
-    importButtonLabel: 'import',
-    exportButtonLabel: 'export',
+    okButtonLabel: 'Ok',
+    cancelButtonLabel: 'Cancel',
+
+    importButtonLabel: 'Import',
+    exportButtonLabel: 'Export',
 
     mapElementListLabel: 'Map elements:',
 
