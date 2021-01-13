@@ -54,19 +54,19 @@ let currentKey: KeyboardEvent['key'];
 
 // eslint-disable-next-line no-multi-assign
 onkeydown = onkeyup = (e) => {
-    if ((e.target as HTMLElement).tagName === 'INPUT') {
+    // keep default keyboard navigation in input elements
+    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tabIndex > -1) {
         return;
     }
     // prevent page scroll
     if (navigationKeys.includes(e.key)) {
         e.preventDefault();
     }
-
-    currentKey = e.key.length === 1 ? e.key.toUpperCase() : e.key;
-
     if (e.type === 'keydown' && e.repeat) {
         return;
     }
+    currentKey = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+
     if (e.type === 'keyup') {
         keysDown.delete(currentKey);
         keyPressListeners.forEach(invokeKeyPressHandler);

@@ -1,4 +1,4 @@
-import { SAPBroadphase, World } from 'cannon-es';
+import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
 import wireframeRenderer from 'cannon-es-debugger';
 import { CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, Vector2, WebGLRenderer } from 'three';
 import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
@@ -10,9 +10,9 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 
 import { CameraHandler, CameraMode } from './cameraHandler';
 import cfg from './config';
+import { getCheckpointIcon3d } from './gameProgress/checkpointHandler';
 import { GameProgressManager } from './gameProgress/gameProgressManager';
 import inputHandler from './inputHandler';
-import { CheckpointManager } from './mapModules/checkpointManager';
 import {
     MapBuilder, TriggerMapElementEvent, TriggeredEvent, MapBuilderEvent, vehicleMapElementId,
 } from './mapModules/mapBuilder';
@@ -24,6 +24,17 @@ import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
 
 const worldStep = 1 / 60;
+
+const generalMaterial = new Material('general');
+const lowFrictionMaterial = new Material('lowFriction');
+const vehicleTireMaterial = new Material('vehicleTire');
+const general_to_general_cm = new ContactMaterial(generalMaterial, generalMaterial, {
+    friction: 1e-3,
+});
+const lowFriction_to_general_cm = new ContactMaterial(generalMaterial, lowFrictionMaterial, {
+    friction: 0,
+    contactEquationStiffness: 1e8,
+});
 
 if (cfg.fullscreen) {
     confirmDialog('Allow fullscreen?').then((confirmed) => {
@@ -49,7 +60,10 @@ if (cfg.fullscreen) {
     const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
     world.gravity.set(gravityX, gravityY, gravityZ);
     world.broadphase = new SAPBroadphase(world);
+    world.materials.push(generalMaterial, lowFrictionMaterial, vehicleTireMaterial);
     world.defaultContactMaterial.friction = 0.001;
+    world.addContactMaterial(general_to_general_cm);
+    world.addContactMaterial(lowFriction_to_general_cm);
 
     const renderer = new WebGLRenderer({ antialias: cfg.antialias, powerPreference: cfg.powerPreference });
     renderer.setPixelRatio(window.devicePixelRatio); // cfg.renderScale;
@@ -57,6 +71,8 @@ if (cfg.fullscreen) {
     renderer.shadowMap.enabled = cfg.renderShadows;
 
     const cameraHandler = new CameraHandler(renderer.domElement);
+    renderer.domElement.tabIndex = -1; /* OrbitControls sets tabIndex="0" */
+    renderer.domElement.focus();
 
     // setup postprocessing
     const composer = new EffectComposer(renderer);
@@ -70,18 +86,22 @@ if (cfg.fullscreen) {
     document.body.appendChild(renderer.domElement);
     window.onresize = utils.debounce(onWindowResize, 500);
 
-    const [aVehicle, finishIcon3d, checkpointIcon3d] = await loadAssets() as [Vehicle, Mesh, Mesh];
+    const [vehicleChassis, vehicleWheel, pinIcon3d] = await loadAssets();
+    const vehicle = new Vehicle(vehicleChassis, vehicleWheel);
+    vehicle.addToWorld(world)
+        .addToScene(scene);
 
-    cameraHandler.setCameraTarget(aVehicle);
+    cameraHandler.setCameraTarget(vehicle);
     cameraHandler.camera.aspect = window.aspectRatio;
     cameraHandler.camera.updateProjectionMatrix();
 
     const mapBuilder = new MapBuilder(scene, world);
-    const checkpointManager = new CheckpointManager(scene, {
-        finish: finishIcon3d,
-        checkpoint: checkpointIcon3d,
+
+    const gameProgress = new GameProgressManager(mapBuilder, vehicle);
+    gameProgress.initCheckpointHandler(scene, {
+        checkpoint: getCheckpointIcon3d(),
+        finish: pinIcon3d as unknown as Mesh,
     });
-    const gameProgress = new GameProgressManager(mapBuilder, checkpointManager);
 
     const mouseSelectHandler = new MouseSelectHandler(scene, cameraHandler.camera, renderer.domElement, mapBuilder);
     const transformControls = initTransformControls(cameraHandler, mapBuilder);
@@ -90,14 +110,14 @@ if (cfg.fullscreen) {
     mountMenuRoot(gameProgress, renderer);
 
     mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
-        aVehicle.initialPosition.set(pX, pY, pZ);
-        aVehicle.initialRotation.setFromEuler(utils.degToRad(rX), utils.degToRad(rY), utils.degToRad(rZ));
-        aVehicle.resetPosition();
+        vehicle.initialPosition.set(pX, pY, pZ);
+        vehicle.initialRotation.setFromEuler(utils.degToRad(rX), utils.degToRad(rY), utils.degToRad(rZ));
+        vehicle.resetPosition();
     };
     mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.setCameraPosition,
         ({ relatedTarget, dataSet }: TriggeredEvent) => {
-            if (relatedTarget === aVehicle.chassisBody) {
+            if (relatedTarget === vehicle.chassisBody) {
                 const [x, y, z] = dataSet.split(',');
                 cameraHandler.cameraPosition.set(Number(x), Number(y), Number(z));
             }
@@ -106,7 +126,7 @@ if (cfg.fullscreen) {
     mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.setCameraMode,
         ({ relatedTarget, dataSet }: TriggeredEvent) => {
-            if (relatedTarget === aVehicle.chassisBody) {
+            if (relatedTarget === vehicle.chassisBody) {
                 const [cameraMode, x, y, z] = dataSet.split(',');
                 cameraHandler.cameraMode = cameraMode as CameraMode;
                 if (x || y || z) {
@@ -118,7 +138,7 @@ if (cfg.fullscreen) {
     mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.startAnimation,
         ({ relatedTarget, dataSet }: TriggeredEvent) => {
-            if (relatedTarget === aVehicle.chassisBody) {
+            if (relatedTarget === vehicle.chassisBody) {
                 const animatedMapElementId = dataSet;
                 const body = mapBuilder.getBodyFromStore(animatedMapElementId);
                 const {
@@ -132,7 +152,7 @@ if (cfg.fullscreen) {
     mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.reset,
         ({ relatedTarget }: TriggeredEvent) => {
-            if (relatedTarget === aVehicle.chassisBody) {
+            if (relatedTarget === vehicle.chassisBody) {
                 gameProgress.reset();
             }
         },
@@ -142,7 +162,7 @@ if (cfg.fullscreen) {
         transformControls.detach();
 
         if (selectedMapElementId === vehicleMapElementId) {
-            outlinePass.selectedObjects.push(aVehicle.chassisMesh, ...aVehicle.wheelMeshes);
+            outlinePass.selectedObjects.push(vehicle.chassisMesh, ...vehicle.wheelMeshes);
         } else if (selectedMapElementId) {
             const selectedMesh = mapBuilder.getMeshFromStore(selectedMapElementId);
             outlinePass.selectedObjects.push(selectedMesh);
@@ -161,7 +181,7 @@ if (cfg.fullscreen) {
                 console.log(cameraHandler.camera.position);
                 break;
             case 'R':
-                reset();
+                gameProgress.respawnAtLastCheckpoint();
                 break;
             case 'C':
                 cameraHandler.switchMode();
@@ -187,9 +207,9 @@ if (cfg.fullscreen) {
             gameProgress.start();
         }
 
-        aVehicle.setEngineForceDirection(engineForceDirection);
-        aVehicle.setSteeringDirection(steeringDirection);
-        aVehicle.setBrakeForce(Number(keysDown.has(' ')));
+        vehicle.setEngineForceDirection(engineForceDirection);
+        vehicle.setSteeringDirection(steeringDirection);
+        vehicle.setBrakeForce(Number(keysDown.has(' ')));
     });
 
     gameProgress.loadMap();
@@ -210,10 +230,6 @@ if (cfg.fullscreen) {
             transformControls.enabled = false;
             mouseSelectHandler.enabled = false;
         }
-    }
-
-    function reset() {
-        gameProgress.reset();
     }
 
     function pause() {
@@ -247,7 +263,7 @@ if (cfg.fullscreen) {
         cameraHandler.update();
         gameProgress.updateHUD();
 
-        checkpointManager.updateVisuals(dt);
+        gameProgress.checkpointHandler.updateVisuals(dt);
 
         composer.render();
 
@@ -264,11 +280,10 @@ if (cfg.fullscreen) {
     }
 
     async function loadAssets() {
-        const [cubeTexture, wheelGLTF, chassisGLTF, finishIcon, checkpointIcon] = await Promise.all([
+        const [cubeTexture, wheelGLTF, chassisGLTF, pinIcon] = await Promise.all([
             utils.loadResource<HTMLImageElement>('./img/skybox.jpg'),
             utils.loadResource<GLTF>('./3D_objects/lowPoly_car_wheel.gltf'),
             utils.loadResource<GLTF>('./3D_objects/mg.glb'),
-            utils.loadResource<SVGResult>('./img/laurel_wreath.svg'),
             utils.loadResource<SVGResult>('./img/pin.svg'),
         ]);
 
@@ -278,17 +293,10 @@ if (cfg.fullscreen) {
 
         lightProbe.copy(LightProbeGenerator.fromCubeTexture(skyBox));
 
-        const vehicleChassis = chassisGLTF.scene;
-        const vehicleWheel = wheelGLTF.scene;
-        const vehicle = new Vehicle(vehicleChassis, vehicleWheel);
-        vehicle.addToWorld(world)
-            .addToScene(scene)
-            .resetPosition();
-
         return [
-            vehicle,
-            utils.svgToMesh(finishIcon, { x: 3.5, y: -3, scale: 0.07 }),
-            utils.svgToMesh(checkpointIcon, { x: -5, y: -5, scale: 0.07 }),
+            chassisGLTF.scene,
+            wheelGLTF.scene,
+            utils.svgToMesh(pinIcon, { x: -6, y: -3, scale: 0.07 }),
         ];
     }
 })();

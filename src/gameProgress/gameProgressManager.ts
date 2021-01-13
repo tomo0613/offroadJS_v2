@@ -1,9 +1,13 @@
+import { Body } from 'cannon-es';
+import { Scene } from 'three';
+
 import EventListener from '../common/EventListener';
 import Timer from '../common/Timer';
-import { CheckpointManager } from '../mapModules/checkpointManager';
 import { MapBuilder } from '../mapModules/mapBuilder';
 import { mapCollection } from '../maps/mapCollection';
 import { formatTime } from '../utils';
+import Vehicle from '../vehicle/Vehicle';
+import { CheckpointHandler, Icon3dList } from './checkpointHandler';
 import { mountModalController } from './gameProgressModalController';
 
 export enum GameProgressEvent {
@@ -11,12 +15,14 @@ export enum GameProgressEvent {
     openMapSelectorPanel = 'openMapSelectorPanel',
 }
 
+let lastCheckpointTriggerBody: Body;
+
 const hud = document.createElement('aside');
 const timeDisplay = document.createElement('span');
 const timeDisplayDefaultContent = '00:00.000';
 hud.id = 'hud';
 
-const mapOrder = ['map01', 'map02', 'map03'];
+const mapOrder = ['map01', 'map02', 'map03', 'map04'];
 
 export class GameProgressManager {
     timer = new Timer();
@@ -24,19 +30,40 @@ export class GameProgressManager {
     started = false;
     result = '';
     checkpointsReached = 0;
-    _mapBuilder: MapBuilder;
-    _checkpointManager: CheckpointManager;
+    private _mapBuilder: MapBuilder;
+    checkpointHandler: CheckpointHandler;
+    vehicle: Vehicle;
     currentMap = '';
 
-    constructor(mapBuilder: MapBuilder, checkpointManager: CheckpointManager) {
+    constructor(mapBuilder: MapBuilder, vehicle: Vehicle) {
         timeDisplay.textContent = timeDisplayDefaultContent;
         hud.appendChild(timeDisplay);
         document.getElementById('topLeftPanel').appendChild(hud);
 
         this._mapBuilder = mapBuilder;
-        this._checkpointManager = checkpointManager;
+        this.vehicle = vehicle;
 
         mountModalController(this);
+    }
+
+    initCheckpointHandler(scene: Scene, icon3dList: Icon3dList) {
+        this.checkpointHandler = new CheckpointHandler(scene, icon3dList);
+    }
+
+    checkpointReached = (checkpointTriggerBody: Body) => {
+        lastCheckpointTriggerBody = checkpointTriggerBody;
+        this.checkpointsReached++;
+    }
+
+    respawnAtLastCheckpoint() {
+        if (lastCheckpointTriggerBody) {
+            this.vehicle.chassisBody.velocity.setZero();
+            this.vehicle.chassisBody.angularVelocity.setZero();
+            this.vehicle.chassisBody.position.copy(lastCheckpointTriggerBody.position);
+            this.vehicle.chassisBody.quaternion.copy(lastCheckpointTriggerBody.quaternion);
+        } else {
+            this.reset();
+        }
     }
 
     start() {
@@ -57,7 +84,8 @@ export class GameProgressManager {
         this.timer.reset();
 
         this._mapBuilder.resetDynamicMapElements();
-        this._checkpointManager.init(this._mapBuilder, this);
+        this.checkpointHandler.init(this._mapBuilder, this);
+        lastCheckpointTriggerBody = undefined;
     }
 
     loadMap(mapName = 'map01') {
@@ -79,10 +107,6 @@ export class GameProgressManager {
         } else {
             this.reset();
         }
-    }
-
-    checkpointReached = () => {
-        this.checkpointsReached++;
     }
 
     updateHUD() {

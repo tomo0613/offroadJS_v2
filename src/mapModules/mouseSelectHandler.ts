@@ -39,6 +39,9 @@ export class MouseSelectHandler {
     }
 
     onClick = (e: MouseEvent) => {
+        if (!e.altKey) {
+            return;
+        }
         this.mousePosition.x = (e.clientX / window.innerWidth) * 2 - 1;
         this.mousePosition.y = -(e.clientY / window.innerHeight) * 2 + 1;
 

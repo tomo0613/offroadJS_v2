@@ -33,6 +33,7 @@ export function List({ label, contentList, selected, onSelect = NOP }: ListProps
                         onSelect((target as HTMLLIElement).dataset.content);
                     }
                 }}
+                tabIndex={0}
             >
                 {contentList.map((content) => (
                     <ListItem

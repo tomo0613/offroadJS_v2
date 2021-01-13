@@ -1,19 +1,23 @@
 import { Body } from 'cannon-es';
-import { Mesh, Scene, Vector3 } from 'three';
+import { BoxBufferGeometry, Mesh, MeshPhongMaterial, Scene, Vector3, HSL } from 'three';
 
 import ObjectPool from '../common/ObjectPool';
-import { GameProgressManager } from '../gameProgress/gameProgressManager';
-import { MapBuilder, TriggerMapElementEvent, TriggeredEvent } from './mapBuilder';
+import { MapBuilder, TriggerMapElementEvent, TriggeredEvent } from '../mapModules/mapBuilder';
+import { GameProgressManager } from './gameProgressManager';
 
-interface Icon3dList {
+export interface Icon3dList {
     checkpoint: Mesh;
     finish: Mesh;
 }
 
-const PIx2 = Math.PI * 2;
-let animationHeightOffset = 0;
+const checkpointCountRegExp = /checkpointCount:(\d+)/i;
 
-export class CheckpointManager {
+const PIx2 = Math.PI * 2;
+const iconRotationSpeed = 0.02;
+let animationHeightOffset = 0;
+let animationLightnessOffset = 0;
+
+export class CheckpointHandler {
     activeCheckpoints = new Set<Body>();
     checkpointIconToElementLinks = new Map<Body, Mesh>();
     checkpointIcon3dPool: ObjectPool<Mesh>;
@@ -84,40 +88,64 @@ export class CheckpointManager {
     }
 
     checkpointEventHandler = ({ target, relatedTarget }: TriggeredEvent) => {
-        // if (relatedTarget === aVehicle.chassisBody) {
-        if (this.activeCheckpoints.has(target)) {
-            this.gameProgress.checkpointReached();
+        if (relatedTarget === this.gameProgress.vehicle.chassisBody) {
+            if (this.activeCheckpoints.has(target)) {
+                this.gameProgress.checkpointReached(target);
 
-            const icon3d = this.checkpointIconToElementLinks.get(target);
-            this.checkpointIcon3dPool.release(icon3d);
-            this.activeCheckpoints.delete(target);
+                const icon3d = this.checkpointIconToElementLinks.get(target);
+                this.checkpointIcon3dPool.release(icon3d);
+                this.activeCheckpoints.delete(target);
+            }
         }
     }
 
     finishEventHandler = ({ target, relatedTarget, dataSet }: TriggeredEvent) => {
-        // if (relatedTarget === aVehicle.chassisBody) {
-        if (parseCheckpointCount(dataSet) === this.gameProgress.checkpointsReached) {
-            this.gameProgress.stop();
-            this.gameProgress.openModal();
+        if (relatedTarget === this.gameProgress.vehicle.chassisBody) {
+            if (parseCheckpointCount(dataSet) === this.gameProgress.checkpointsReached) {
+                this.gameProgress.stop();
+                this.gameProgress.openModal();
+            }
         }
     }
 
     updateVisuals(dt: number) {
         animationHeightOffset = Math.sin(dt / 1000) / 500;
+        animationLightnessOffset = 0.5 * Math.sin(dt / 500) * 0.005;
 
         this.checkpointIcon3dPool.forActive(animateIcon3d);
         animateIcon3d(this.finishIcon3d);
     }
 }
 
+export function getCheckpointIcon3d() {
+    const checkpointIcon3d = new Mesh(
+        new BoxBufferGeometry(0.8, 0.8, 0.8),
+        new MeshPhongMaterial({
+            color: 0x000000,
+            specular: 0x666666,
+            emissive: 0x00AA00,
+            shininess: 10,
+            transparent: true,
+            opacity: 0.6,
+        }),
+    );
+    checkpointIcon3d.rotation.set(Math.PI / 4, 0, Math.PI / 4);
+
+    return checkpointIcon3d;
+}
+
 function animateIcon3d(icon3d: Mesh) {
-    const r = icon3d.rotation.y + 0.02;
+    const r = icon3d.rotation.y + iconRotationSpeed;
     icon3d.rotation.y = r >= PIx2 ? 0 : r;
     icon3d.position.y += animationHeightOffset;
+
+    if (icon3d.material) {
+        (icon3d.material as MeshPhongMaterial).emissive.offsetHSL(0, 0, animationLightnessOffset);
+    }
 }
 
 function parseCheckpointCount(dataSet: string) {
-    const [, checkpointCount] = dataSet.match(/checkpoints:(\d+)/) || [];
+    const [, checkpointCount] = dataSet.match(checkpointCountRegExp) || [];
 
     return checkpointCount ? Number(checkpointCount) : 0;
 }

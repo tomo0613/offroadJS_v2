@@ -99,6 +99,10 @@ body {
     background-color: rgba(5, 5, 5, 0.8);
 }
 
+#menu .tabbedBox__tabPanel {
+    height: 420px;
+}
+
 @media (max-width: 640px) {
     #menu {
         width: 320px;

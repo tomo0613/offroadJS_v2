@@ -7,6 +7,14 @@ interface ModalProps {
     onClose?: VoidFnc;
 }
 
+const keyboardFocusableElementSelector = `
+    input:not([disabled]),
+    textarea:not([disabled]),
+    button:not([disabled]),
+    select,
+    [tabindex]
+`;
+
 const closeButtonText = '⨯';
 const gModalRoot = document.createElement('aside');
 gModalRoot.classList.add('hidden');
@@ -29,7 +37,6 @@ const ModalContainer: React.FunctionComponent<ModalProps> = function ({ onClose,
 
 export const Modal: React.FunctionComponent<ModalProps> = function ({ onClose, children }) {
     const previousActiveElement = document.activeElement as HTMLElement;
-    // const focusableChildElements = [...gModalRoot.querySelectorAll('input, textarea, select, button')];
 
     useEffect(() => {
         inputHandler.clearKeysDown();
@@ -55,13 +62,49 @@ export const Modal: React.FunctionComponent<ModalProps> = function ({ onClose, c
 
     function onKeyDown(e: globalThis.KeyboardEvent) {
         e.stopPropagation();
+
+        if (e.key === 'Tab') {
+            e.preventDefault();
+        }
     }
 
     function onKeyUp(e: globalThis.KeyboardEvent) {
         e.stopPropagation();
+        e.preventDefault();
 
         if (onClose && e.key === 'Escape') {
             onClose();
+        } else if (e.key === 'Tab') {
+            focusNextFocusableChildElement(e.shiftKey ? -1 : 1);
         }
     }
+
+    function focusNextFocusableChildElement(direction: -1|1) {
+        const focusableChildElements = getFocusableChildElements(gModalRoot);
+
+        if (!focusableChildElements.length) {
+            return;
+        }
+
+        const focusedElement = document.activeElement as HTMLElement;
+        const focusedChildElementIndex = focusableChildElements.indexOf(focusedElement);
+        const lastFocusableChildElementIndex = focusableChildElements.length - 1;
+
+        let nextFocusableChildElementIndex = focusedChildElementIndex + direction;
+        if (nextFocusableChildElementIndex < 0) {
+            nextFocusableChildElementIndex = lastFocusableChildElementIndex;
+        } else if (nextFocusableChildElementIndex > lastFocusableChildElementIndex) {
+            nextFocusableChildElementIndex = 0;
+        }
+
+        (focusableChildElements[nextFocusableChildElementIndex] as HTMLElement).focus();
+    }
 };
+
+function getFocusableChildElements(element: HTMLElement) {
+    return [...element.querySelectorAll(keyboardFocusableElementSelector)].filter(inaccessibleElementFilter);
+}
+
+function inaccessibleElementFilter(element: HTMLElement) {
+    return element.tabIndex !== -1 && window.getComputedStyle(element).visibility !== 'hidden';
+}

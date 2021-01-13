@@ -1,5 +1,9 @@
 @charset "UTF-8";
 
+.tabbedBox {
+    overflow: hidden;
+}
+
 .tabbedBox__tabBar {
     background: rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid;
@@ -23,4 +27,5 @@
 
 .tabbedBox__tabPanel {
     padding: 10px;
+    overflow-y: auto;
 }

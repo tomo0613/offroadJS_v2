@@ -1,4 +1,4 @@
-import { Body, BODY_TYPES, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
+import { Body, BODY_TYPES, ContactEquation, Material, Quaternion, Vec3, World } from 'cannon-es';
 import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler } from 'three';
 
 import EventListener from '../common/EventListener';
@@ -115,17 +115,11 @@ const defaultPlatformColor = 0xD6D6D6;
 const dynamicPlatformColor = 0x95C0E5;
 const kinematicPlatformColor = 0x9FA8BB;
 const triggerOutlieColor = 0xCD72D3;
-const normalMaterial = new Material('normalMaterial');
-const lowFrictionMaterial = new Material('lowFrictionMaterial');
-const normal_to_normal_cm = new ContactMaterial(normalMaterial, normalMaterial, {
-    friction: 1e-3,
-});
-const normal_to_lowFriction_cm = new ContactMaterial(normalMaterial, lowFrictionMaterial, {
-    friction: 0,
-    contactEquationStiffness: 1e8,
-});
+
 const tmp_euler = new Euler();
 
+let lowFrictionMaterial: Material;
+let generalMaterial: Material;
 let gId = 0;
 
 ColorPicker.addColorValues(defaultPlatformColor, dynamicPlatformColor, kinematicPlatformColor);
@@ -146,8 +140,8 @@ export class MapBuilder {
         this.scene = scene;
         this.world = world;
 
-        world.addContactMaterial(normal_to_normal_cm);
-        world.addContactMaterial(normal_to_lowFriction_cm);
+        generalMaterial = world.materials.find((material) => material.name === 'general');
+        lowFrictionMaterial = world.materials.find((material) => material.name === 'lowFriction');
     }
 
     get mapElementIdList() {
@@ -316,7 +310,7 @@ export class MapBuilder {
 
     build(props: MapElementProps) {
         const meshMaterial = new MeshLambertMaterial({ color: getColorValueByProps(props) });
-        const bodyMaterial = props.lowFriction ? lowFrictionMaterial : normalMaterial;
+        const bodyMaterial = props.lowFriction ? lowFrictionMaterial : generalMaterial;
         const mapElementBody = new Body({ mass: props.mass, material: bodyMaterial });
         let mapElementMesh: Mesh|Group;
 
@@ -631,6 +625,7 @@ export class MapBuilder {
     }
 
     exportMap = () => (
+        // ToDo remove default values
         Array.from(this.mapElementComponentStore.entries())
             .filter(([key]) => key.endsWith('props'))
             .map(([, value]) => value)

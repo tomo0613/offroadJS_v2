@@ -22,7 +22,7 @@ export function RangeInput({ id, label, defaultValue, onChange = NOP, ...props }
                 type="range" id={id} name={id}
                 defaultValue={defaultValue} onChange={onInputChange} {...props}
             />
-            <input value={displayValue} onChange={NOP}/>
+            <input value={displayValue} onChange={NOP} tabIndex={-1}/>
         </InputContainer>
     );
 

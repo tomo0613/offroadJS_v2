@@ -9,7 +9,6 @@ module.exports = {
         '@snowpack/plugin-react-refresh',
     ],
     devOptions: {
-        port: 3000,
         open: 'firefox',
     },
 };
