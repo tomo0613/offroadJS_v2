@@ -91,9 +91,9 @@ if (isMobileDevice()) {
     appendScreenKey('bottomLeftPanel', 'ArrowDown', '▼');
     appendScreenKey('bottomRightPanel', 'ArrowLeft', '◄');
     appendScreenKey('bottomRightPanel', 'ArrowRight', '►');
-    appendScreenButton('topRightPanel', 'keyP', 'p');
-    appendScreenButton('topRightPanel', 'keyC', 'c');
-    appendScreenButton('topRightPanel', 'keyR', '⟲');
+    appendScreenButton('topRightPanel', 'KeyP', 'p');
+    appendScreenButton('topRightPanel', 'KeyC', 'c');
+    appendScreenButton('topRightPanel', 'KeyR', '⟲');
 }
 
 function appendScreenInput(containerElementId: string, onEventStart: VoidFnc, onEventEnd: VoidFnc) {
@@ -125,14 +125,14 @@ function appendScreenButton(containerElementId: string, key: string, label: stri
 }
 
 function appendScreenKey(containerElementId: string, key: string, label: string) {
-    const onEventStart = debounce(() => {
+    const onEventStart = () => {
         keysDown.add(key);
         keyDownListeners.forEach(invokeKeyDownHandler);
-    }, 100, true);
-    const onEventEnd = debounce(() => {
+    };
+    const onEventEnd = () => {
         keysDown.delete(key);
         keyDownListeners.forEach(invokeKeyDownHandler);
-    }, 100, true);
+    };
     const button = appendScreenInput(containerElementId, onEventStart, onEventEnd);
     button.textContent = label;
     button.id = key;
