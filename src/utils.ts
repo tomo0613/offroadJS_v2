@@ -111,12 +111,18 @@ export function sliceCubeTexture(img: HTMLImageElement, imgSize = 1024) {
 export function debounce(fnc: VoidFnc, delay = 200, immediate = false) {
     let timeoutId: number;
 
-    return (...args) => {
+    return (...args: unknown[]) => {
         if (immediate && !timeoutId) {
             fnc(...args);
         }
         clearTimeout(timeoutId);
-        timeoutId = window.setTimeout(() => fnc(...args), delay);
+        timeoutId = window.setTimeout(() => {
+            if (!immediate) {
+                fnc(...args);
+            } else {
+                timeoutId = undefined;
+            }
+        }, delay);
     };
 }
 
@@ -126,7 +132,7 @@ export function throttle(fnc: VoidFnc, timeToWaitBeforeNextCall = 200) {
     let now: number;
     let nextScheduledCallTime: number;
 
-    return (...args) => {
+    return (...args: unknown[]) => {
         nextScheduledCallTime = prevCallTime + timeToWaitBeforeNextCall;
         now = performance.now();
 

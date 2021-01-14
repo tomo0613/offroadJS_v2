@@ -7,11 +7,11 @@ import { VehicleState, initStateHandler } from './stateHandler';
 
 const translateAxis = new Vector3(0, 0, 1);
 
-let aTransform: Transform;
-let aWheelBody: Body;
+let tmp_transform: Transform;
+let tmp_wheelBody: Body;
 
-const frontWheelIndices = [0, 1];
-const rearWheelIndices = [2, 3];
+const frontWheelIndices = new Set([0, 1]);
+const rearWheelIndices = new Set([2, 3]);
 
 const { maxEngineForce, maxSteeringValue, steeringSpeed } = cfg.vehicle;
 
@@ -123,20 +123,20 @@ export default class Vehicle {
 
     private update = () => {
         for (let i = 0; i < this.base.wheelInfos.length; i++) {
-            if (frontWheelIndices.includes(i)) {
+            if (frontWheelIndices.has(i)) {
                 this.steerWheel(i);
             }
 
             this.base.updateWheelTransform(i);
 
-            aTransform = this.base.wheelInfos[i].worldTransform;
-            aWheelBody = this.wheelBodies[i];
+            tmp_transform = this.base.wheelInfos[i].worldTransform;
+            tmp_wheelBody = this.wheelBodies[i];
 
-            aWheelBody.position.copy(aTransform.position);
-            aWheelBody.quaternion.copy(aTransform.quaternion);
+            tmp_wheelBody.position.copy(tmp_transform.position);
+            tmp_wheelBody.quaternion.copy(tmp_transform.quaternion);
 
-            this.wheelMeshes[i].position.copy(aWheelBody.position as unknown as Vector3);
-            this.wheelMeshes[i].quaternion.copy(aWheelBody.quaternion as unknown as THREE.Quaternion);
+            this.wheelMeshes[i].position.copy(tmp_wheelBody.position as unknown as Vector3);
+            this.wheelMeshes[i].quaternion.copy(tmp_wheelBody.quaternion as unknown as THREE.Quaternion);
         }
 
         this.chassisMesh.position.copy(this.chassisBody.position as unknown as Vector3);

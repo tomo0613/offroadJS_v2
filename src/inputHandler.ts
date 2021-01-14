@@ -1,7 +1,7 @@
-import { isMobileDevice, NOP } from './utils';
+import { debounce, isMobileDevice, NOP } from './utils';
 
-const navigationKeys = [
-    ' ',
+const navigationKeys = new Set([
+    'Space',
     'PageUp',
     'PageDown',
     'End',
@@ -12,8 +12,17 @@ const navigationKeys = [
     'ArrowDown',
     'Escape',
     'Tab',
-];
+]);
+const controlKeys = new Set([
+    'KeyF', // Ctrl + F – search
+    'KeyH', // Ctrl + H – open browsing history
+    'KeyJ', // Ctrl + J – open download history
+    'KeyO', // Ctrl + O – open a file from your computer
+    'KeyP', // Ctrl + P – print
+    'KeyS', // Ctrl + S – save the page to your computer
+]);
 const keysDown = new Set<KeyboardEvent['key']>();
+let currentKey: KeyboardEvent['key'];
 
 type KeyDownListener = (_keysDown: typeof keysDown) => void;
 type KeyPressListener = (keyPressed: KeyboardEvent['key']) => void;
@@ -50,22 +59,20 @@ function clearKeysDown() {
     keyDownListeners.forEach(invokeKeyDownHandler);
 }
 
-let currentKey: KeyboardEvent['key'];
-
 // eslint-disable-next-line no-multi-assign
-onkeydown = onkeyup = (e) => {
+window.onkeydown = window.onkeyup = (e: KeyboardEvent) => {
     // keep default keyboard navigation in input elements
     if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tabIndex > -1) {
         return;
     }
     // prevent page scroll
-    if (navigationKeys.includes(e.key)) {
+    if (navigationKeys.has(e.code) || (e.ctrlKey && controlKeys.has(e.code))) {
         e.preventDefault();
     }
     if (e.type === 'keydown' && e.repeat) {
         return;
     }
-    currentKey = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+    currentKey = e.code;
 
     if (e.type === 'keyup') {
         keysDown.delete(currentKey);
@@ -84,9 +91,9 @@ if (isMobileDevice()) {
     appendScreenKey('bottomLeftPanel', 'ArrowDown', '▼');
     appendScreenKey('bottomRightPanel', 'ArrowLeft', '◄');
     appendScreenKey('bottomRightPanel', 'ArrowRight', '►');
-    appendScreenButton('topRightPanel', 'P', 'p');
-    appendScreenButton('topRightPanel', 'C', 'c');
-    appendScreenButton('topRightPanel', 'R', '⟲');
+    appendScreenButton('topRightPanel', 'keyP', 'p');
+    appendScreenButton('topRightPanel', 'keyC', 'c');
+    appendScreenButton('topRightPanel', 'keyR', '⟲');
 }
 
 function appendScreenInput(containerElementId: string, onEventStart: VoidFnc, onEventEnd: VoidFnc) {
@@ -107,10 +114,10 @@ function appendScreenInput(containerElementId: string, onEventStart: VoidFnc, on
 }
 
 function appendScreenButton(containerElementId: string, key: string, label: string) {
-    const onEvent = () => {
+    const onEvent = debounce(() => {
         currentKey = key;
         keyPressListeners.forEach(invokeKeyPressHandler);
-    };
+    }, 100, true);
     const button = appendScreenInput(containerElementId, onEvent, NOP);
     button.textContent = label;
     button.id = key;
@@ -118,14 +125,14 @@ function appendScreenButton(containerElementId: string, key: string, label: stri
 }
 
 function appendScreenKey(containerElementId: string, key: string, label: string) {
-    const onEventStart = () => {
+    const onEventStart = debounce(() => {
         keysDown.add(key);
         keyDownListeners.forEach(invokeKeyDownHandler);
-    };
-    const onEventEnd = () => {
+    }, 100, true);
+    const onEventEnd = debounce(() => {
         keysDown.delete(key);
         keyDownListeners.forEach(invokeKeyDownHandler);
-    };
+    }, 100, true);
     const button = appendScreenInput(containerElementId, onEventStart, onEventEnd);
     button.textContent = label;
     button.id = key;

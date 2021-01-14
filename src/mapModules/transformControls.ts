@@ -39,7 +39,7 @@ export function initTransformControls(cameraHandler: CameraHandler, mapBuilder: 
     });
 
     inputHandler.addKeyPressListener((keyPressed) => {
-        if (keyPressed === 'G') {
+        if (keyPressed === 'KeyG') {
             if (transformControls.mode === 'translate') {
                 transformControls.setMode('rotate');
             } else {

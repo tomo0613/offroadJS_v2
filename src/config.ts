@@ -68,7 +68,7 @@ const userPrefCache = prefKeys.reduce((prefCache, prefKey) => {
 
 export default new Proxy(config, {
     get(target, key: ConfigKeys) {
-        return userPrefCache[key] || target[key];
+        return userPrefCache.hasOwnProperty(key) ? userPrefCache[key] : target[key];
     },
     set(target, key: ConfigKeys, value: boolean|number) {
         if (prefKeys.includes(key as (typeof prefKeys)[number])) {

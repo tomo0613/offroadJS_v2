@@ -30,6 +30,7 @@ export class GameProgressManager {
     started = false;
     result = '';
     checkpointsReached = 0;
+    respawnCount = 0;
     private _mapBuilder: MapBuilder;
     checkpointHandler: CheckpointHandler;
     vehicle: Vehicle;
@@ -61,6 +62,7 @@ export class GameProgressManager {
             this.vehicle.chassisBody.angularVelocity.setZero();
             this.vehicle.chassisBody.position.copy(lastCheckpointTriggerBody.position);
             this.vehicle.chassisBody.quaternion.copy(lastCheckpointTriggerBody.quaternion);
+            this.respawnCount++;
         } else {
             this.reset();
         }
@@ -79,6 +81,7 @@ export class GameProgressManager {
     reset() {
         this.started = false;
         this.checkpointsReached = 0;
+        this.respawnCount = 0;
         this.result = '';
         timeDisplay.textContent = timeDisplayDefaultContent;
         this.timer.reset();

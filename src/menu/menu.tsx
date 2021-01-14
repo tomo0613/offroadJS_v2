@@ -62,8 +62,8 @@ function ModalStateController() {
         setHidden(true);
     }
 
-    function openModalOnKeyPress(key: KeyboardEvent['key']) {
-        if (key === 'Tab') {
+    function openModalOnKeyPress(keyPressed: KeyboardEvent['key']) {
+        if (keyPressed === 'Tab') {
             if (hidden) {
                 setHidden(false);
             }

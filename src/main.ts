@@ -171,19 +171,19 @@ if (cfg.fullscreen) {
     });
     inputHandler.addKeyPressListener((keyPressed) => {
         switch (keyPressed) {
-            case 'M':
+            case 'KeyM':
                 toggleEditMode();
                 break;
-            case 'P':
+            case 'KeyP':
                 pause();
                 break;
-            case 'O':
+            case 'KeyO':
                 console.log(cameraHandler.camera.position);
                 break;
-            case 'R':
+            case 'KeyR':
                 gameProgress.respawnAtLastCheckpoint();
                 break;
-            case 'C':
+            case 'KeyC':
                 cameraHandler.switchMode();
                 break;
             default:
@@ -193,14 +193,14 @@ if (cfg.fullscreen) {
         let engineForceDirection: -1|0|1 = 0;
         let steeringDirection: -1|0|1 = 0;
 
-        if (keysDown.has('W') || keysDown.has('ArrowUp')) {
+        if (keysDown.has('KeyW') || keysDown.has('ArrowUp')) {
             engineForceDirection = 1;
-        } else if (keysDown.has('S') || keysDown.has('ArrowDown')) {
+        } else if (keysDown.has('KeyS') || keysDown.has('ArrowDown')) {
             engineForceDirection = -1;
         }
-        if (keysDown.has('A') || keysDown.has('ArrowLeft')) {
+        if (keysDown.has('KeyA') || keysDown.has('ArrowLeft')) {
             steeringDirection = 1;
-        } else if (keysDown.has('D') || keysDown.has('ArrowRight')) {
+        } else if (keysDown.has('KeyD') || keysDown.has('ArrowRight')) {
             steeringDirection = -1;
         }
         if (!gameProgress.started && engineForceDirection) {
@@ -209,7 +209,7 @@ if (cfg.fullscreen) {
 
         vehicle.setEngineForceDirection(engineForceDirection);
         vehicle.setSteeringDirection(steeringDirection);
-        vehicle.setBrakeForce(Number(keysDown.has(' ')));
+        vehicle.setBrakeForce(Number(keysDown.has('Space')));
     });
 
     gameProgress.loadMap();
