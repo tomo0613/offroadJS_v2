@@ -6,7 +6,7 @@ const stateValueLimits = {
     engineForceMin: -cfg.vehicle.maxEngineForce,
     engineForceMax: cfg.vehicle.maxEngineForce,
     brakeForceMin: 0,
-    brakeForceMax: 1,
+    brakeForceMax: cfg.vehicle.maxBrakeForce,
     steeringValueMin: -cfg.vehicle.maxSteeringValue,
     steeringValueMax: cfg.vehicle.maxSteeringValue,
 };

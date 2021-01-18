@@ -91,7 +91,8 @@ export class GameProgressManager {
         lastCheckpointTriggerBody = undefined;
     }
 
-    loadMap(mapName = 'map01') {
+    // loadMap(mapName = 'map01') {
+    loadMap(mapName = 'test') {
         if (!mapCollection.hasOwnProperty(mapName)) {
             console.warn(`invalid map name ${mapName}`);
             return;
@@ -118,6 +119,7 @@ export class GameProgressManager {
         }
 
         timeDisplay.textContent = formatTime(this.timer.time);
+        // '  ' + this.vehicle.base.currentVehicleSpeedKmHour
     }
 
     openModal() {

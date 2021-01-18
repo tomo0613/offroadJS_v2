@@ -209,7 +209,7 @@ if (cfg.fullscreen) {
 
         vehicle.setEngineForceDirection(engineForceDirection);
         vehicle.setSteeringDirection(steeringDirection);
-        vehicle.setBrakeForce(Number(keysDown.has('Space')));
+        vehicle.setBrakeForce(Number(keysDown.has('Space')) as 0|1);
     });
 
     gameProgress.loadMap();

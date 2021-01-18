@@ -10,5 +10,6 @@ module.exports = {
     ],
     devOptions: {
         open: 'firefox',
+        port: 3000,
     },
 };

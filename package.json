@@ -4,10 +4,8 @@
   "keywords": [
     "3d",
     "game",
-    "arcade",
-    "racing",
     "driving",
-    "platform",
+    "platformer",
     "html5",
     "javascript",
     "cannon",
@@ -33,8 +31,8 @@
   "author": "Tomo",
   "license": "GNU GPLv3",
   "dependencies": {
-    "cannon-es": "^0.15.1",
-    "cannon-es-debugger": "0.0.4",
+    "cannon-es": "^0.16.0",
+    "cannon-es-debugger": "^0.1.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "three": "^0.122.0"
@@ -52,7 +50,7 @@
     "eslint-plugin-react": "^7.21.5",
     "rollup": "^2.33.3",
     "rollup-plugin-terser": "^7.0.2",
-    "snowpack": "^2.17.1",
+    "snowpack": "^2.18.5",
     "snowpack-plugin-rollup-bundle": "^0.3.3",
     "typescript": "^4.1.2"
   }

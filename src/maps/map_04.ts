@@ -104,13 +104,13 @@ export default [
     },
     {
         shape: 'box',
-        position_y: 8.17,
+        position_y: 8.576,
         width: 6,
         height: 0.1,
         length: 6,
-        position_x: 10.53,
+        position_x: 10.858,
         position_z: 4,
-        rotation_z: -40,
+        rotation_z: -35,
     },
     {
         shape: 'box',

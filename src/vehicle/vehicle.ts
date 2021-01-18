@@ -13,7 +13,24 @@ let tmp_wheelBody: Body;
 const frontWheelIndices = new Set([0, 1]);
 const rearWheelIndices = new Set([2, 3]);
 
-const { maxEngineForce, maxSteeringValue, steeringSpeed } = cfg.vehicle;
+const { renderWireFrame } = cfg;
+const {
+    maxEngineForce,
+    maxBrakeForce,
+    maxSteeringValue,
+    steeringSpeed,
+    wheelRadius,
+    wheelSuspensionRestLength,
+    wheelSuspensionStiffness,
+    wheelMaxSuspensionTravel,
+    wheelMaxSuspensionForce,
+    wheelDampingCompression,
+    wheelDampingRelaxation,
+    wheelFrictionSlip,
+    wheelForwardAcceleration,
+    wheelSidedAcceleration,
+    wheelRollInfluence,
+} = cfg.vehicle;
 
 export default class Vehicle {
     base: RaycastVehicle;
@@ -40,46 +57,54 @@ export default class Vehicle {
             indexRightAxis: 0,
             indexUpAxis: 1,
         });
-
         const wheelConfig = {
-            radius: 0.4,
-            directionLocal: new Vec3(0, -1, 0),
-            suspensionStiffness: 30,
-            suspensionRestLength: 0.3,
-            frictionSlip: 1.4,
-            dampingRelaxation: 2.3,
-            dampingCompression: 4.4,
-            maxSuspensionForce: 100000,
-            rollInfluence: 0.5,
+            radius: wheelRadius,
+            suspensionRestLength: wheelSuspensionRestLength,
+            suspensionStiffness: wheelSuspensionStiffness,
+            maxSuspensionTravel: wheelMaxSuspensionTravel,
+            maxSuspensionForce: wheelMaxSuspensionForce,
+            dampingCompression: wheelDampingCompression,
+            dampingRelaxation: wheelDampingRelaxation,
+            frictionSlip: wheelFrictionSlip,
+            forwardAcceleration: wheelForwardAcceleration,
+            sideAcceleration: wheelSidedAcceleration,
+            rollInfluence: wheelRollInfluence,
             axleLocal: new Vec3(-1, 0, 0),
+            directionLocal: new Vec3(0, -1, 0),
             chassisConnectionPointLocal: new Vec3(),
-            maxSuspensionTravel: 0.3,
             customSlidingRotationalSpeed: -30,
             useCustomSlidingRotationalSpeed: true,
         };
         const height = 0.3;
-        wheelConfig.chassisConnectionPointLocal.set(0.85, -height, -1.2);
+        const trackWidth = 0.85;
+        // front right
+        wheelConfig.chassisConnectionPointLocal.set(trackWidth, -height, -1.2);
         this.base.addWheel(wheelConfig);
-        wheelConfig.chassisConnectionPointLocal.set(-0.85, -height, -1.2);
+        // front left
+        wheelConfig.chassisConnectionPointLocal.set(-trackWidth, -height, -1.2);
         this.base.addWheel(wheelConfig);
-        wheelConfig.chassisConnectionPointLocal.set(0.85, -height, 1.35);
+        // rear right
+        wheelConfig.chassisConnectionPointLocal.set(trackWidth, -height, 1.4);
         this.base.addWheel(wheelConfig);
-        wheelConfig.chassisConnectionPointLocal.set(-0.85, -height, 1.35);
+        // rear left
+        wheelConfig.chassisConnectionPointLocal.set(-trackWidth, -height, 1.4);
         this.base.addWheel(wheelConfig);
 
         const wheelOrientation = new Quaternion();
         wheelOrientation.setFromAxisAngle(new Vec3(0, 0, 1), Math.PI / 2);
 
-        this.wheelBodies = this.base.wheelInfos.map((wheel) => {
-            const wheelShape = new Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 8);
-            const wheelBody = new Body({
-                type: Body.KINEMATIC,
-                collisionFilterGroup: 0, // turn off collisions
-            });
-            wheelBody.addShape(wheelShape, Vec3.ZERO, wheelOrientation);
+        if (renderWireFrame) {
+            this.wheelBodies = this.base.wheelInfos.map((wheel) => {
+                const wheelShape = new Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 8);
+                const wheelBody = new Body({
+                    type: Body.KINEMATIC,
+                    collisionFilterGroup: 0, // turn off collisions
+                });
+                wheelBody.addShape(wheelShape, Vec3.ZERO, wheelOrientation);
 
-            return wheelBody;
-        });
+                return wheelBody;
+            });
+        }
 
         setMaterials(wheelMesh, chassisMesh);
         const wheelMeshes = {
@@ -104,8 +129,10 @@ export default class Vehicle {
     }
 
     addToWorld(world: World) {
-        this.wheelBodies.forEach((wheelBody) => world.addBody(wheelBody));
         this.base.addToWorld(world);
+        if (renderWireFrame) {
+            this.wheelBodies.forEach((wheelBody) => world.addBody(wheelBody));
+        }
 
         world.addEventListener('postStep', this.update);
 
@@ -122,6 +149,8 @@ export default class Vehicle {
     }
 
     private update = () => {
+        // const { currentVehicleSpeedKmHour: speed } = this.base;
+        // ToDo shift // spd 45
         for (let i = 0; i < this.base.wheelInfos.length; i++) {
             if (frontWheelIndices.has(i)) {
                 this.steerWheel(i);
@@ -130,13 +159,18 @@ export default class Vehicle {
             this.base.updateWheelTransform(i);
 
             tmp_transform = this.base.wheelInfos[i].worldTransform;
-            tmp_wheelBody = this.wheelBodies[i];
+            this.wheelMeshes[i].position.copy(tmp_transform.position as unknown as Vector3);
+            this.wheelMeshes[i].quaternion.copy(tmp_transform.quaternion as unknown as THREE.Quaternion);
 
-            tmp_wheelBody.position.copy(tmp_transform.position);
-            tmp_wheelBody.quaternion.copy(tmp_transform.quaternion);
+            if (renderWireFrame) {
+                tmp_wheelBody = this.wheelBodies[i];
 
-            this.wheelMeshes[i].position.copy(tmp_wheelBody.position as unknown as Vector3);
-            this.wheelMeshes[i].quaternion.copy(tmp_wheelBody.quaternion as unknown as THREE.Quaternion);
+                tmp_wheelBody.position.copy(tmp_transform.position);
+                tmp_wheelBody.quaternion.copy(tmp_transform.quaternion);
+
+                this.wheelMeshes[i].position.copy(tmp_wheelBody.position as unknown as Vector3);
+                this.wheelMeshes[i].quaternion.copy(tmp_wheelBody.quaternion as unknown as THREE.Quaternion);
+            }
         }
 
         this.chassisMesh.position.copy(this.chassisBody.position as unknown as Vector3);
@@ -152,24 +186,24 @@ export default class Vehicle {
             this.state.engineForce *= 0.9;
         }
 
-        frontWheelIndices.forEach(this.applyEngineForceOnFrontWheels);
-        rearWheelIndices.forEach(this.applyEngineForceOnRearWheels);
+        frontWheelIndices.forEach(this.applyEngineForceOnFrontWheel);
+        rearWheelIndices.forEach(this.applyEngineForceOnRearWheel);
     }
 
-    private applyEngineForceOnFrontWheels = (wheelIndex: number) => {
+    private applyEngineForceOnFrontWheel = (wheelIndex: number) => {
         this.base.applyEngineForce(this.state.engineForce * 0.6, wheelIndex);
     }
 
-    private applyEngineForceOnRearWheels = (wheelIndex: number) => {
+    private applyEngineForceOnRearWheel = (wheelIndex: number) => {
         this.base.applyEngineForce(this.state.engineForce * 0.4, wheelIndex);
     }
 
-    setBrakeForce(brakeForce: number) {
-        this.state.brakeForce = brakeForce;
-        rearWheelIndices.forEach(this.brakeWheels);
+    setBrakeForce(brakeForceFactor: 0|1) {
+        this.state.brakeForce = maxBrakeForce * brakeForceFactor;
+        rearWheelIndices.forEach(this.brakeWheel);
     }
 
-    private brakeWheels = (wheelIndex: number) => {
+    private brakeWheel = (wheelIndex: number) => {
         this.base.setBrake(this.state.brakeForce, wheelIndex);
     }
 
