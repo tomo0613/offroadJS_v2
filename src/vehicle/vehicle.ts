@@ -10,14 +10,16 @@ const translateAxis = new Vector3(0, 0, 1);
 let tmp_transform: Transform;
 let tmp_wheelBody: Body;
 
-const frontWheelIndices = new Set([0, 1]);
+const frontRightWheelIndex = 0;
+const frontLeftWheelIndex = 1;
+const frontWheelIndices = new Set([frontRightWheelIndex, frontLeftWheelIndex]);
 const rearWheelIndices = new Set([2, 3]);
 
 const { renderWireFrame } = cfg;
 const {
     maxEngineForce,
     maxBrakeForce,
-    maxSteeringValue,
+    maxSteeringAngle,
     steeringSpeed,
     wheelRadius,
     wheelSuspensionRestLength,
@@ -41,6 +43,8 @@ export default class Vehicle {
     state: VehicleState;
     initialPosition = new Vec3();
     initialRotation = new Quaternion();
+    trackWidth = 0;
+    wheelBase = 0;
 
     constructor(chassisMesh: Object3D, wheelMesh: Object3D) {
         const chassisBaseShape = new Box(new Vec3(0.9, 0.4, 2.1));
@@ -76,24 +80,26 @@ export default class Vehicle {
             useCustomSlidingRotationalSpeed: true,
         };
         const height = 0.3;
-        const trackWidth = 0.85;
+        const halfTrackWidth = 0.85;
+        this.trackWidth = halfTrackWidth * 2;
+        this.wheelBase = 1.2 + 1.4;
         // front right
-        wheelConfig.chassisConnectionPointLocal.set(trackWidth, -height, -1.2);
+        wheelConfig.chassisConnectionPointLocal.set(halfTrackWidth, -height, -1.2);
         this.base.addWheel(wheelConfig);
         // front left
-        wheelConfig.chassisConnectionPointLocal.set(-trackWidth, -height, -1.2);
+        wheelConfig.chassisConnectionPointLocal.set(-halfTrackWidth, -height, -1.2);
         this.base.addWheel(wheelConfig);
         // rear right
-        wheelConfig.chassisConnectionPointLocal.set(trackWidth, -height, 1.4);
+        wheelConfig.chassisConnectionPointLocal.set(halfTrackWidth, -height, 1.4);
         this.base.addWheel(wheelConfig);
         // rear left
-        wheelConfig.chassisConnectionPointLocal.set(-trackWidth, -height, 1.4);
+        wheelConfig.chassisConnectionPointLocal.set(-halfTrackWidth, -height, 1.4);
         this.base.addWheel(wheelConfig);
 
-        const wheelOrientation = new Quaternion();
-        wheelOrientation.setFromAxisAngle(new Vec3(0, 0, 1), Math.PI / 2);
-
         if (renderWireFrame) {
+            const wheelOrientation = new Quaternion();
+            wheelOrientation.setFromAxisAngle(Vec3.UNIT_Z, Math.PI / 2);
+
             this.wheelBodies = this.base.wheelInfos.map((wheel) => {
                 const wheelShape = new Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 8);
                 const wheelBody = new Body({
@@ -114,8 +120,8 @@ export default class Vehicle {
             rear_l: wheelMesh.clone(),
         };
         // mirror meshes suffixed with '_r'
-        const axes = ['x', 'y', 'z'];
-        Object.keys(wheelMeshes).forEach((wheelId) => {
+        const axes = ['x', 'y', 'z'] as const;
+        Object.keys(wheelMeshes).forEach((wheelId: keyof typeof wheelMeshes) => {
             if (wheelId.endsWith('_r')) {
                 axes.forEach((axis) => {
                     wheelMeshes[wheelId].scale[axis] *= -1;
@@ -150,12 +156,10 @@ export default class Vehicle {
 
     private update = () => {
         // const { currentVehicleSpeedKmHour: speed } = this.base;
-        // ToDo shift // spd 45
-        for (let i = 0; i < this.base.wheelInfos.length; i++) {
-            if (frontWheelIndices.has(i)) {
-                this.steerWheel(i);
-            }
+        // distributeEngineForce
+        this.steerWheels();
 
+        for (let i = 0; i < this.base.wheelInfos.length; i++) {
             this.base.updateWheelTransform(i);
 
             tmp_transform = this.base.wheelInfos[i].worldTransform;
@@ -208,26 +212,66 @@ export default class Vehicle {
     }
 
     setSteeringDirection(steeringDirection: -1|0|1) {
-        this.state.steeringValue = maxSteeringValue * steeringDirection;
+        this.state.steeringAngle = maxSteeringAngle * steeringDirection;
     }
 
-    private steerWheel = (wheelIndex: number) => {
-        const { steering: currentSteeringValue } = this.base.wheelInfos[wheelIndex];
-        const { steeringValue } = this.state;
+    private steerWheels = () => {
+        const currentSteeringAngle = (
+            this.base.wheelInfos[frontRightWheelIndex].steering + this.base.wheelInfos[frontLeftWheelIndex].steering
+        ) / 2;
+        const { steeringAngle: targetSteeringAngle } = this.state;
+        let steeringAngle = 0;
 
-        if (currentSteeringValue < steeringValue) {
+        if (currentSteeringAngle < targetSteeringAngle) {
             // steer left
-            this.base.setSteeringValue(Math.min(steeringValue, currentSteeringValue + steeringSpeed), wheelIndex);
-        } else if (currentSteeringValue > steeringValue) {
+            steeringAngle = Math.min(targetSteeringAngle, currentSteeringAngle + steeringSpeed);
+        } else if (currentSteeringAngle > targetSteeringAngle) {
             // steer right
-            this.base.setSteeringValue(Math.max(steeringValue, currentSteeringValue - steeringSpeed), wheelIndex);
+            steeringAngle = Math.max(targetSteeringAngle, currentSteeringAngle - steeringSpeed);
+        } else {
+            return;
         }
+        /**
+         * Ackermann steering
+         * https://www.xarg.org/book/kinematics/ackerman-steering/
+         */
+        const { wheelBase, trackWidth } = this;
+        const wheelBase_x2 = wheelBase * 2;
+        const steeringAngle_sin = Math.sin(steeringAngle);
+        const steeringAngle_cos = Math.cos(steeringAngle);
+
+        const steeringAngleLeft = Math.atan(
+            (wheelBase_x2 * steeringAngle_sin) / (wheelBase_x2 * steeringAngle_cos - trackWidth * steeringAngle_sin),
+        );
+        const steeringAngleRight = Math.atan(
+            (wheelBase_x2 * steeringAngle_sin) / (wheelBase_x2 * steeringAngle_cos + trackWidth * steeringAngle_sin),
+        );
+        this.base.setSteeringValue(steeringAngleLeft, frontLeftWheelIndex);
+        this.base.setSteeringValue(steeringAngleRight, frontRightWheelIndex);
     }
 
     resetPosition() {
         this.chassisBody.position.copy(this.initialPosition);
         this.chassisBody.quaternion.copy(this.initialRotation);
-        this.chassisBody.velocity.set(0, 0, 0);
-        this.chassisBody.angularVelocity.set(0, 0, 0);
+        this.chassisBody.velocity.setZero();
+        this.chassisBody.angularVelocity.setZero();
     }
+}
+
+function ackermann1(steeringAngle: number, wheelBase: number, trackWidth: number) {
+    // https://www.xarg.org/book/kinematics/ackerman-steering/
+    const wheelBase_x2 = wheelBase * 2;
+    const steeringAngle_sin = Math.sin(steeringAngle);
+    const steeringAngle_cos = Math.cos(steeringAngle);
+
+    const steeringAngleInner = Math.atan(
+        (wheelBase_x2 * steeringAngle_sin) / (wheelBase_x2 * steeringAngle_cos - trackWidth * steeringAngle_sin),
+    );
+    const steeringAngleOuter = Math.atan(
+        (wheelBase_x2 * steeringAngle_sin) / (wheelBase_x2 * steeringAngle_cos + trackWidth * steeringAngle_sin),
+    );
+}
+
+function ctg(x: number) {
+    return 1 / Math.tan(x);
 }

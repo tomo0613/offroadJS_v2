@@ -7,14 +7,14 @@ const stateValueLimits = {
     engineForceMax: cfg.vehicle.maxEngineForce,
     brakeForceMin: 0,
     brakeForceMax: cfg.vehicle.maxBrakeForce,
-    steeringValueMin: -cfg.vehicle.maxSteeringValue,
-    steeringValueMax: cfg.vehicle.maxSteeringValue,
+    steeringAngleMin: -cfg.vehicle.maxSteeringAngle,
+    steeringAngleMax: cfg.vehicle.maxSteeringAngle,
 };
 
 const defaultState = {
     engineForce: 0,
     brakeForce: 0,
-    steeringValue: 0,
+    steeringAngle: 0,
 };
 
 export type VehicleState = typeof defaultState;

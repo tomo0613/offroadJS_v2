@@ -37,8 +37,8 @@ const config = {
     },
     vehicle: {
         mass: 30,
-        steeringSpeed: 0.03,
-        maxSteeringValue: 0.8,
+        steeringSpeed: 0.05,
+        maxSteeringAngle: 0.7,
         maxBrakeForce: 22,
         maxEngineForce: 220,
         cameraMountPosition: {
