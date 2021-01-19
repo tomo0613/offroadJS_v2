@@ -195,11 +195,11 @@ export default class Vehicle {
     }
 
     private applyEngineForceOnFrontWheel = (wheelIndex: number) => {
-        this.base.applyEngineForce(this.state.engineForce * 0.6, wheelIndex);
+        this.base.applyEngineForce(this.state.engineForce * 0.5, wheelIndex);
     }
 
     private applyEngineForceOnRearWheel = (wheelIndex: number) => {
-        this.base.applyEngineForce(this.state.engineForce * 0.4, wheelIndex);
+        this.base.applyEngineForce(this.state.engineForce * 0.5, wheelIndex);
     }
 
     setBrakeForce(brakeForceFactor: 0|1) {
