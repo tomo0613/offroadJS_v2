@@ -10,13 +10,9 @@ const translateAxis = new Vector3(0, 0, 1);
 let tmp_transform: Transform;
 let tmp_wheelBody: Body;
 
-const frontRightWheelIndex = 0;
-const frontLeftWheelIndex = 1;
-const frontWheelIndices = new Set([frontRightWheelIndex, frontLeftWheelIndex]);
-const rearWheelIndices = new Set([2, 3]);
-
 const { renderWireFrame } = cfg;
 const {
+    torqueSplitRatio,
     maxEngineForce,
     maxBrakeForce,
     maxSteeringAngle,
@@ -34,6 +30,18 @@ const {
     wheelRollInfluence,
 } = cfg.vehicle;
 
+const frontRightWheelIndex = 0;
+const frontLeftWheelIndex = 1;
+const rearRightWheelIndex = 2;
+const rearLeftWheelIndex = 3;
+const rearWheelIndices = new Set([rearRightWheelIndex, rearLeftWheelIndex]);
+const [torqueSplitFront, torqueSplitRear] = torqueSplitRatio;
+const defaultTorqueDistribution = [
+    torqueSplitFront / 2, torqueSplitFront / 2,
+    torqueSplitRear / 2, torqueSplitRear / 2,
+];
+const torqueDistribution = [...defaultTorqueDistribution];
+
 export default class Vehicle {
     base: RaycastVehicle;
     chassisBody: Body;
@@ -43,6 +51,7 @@ export default class Vehicle {
     state: VehicleState;
     initialPosition = new Vec3();
     initialRotation = new Quaternion();
+    currentSteeringAngle = 0;
     trackWidth = 0;
     wheelBase = 0;
 
@@ -137,7 +146,7 @@ export default class Vehicle {
     addToWorld(world: World) {
         this.base.addToWorld(world);
         if (renderWireFrame) {
-            this.wheelBodies.forEach((wheelBody) => world.addBody(wheelBody));
+            this.wheelBodies.forEach(world.addBody, world);
         }
 
         world.addEventListener('postStep', this.update);
@@ -155,11 +164,12 @@ export default class Vehicle {
     }
 
     private update = () => {
-        // const { currentVehicleSpeedKmHour: speed } = this.base;
-        // distributeEngineForce
         this.steerWheels();
+        // ToDo implement torque vectoring
+        this.applyWheelSlipReduction();
 
         for (let i = 0; i < this.base.wheelInfos.length; i++) {
+            this.base.applyEngineForce(this.state.engineForce * torqueDistribution[i] * 0.01, i);
             this.base.updateWheelTransform(i);
 
             tmp_transform = this.base.wheelInfos[i].worldTransform;
@@ -189,17 +199,45 @@ export default class Vehicle {
             // reverse
             this.state.engineForce *= 0.9;
         }
-
-        frontWheelIndices.forEach(this.applyEngineForceOnFrontWheel);
-        rearWheelIndices.forEach(this.applyEngineForceOnRearWheel);
     }
 
-    private applyEngineForceOnFrontWheel = (wheelIndex: number) => {
-        this.base.applyEngineForce(this.state.engineForce * 0.5, wheelIndex);
-    }
+    private applyWheelSlipReduction = () => {
+        const frontLeftWheelHasGrip = this.wheelHasGrip(frontLeftWheelIndex);
+        const frontRightWheelHasGrip = this.wheelHasGrip(frontRightWheelIndex);
+        const rearLeftWheelHasGrip = this.wheelHasGrip(rearLeftWheelIndex);
+        const rearRightWheelHasGrip = this.wheelHasGrip(rearRightWheelIndex);
 
-    private applyEngineForceOnRearWheel = (wheelIndex: number) => {
-        this.base.applyEngineForce(this.state.engineForce * 0.5, wheelIndex);
+        if (frontLeftWheelHasGrip && !rearLeftWheelHasGrip && torqueDistribution[rearLeftWheelIndex] > 1) {
+            torqueDistribution[frontLeftWheelIndex] += 1;
+            torqueDistribution[rearLeftWheelIndex] -= 1;
+        } else if (!frontLeftWheelHasGrip && rearLeftWheelHasGrip && torqueDistribution[frontLeftWheelIndex] > 1) {
+            torqueDistribution[frontLeftWheelIndex] -= 1;
+            torqueDistribution[rearLeftWheelIndex] += 1;
+        } else {
+            const diffSign = Math.sign(
+                torqueDistribution[frontLeftWheelIndex] - defaultTorqueDistribution[frontLeftWheelIndex],
+            );
+            if (diffSign) {
+                torqueDistribution[frontLeftWheelIndex] -= diffSign * 1;
+                torqueDistribution[rearLeftWheelIndex] += diffSign * 1;
+            }
+        }
+
+        if (frontRightWheelHasGrip && !rearRightWheelHasGrip && torqueDistribution[rearRightWheelIndex] > 1) {
+            torqueDistribution[frontRightWheelIndex] += 1;
+            torqueDistribution[rearRightWheelIndex] -= 1;
+        } else if (!frontRightWheelHasGrip && rearRightWheelHasGrip && torqueDistribution[frontRightWheelIndex] > 1) {
+            torqueDistribution[frontRightWheelIndex] -= 1;
+            torqueDistribution[rearRightWheelIndex] += 1;
+        } else {
+            const diffSign = Math.sign(
+                torqueDistribution[frontRightWheelIndex] - defaultTorqueDistribution[frontRightWheelIndex],
+            );
+            if (diffSign) {
+                torqueDistribution[frontRightWheelIndex] -= diffSign * 1;
+                torqueDistribution[rearRightWheelIndex] += diffSign * 1;
+            }
+        }
     }
 
     setBrakeForce(brakeForceFactor: 0|1) {
@@ -216,9 +254,7 @@ export default class Vehicle {
     }
 
     private steerWheels = () => {
-        const currentSteeringAngle = (
-            this.base.wheelInfos[frontRightWheelIndex].steering + this.base.wheelInfos[frontLeftWheelIndex].steering
-        ) / 2;
+        const { currentSteeringAngle } = this;
         const { steeringAngle: targetSteeringAngle } = this.state;
         let steeringAngle = 0;
 
@@ -248,6 +284,7 @@ export default class Vehicle {
         );
         this.base.setSteeringValue(steeringAngleLeft, frontLeftWheelIndex);
         this.base.setSteeringValue(steeringAngleRight, frontRightWheelIndex);
+        this.currentSteeringAngle = steeringAngle;
     }
 
     resetPosition() {
@@ -256,22 +293,8 @@ export default class Vehicle {
         this.chassisBody.velocity.setZero();
         this.chassisBody.angularVelocity.setZero();
     }
-}
 
-function ackermann1(steeringAngle: number, wheelBase: number, trackWidth: number) {
-    // https://www.xarg.org/book/kinematics/ackerman-steering/
-    const wheelBase_x2 = wheelBase * 2;
-    const steeringAngle_sin = Math.sin(steeringAngle);
-    const steeringAngle_cos = Math.cos(steeringAngle);
-
-    const steeringAngleInner = Math.atan(
-        (wheelBase_x2 * steeringAngle_sin) / (wheelBase_x2 * steeringAngle_cos - trackWidth * steeringAngle_sin),
-    );
-    const steeringAngleOuter = Math.atan(
-        (wheelBase_x2 * steeringAngle_sin) / (wheelBase_x2 * steeringAngle_cos + trackWidth * steeringAngle_sin),
-    );
-}
-
-function ctg(x: number) {
-    return 1 / Math.tan(x);
+    wheelHasGrip = (wheelIndex: number) => (
+        this.base.wheelInfos[wheelIndex].isInContact && !this.base.wheelInfos[wheelIndex].sliding
+    )
 }

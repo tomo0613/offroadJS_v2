@@ -1,9 +1,8 @@
 export default [
     {
         type: 'vehicle',
-        position_x: 0,
         position_y: 1,
-        position_z: 0,
+        rotation_y: -1,
     },
     {
         shape: 'box',

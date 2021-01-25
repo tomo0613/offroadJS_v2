@@ -10,8 +10,9 @@ export default [
         shape: 'box',
         width: 15,
         height: 0.1,
-        length: 15,
+        length: 17,
         position_x: 6,
+        position_z: 2,
     },
     {
         shape: 'box',

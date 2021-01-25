@@ -91,8 +91,7 @@ export class GameProgressManager {
         lastCheckpointTriggerBody = undefined;
     }
 
-    // loadMap(mapName = 'map01') {
-    loadMap(mapName = 'test') {
+    loadMap(mapName = 'map01') {
         if (!mapCollection.hasOwnProperty(mapName)) {
             console.warn(`invalid map name ${mapName}`);
             return;

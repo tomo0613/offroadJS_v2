@@ -41,6 +41,7 @@ const config = {
         maxSteeringAngle: 0.7,
         maxBrakeForce: 22,
         maxEngineForce: 220,
+        torqueSplitRatio: [50, 50],
         cameraMountPosition: {
             x: 0,
             y: 4,
