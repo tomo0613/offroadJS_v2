@@ -24,7 +24,6 @@ const uiTexts = {
     rotationLabel: 'rotation',
 
     transformPanelLabel: 'Transform',
-    sizeLabel: 'size:',
     widthLabel: 'width:',
     heightLabel: 'height:',
     lengthLabel: 'length:',
@@ -37,6 +36,7 @@ const uiTexts = {
     segmentCountLabel: 'segmentCount:',
     offsetLabel: 'offset:',
     radiusLabel: 'radius:',
+    angleLabel: 'angle:',
 
     cloneButtonLabel: 'clone',
     removeButtonLabel: 'remove',

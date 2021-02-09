@@ -7,7 +7,7 @@ import { MapBuilderContext } from './editor';
 
 const { createButtonLabel } = uiTexts;
 const mapElementShapeSelectorOptionList = [
-    'box', 'cylinder', 'ramp', 'sphere', 'triangularRamp', 'loop', 'slopeTransition',
+    'box', 'cylinder', 'ramp', 'sphere', 'triangularRamp', 'triangularPrism', 'loop', 'slopeTransition', 'cantedCurve',
 ] as MapElementShape[];
 
 export function MapBuilderActionButtons() {

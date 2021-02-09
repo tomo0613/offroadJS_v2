@@ -40,6 +40,8 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
     ],
     rules: {
+        'curly': [ERROR, 'all'],
+        'brace-style': [ERROR, '1tbs', { allowSingleLine: false }],
         'sort-imports': DISABLED,
         'func-names': [WARNING, 'as-needed'],
         'import/extensions': [ERROR, 'never'],

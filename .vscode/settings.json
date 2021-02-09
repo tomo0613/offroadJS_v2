@@ -9,7 +9,8 @@
         "lerp",
         "raycaster",
         "skybox",
-        "vadd"
+        "vadd",
+        "vsub"
     ],
     "typescript.tsdk": "node_modules\\typescript\\lib"
 }

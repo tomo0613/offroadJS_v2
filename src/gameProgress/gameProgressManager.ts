@@ -118,7 +118,6 @@ export class GameProgressManager {
         }
 
         timeDisplay.textContent = formatTime(this.timer.time);
-        // '  ' + this.vehicle.base.currentVehicleSpeedKmHour
     }
 
     openModal() {

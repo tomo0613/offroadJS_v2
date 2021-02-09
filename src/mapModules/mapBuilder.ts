@@ -9,12 +9,7 @@ import { degToRad, NOP } from '../utils';
 import { AnimationProps, defineAnimationProps } from './animatedMapElementHelper';
 import { getBaseElementComponents } from './baseMapElementComponents';
 import {
-    compoundShapes,
-    getCompoundElementChildrenPropertyList,
-    loopPropKeys,
-    LoopProps,
-    slopeTransitionPropKeys,
-    SlopeTransitionProps,
+    compoundShapes, getCompoundElementChildrenPropertyList, LoopProps, SlopeTransitionProps, CantedCurveProps,
 } from './compoundMapElementComponents';
 
 export enum MapBuilderEvent {
@@ -45,8 +40,10 @@ export enum MapElementShape {
     ramp = 'ramp',
     sphere = 'sphere',
     triangularRamp = 'triangularRamp',
+    triangularPrism = 'triangularPrism',
     loop = 'loop',
     slopeTransition = 'slopeTransition',
+    cantedCurve = 'cantedCurve',
 }
 
 export interface MapElementOrientationProps {
@@ -74,7 +71,7 @@ interface BoxShapeProps {
 }
 
 interface SphereShapeProps {
-    size?: number;
+    radius?: number;
 }
 
 interface CylinderShapeProps {
@@ -82,6 +79,10 @@ interface CylinderShapeProps {
     radiusBottom?: number;
     height?: number;
     sides?: number;
+}
+
+interface PrismShapeProps extends BoxShapeProps {
+    offset?: number;
 }
 
 interface EventTriggerProps {
@@ -105,13 +106,15 @@ export interface TriggeredEvent {
 type MapElementId = string;
 type BoxProps = CommonMapElementProps & BoxShapeProps;
 type CylinderProps = CommonMapElementProps & CylinderShapeProps;
+type PrismProps = CommonMapElementProps & PrismShapeProps;
 type SphereProps = CommonMapElementProps & SphereShapeProps;
-type CompoundProps = LoopProps & SlopeTransitionProps;
-export type MapElementProps = BoxProps & CylinderProps & SphereProps & EventTriggerProps & CompoundProps;
+type CompoundProps = LoopProps & SlopeTransitionProps & CantedCurveProps;
+export type MapElementProps = BoxProps & CylinderProps & SphereProps & PrismProps & EventTriggerProps & CompoundProps;
 export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps|AnimationProps>;
 
 export const vehicleMapElementId = 'vehicle_0';
-const defaultPlatformColor = 0xD6D6D6;
+// const defaultPlatformColor = 0xD6D6D6;
+const defaultPlatformColor = 0xA0A0A0;
 const dynamicPlatformColor = 0x95C0E5;
 const kinematicPlatformColor = 0x9FA8BB;
 const triggerOutlieColor = 0xCD72D3;
@@ -490,29 +493,8 @@ export class MapBuilder {
         const mapElementBody = this.getBodyFromStore(id);
         const mapElementProps = this.getPropsFromStore(id);
 
-        switch (mapElementProps.shape) {
-            case MapElementShape.box:
-            case MapElementShape.ramp:
-            case MapElementShape.triangularRamp:
-                Object.assign(mapElementProps, Object.pick(transformProps, 'width', 'height', 'length'));
-                break;
-            case MapElementShape.cylinder:
-                Object.assign(
-                    mapElementProps,
-                    Object.pick(transformProps, 'radiusTop', 'radiusBottom', 'height', 'sides'),
-                );
-                break;
-            case MapElementShape.sphere:
-                Object.assign(mapElementProps, Object.pick(transformProps, 'size'));
-                break;
-            case MapElementShape.loop:
-                Object.assign(mapElementProps, Object.pick(transformProps, ...loopPropKeys));
-                break;
-            case MapElementShape.slopeTransition:
-                Object.assign(mapElementProps, Object.pick(transformProps, ...slopeTransitionPropKeys));
-                break;
-            default:
-        }
+        Object.assign(mapElementProps, { ...transformProps });
+
         /*  remove current shape(s)  */
         mapElementBody.shapes.length = 0;
         mapElementBody.shapeOffsets.length = 0;
