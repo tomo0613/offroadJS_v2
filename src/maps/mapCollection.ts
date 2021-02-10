@@ -2,12 +2,14 @@ import map01 from './map_01';
 import map02 from './map_02';
 import map03 from './map_03';
 import map04 from './map_04';
+import map05 from './map_05';
 
 export const mapCollection = {
     map01,
     map02,
     map03,
     map04,
+    map05,
     test: [
         {
             type: 'vehicle',
@@ -30,7 +32,7 @@ export const mapCollection = {
             position_y: 1,
         },
         // {
-        //     shape: 'triangularRamp',
+        //     shape: 'tetrahedron',
         //     width: 2,
         //     length: 2,
         //     position_x: -2.02,

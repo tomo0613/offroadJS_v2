@@ -32,9 +32,8 @@ const {
 const editablePropertiesByShape: Record<MapElementShape, (keyof MapElementProps)[]> = {
     box: ['width', 'height', 'length'],
     cylinder: ['height', 'radiusTop', 'radiusBottom', 'sides'],
-    ramp: ['width', 'height', 'length'],
     sphere: ['radius'],
-    triangularRamp: ['width', 'height', 'length'],
+    tetrahedron: ['width', 'height', 'length'],
     triangularPrism: ['width', 'height', 'length', 'offset'],
     loop: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'segmentPositionOffset', 'radius'],
     slopeTransition: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'angle'],

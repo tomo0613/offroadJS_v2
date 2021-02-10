@@ -49,7 +49,7 @@ export function initTransformControls(cameraHandler: CameraHandler, mapBuilder: 
     });
 
     inputHandler.addKeyDownListener((keysDown) => {
-        if (keysDown.has('Shift')) {
+        if (keysDown.has('ShiftLeft')) {
             transformControls.setTranslationSnap(1);
         } else {
             transformControls.setTranslationSnap(null);

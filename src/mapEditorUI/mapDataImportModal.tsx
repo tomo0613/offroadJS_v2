@@ -17,7 +17,7 @@ const importTextAreaPlaceholder = `[
         "length": 20
     },
     {
-        "shape": "ramp",
+        "shape": "triangularPrism",
         "width": 3,
         "height": 1,
         "length": 3,
@@ -35,13 +35,13 @@ export function MapDataImportModal({ closeModal }: { closeModal: VoidFnc }) {
             <div className="modal__body">
                 <textarea ref={inputRef} placeholder={importTextAreaPlaceholder}/>
             </div>
-            <button onClick={executeImport}>
+            <button onClick={executeImportAction}>
                 {importButtonText}
             </button>
         </>
     );
 
-    function executeImport() {
+    function executeImportAction() {
         const mapDataString = inputRef.current.value;
         let mapData: MapElementProps[];
 

@@ -10,7 +10,7 @@ export interface Icon3dList {
     finish: Mesh;
 }
 
-const checkpointCountRegExp = /checkpointCount:(\d+)/i;
+const checkpointCountRegExp = /checkpointCount:\w*(\d+)/i;
 
 const PIx2 = Math.PI * 2;
 const iconRotationSpeed = 0.02;

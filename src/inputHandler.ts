@@ -117,7 +117,7 @@ function appendScreenButton(containerElementId: string, key: string, label: stri
     const onEvent = debounce(() => {
         currentKey = key;
         keyPressListeners.forEach(invokeKeyPressHandler);
-    }, 100, true);
+    }, 200, true);
     const button = appendScreenInput(containerElementId, onEvent, NOP);
     button.textContent = label;
     button.id = key;

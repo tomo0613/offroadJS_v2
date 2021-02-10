@@ -12,16 +12,16 @@ export function MapDataActionButtons() {
 
     return (
         <div>
-            <button onClick={() => { setActiveModal('import'); }}>
+            <button onClick={openImportModalAction}>
                 {importButtonLabel}
             </button>
-            <button onClick={() => { setActiveModal('export'); }}>
+            <button onClick={openExportModalAction}>
                 {exportButtonLabel}
             </button>
             {activeModal && (
-                <Modal onClose={closeModal}>
+                <Modal onClose={closeModalAction}>
                     {activeModal === 'import' && (
-                        <MapDataImportModal closeModal={closeModal}/>
+                        <MapDataImportModal closeModal={closeModalAction}/>
                     )}
                     {activeModal === 'export' && (
                         <MapDataExportModal/>
@@ -31,7 +31,15 @@ export function MapDataActionButtons() {
         </div>
     );
 
-    function closeModal() {
+    function openImportModalAction() {
+        setActiveModal('import');
+    }
+
+    function openExportModalAction() {
+        setActiveModal('export');
+    }
+
+    function closeModalAction() {
         setActiveModal(undefined);
     }
 }

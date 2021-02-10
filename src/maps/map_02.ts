@@ -15,13 +15,13 @@ export default [
         position_z: 10,
     },
     {
-        shape: 'ramp',
+        shape: 'triangularPrism',
+        width: 4,
+        length: 4,
+        offset: -2,
         position_x: 8,
         position_y: 1,
         position_z: 7,
-        width: 2,
-        height: 1,
-        length: 2,
     },
     {
         type: 'trigger',

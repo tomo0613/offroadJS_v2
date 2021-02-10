@@ -21,16 +21,12 @@ export function getBaseElementComponents(props: MapElementProps): [Shape, Buffer
             shape = getCylinderShape(radiusTop, radiusBottom, height, sides);
             geometry = getCylinderGeometry(radiusTop, radiusBottom, height, sides);
             break;
-        case MapElementShape.ramp:
-            shape = getRampShape(width, height, length);
-            geometry = getConvexGeometryByShape(shape as ConvexPolyhedron);
-            break;
         case MapElementShape.sphere:
             shape = getSphereShape(radius);
             geometry = getSphereGeometry(radius);
             break;
-        case MapElementShape.triangularRamp:
-            shape = getTriangularRampShape(width, height, length);
+        case MapElementShape.tetrahedron:
+            shape = getTetrahedronShape(width, height, length);
             geometry = getConvexGeometryByShape(shape as ConvexPolyhedron);
             break;
         case MapElementShape.triangularPrism:
@@ -74,44 +70,22 @@ function getSphereShape(radius = 1) {
     return new Sphere(radius);
 }
 
-/*  Ramp (triangular prism) */
+/* TriangularPrism & Tetrahedron */
 function getConvexGeometryByShape(convexShape: ConvexPolyhedron) {
     return new ConvexBufferGeometry(convexShape.vertices.map(({ x, y, z }) => new Vector3(x, y, z)));
 }
 
-function getRampShape(width = 1, height = 1, length = 1) {
-    /*  List of vertices that can be assigned to a face  */
-    const vertices = [
-        new Vec3(-width, -height, -length),
-        new Vec3(width, -height, -length),
-        new Vec3(width, height, -length),
-        new Vec3(-width, height, -length),
-        new Vec3(-width, -height, length),
-        new Vec3(width, -height, length),
-    ];
-    /*
-     * List of vertex index groups that are assigned to individual faces
-     * ! CCW order is important for correct face normals !
-     */
-    const faces = [
-        [3, 2, 1, 0],
-        [4, 5, 2, 3],
-        [5, 4, 0, 1],
-        [0, 4, 3],
-        [1, 2, 5],
-    ];
-
-    return new ConvexPolyhedron({ vertices, faces });
-}
-
-/*  TriangularRamp (tetrahedron) */
-function getTriangularRampShape(width = 1, height = 1, length = 1) {
+function getTetrahedronShape(width = 1, height = 1, length = 1) {
     const vertices = [
         new Vec3(0, 0, 0),
         new Vec3(width * 2, 0, 0),
         new Vec3(0, height * 2, 0),
         new Vec3(0, 0, length * 2),
     ];
+        /*
+     * List of vertex index groups that are assigned to individual faces
+     * ! CCW order is important for correct face normals !
+     */
     const faces = [
         [0, 2, 1],
         [1, 2, 3],

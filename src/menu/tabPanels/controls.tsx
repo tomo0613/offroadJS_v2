@@ -23,6 +23,7 @@ export default function ControlsTabPanel({ tabLabel }: ControlsTabPanelProps) {
             <p>{'Open/close editor panel: '}<span>{'M'}</span></p>
             <p>{'Mouse select: '}<span>{'Alt + LMB'}</span></p>
             <p>{'Toggle mouse action move/rotate: '}<span>{'G'}</span></p>
+            <p>{'Snap on mouse move: '}<span>{'Shift'}</span></p>
         </TabPanel>
     );
 }

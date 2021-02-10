@@ -214,8 +214,6 @@ if (cfg.fullscreen) {
 
     gameProgress.loadMap();
 
-    toggleEditMode();
-
     function toggleEditMode() {
         mapBuilder.toggleEditMode();
 

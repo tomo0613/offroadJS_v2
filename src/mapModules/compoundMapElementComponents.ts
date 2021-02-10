@@ -30,7 +30,7 @@ export const cantedCurveDefaultProps = {
     segmentHeight: 0.1,
     segmentLength: 2,
     angle: 30,
-    radius: 4,
+    radius: 8,
 };
 export const cantedCurvePropKeys = Object
     .keys(cantedCurveDefaultProps) as (keyof typeof cantedCurveDefaultProps)[];
@@ -203,7 +203,7 @@ function generateSlopeTransitionElementChildrenPropertyList(props: SlopeTransiti
         tmp_object3d.rotation.set(0, 0, -rotationPerSegment * i);
 
         slopeTransitionElementChildrenPropertyList.push({
-            shape: MapElementShape.triangularRamp,
+            shape: MapElementShape.tetrahedron,
             width: segmentWidth / 2,
             height: segmentHeight / 2,
             length: segmentLength / 2,

@@ -10,12 +10,20 @@ export function MapElementActionButtons() {
 
     return (
         <div>
-            <button onClick={() => { mapBuilder.clone(mapBuilder.selectedMapElementId); }}>
+            <button onClick={cloneMapElementAction}>
                 {cloneButtonLabel}
             </button>
-            <button onClick={() => { mapBuilder.destroy(mapBuilder.selectedMapElementId); }}>
+            <button onClick={destroyMapElementAction}>
                 {removeButtonLabel}
             </button>
         </div>
     );
+
+    function cloneMapElementAction() {
+        mapBuilder.clone(mapBuilder.selectedMapElementId);
+    }
+
+    function destroyMapElementAction() {
+        mapBuilder.destroy(mapBuilder.selectedMapElementId);
+    }
 }

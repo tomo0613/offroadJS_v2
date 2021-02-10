@@ -37,9 +37,8 @@ export enum MapElementType {
 export enum MapElementShape {
     box = 'box',
     cylinder = 'cylinder',
-    ramp = 'ramp',
     sphere = 'sphere',
-    triangularRamp = 'triangularRamp',
+    tetrahedron = 'tetrahedron',
     triangularPrism = 'triangularPrism',
     loop = 'loop',
     slopeTransition = 'slopeTransition',
@@ -113,8 +112,7 @@ export type MapElementProps = BoxProps & CylinderProps & SphereProps & PrismProp
 export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps|AnimationProps>;
 
 export const vehicleMapElementId = 'vehicle_0';
-// const defaultPlatformColor = 0xD6D6D6;
-const defaultPlatformColor = 0xA0A0A0;
+const defaultPlatformColor = 0xBBBBBB;
 const dynamicPlatformColor = 0x95C0E5;
 const kinematicPlatformColor = 0x9FA8BB;
 const triggerOutlieColor = 0xCD72D3;
