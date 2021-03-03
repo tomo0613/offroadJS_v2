@@ -5,7 +5,7 @@
 
 [PLAY]
 
-![screenshot](/offroadJS_v2_screenshot.jpg?raw=true "screenshot")
+![screenshot](/offroadJS_v2_screenshot.png?raw=true "screenshot")
 
 [three.js]: <https://github.com/mrdoob/three.js/>
 [cannon.es]: <https://github.com/pmndrs/cannon-es>
