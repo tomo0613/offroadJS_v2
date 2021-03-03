@@ -3,9 +3,11 @@
 - browser playable
 - written in TypeScript ( JS )
 
-[DEMO]
+[PLAY]
+
+![screenshot](/offroadJS_v2_screenshot.jpg?raw=true "screenshot")
 
 [three.js]: <https://github.com/mrdoob/three.js/>
 [cannon.es]: <https://github.com/pmndrs/cannon-es>
 [cannon.js]: <https://github.com/schteppe/cannon.js>
-[DEMO]: <https://tomo0613.github.io/offroadJS_v2_demo/>
+[PLAY]: <https://tomo0613.github.io/offroadJS_v2_demo/>
