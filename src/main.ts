@@ -79,6 +79,7 @@ if (cfg.fullscreen) {
     const renderPass = new RenderPass(scene, cameraHandler.camera);
     const resolution = new Vector2(window.innerWidth, window.innerHeight);
     const outlinePass = new OutlinePass(resolution, scene, cameraHandler.camera);
+    outlinePass.edgeStrength = 2;
     outlinePass.visibleEdgeColor.setHex(0xE67300);
     outlinePass.hiddenEdgeColor.setHex(0x663300);
     composer.addPass(renderPass);
@@ -178,7 +179,13 @@ if (cfg.fullscreen) {
                 pause();
                 break;
             case 'KeyO':
-                console.log(cameraHandler.camera.position);
+                console.log(
+                    cameraHandler.camera.position.x,
+                    ',',
+                    cameraHandler.camera.position.y,
+                    ',',
+                    cameraHandler.camera.position.z,
+                );
                 break;
             case 'KeyR':
                 gameProgress.respawnAtLastCheckpoint();

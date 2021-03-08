@@ -22,7 +22,7 @@ const timeDisplay = document.createElement('span');
 const timeDisplayDefaultContent = '00:00.000';
 hud.id = 'hud';
 
-const mapOrder = ['map01', 'map02', 'map03', 'map04', 'map05'];
+const mapOrder = ['map01', 'map02', 'map03', 'map04', 'map05', 'map06'];
 
 export class GameProgressManager {
     timer = new Timer();
@@ -92,7 +92,6 @@ export class GameProgressManager {
     }
 
     loadMap(mapName = 'map01') {
-    // loadMap(mapName = 'map05') {
         if (!mapCollection.hasOwnProperty(mapName)) {
             console.warn(`invalid map name ${mapName}`);
             return;

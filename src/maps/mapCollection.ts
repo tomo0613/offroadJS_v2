@@ -1,8 +1,10 @@
+import empty from './map_00';
 import map01 from './map_01';
 import map02 from './map_02';
 import map03 from './map_03';
 import map04 from './map_04';
 import map05 from './map_05';
+import map06 from './map_06';
 
 export const mapCollection = {
     map01,
@@ -10,6 +12,8 @@ export const mapCollection = {
     map03,
     map04,
     map05,
+    map06,
+    empty,
     test: [
         {
             type: 'vehicle',

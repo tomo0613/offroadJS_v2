@@ -1,7 +1,7 @@
 import { Box3, ExtrudeBufferGeometry, Group, ImageLoader, Mesh, MeshBasicMaterial, Vector3 } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGLoader, SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
-import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeBufferGeometry';
+import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeGeometry';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function NOP() {}

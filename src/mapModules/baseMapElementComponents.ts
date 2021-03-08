@@ -2,7 +2,7 @@ import { Box, ConvexPolyhedron, Cylinder, Shape, Sphere, Vec3 } from 'cannon-es'
 import {
     BoxBufferGeometry, BufferGeometry, CylinderBufferGeometry, Quaternion, SphereBufferGeometry, Vector3,
 } from 'three';
-import { ConvexBufferGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
+import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
 
 import { MapElementProps, MapElementShape } from './mapBuilder';
 
@@ -72,7 +72,7 @@ function getSphereShape(radius = 1) {
 
 /* TriangularPrism & Tetrahedron */
 function getConvexGeometryByShape(convexShape: ConvexPolyhedron) {
-    return new ConvexBufferGeometry(convexShape.vertices.map(({ x, y, z }) => new Vector3(x, y, z)));
+    return new ConvexGeometry(convexShape.vertices.map(({ x, y, z }) => new Vector3(x, y, z)));
 }
 
 function getTetrahedronShape(width = 1, height = 1, length = 1) {

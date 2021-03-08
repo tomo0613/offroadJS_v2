@@ -16,6 +16,7 @@ export function defineAnimationProps(body: Body, dataSet: string) {
         alternate = true,
         alternateDelay = 0,
     } = JSON.parse(dataSet);
+    const movementPrecision = speed * 0.05;
 
     origin.copy(body.position);
     target.set(x, y, z);
@@ -35,7 +36,7 @@ export function defineAnimationProps(body: Body, dataSet: string) {
     };
 
     function movementHandler() {
-        if (body.position.almostEquals(target, 0.05) && isMovingTowards(target)) {
+        if (body.position.almostEquals(target, movementPrecision) && isMovingTowards(target)) {
             if (alternate) {
                 if (alternateDelay) {
                     body.velocity.setZero();
@@ -47,7 +48,7 @@ export function defineAnimationProps(body: Body, dataSet: string) {
                 body.velocity.setZero();
             }
             body.position.copy(target);
-        } else if (body.position.almostEquals(origin, 0.05) && isMovingTowards(origin)) {
+        } else if (body.position.almostEquals(origin, movementPrecision) && isMovingTowards(origin)) {
             if (alternateDelay) {
                 body.velocity.setZero();
                 window.setTimeout(moveTowardsTarget, alternateDelay * 1000);

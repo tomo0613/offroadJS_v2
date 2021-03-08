@@ -1,5 +1,5 @@
 import { Body } from 'cannon-es';
-import { BoxBufferGeometry, Mesh, MeshPhongMaterial, Scene, Vector3, HSL } from 'three';
+import { BoxBufferGeometry, Mesh, MeshPhongMaterial, Scene, Vector3 } from 'three';
 
 import ObjectPool from '../common/ObjectPool';
 import { MapBuilder, TriggerMapElementEvent, TriggeredEvent } from '../mapModules/mapBuilder';
@@ -30,7 +30,7 @@ export class CheckpointHandler {
         this.finishIcon3d = icon3dList.finish;
         this.checkpointIcon3dPool = new ObjectPool<Mesh>(1, {
             itemProvider() {
-                return icon3dList.checkpoint.clone();
+                return icon3dList.checkpoint.clone() as Mesh;
             },
             itemActiveCheck(icon3d) {
                 return icon3d.visible;
