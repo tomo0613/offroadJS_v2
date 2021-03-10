@@ -3,20 +3,18 @@ import { DialogEvent, dialogListener, mountDialogRoot } from './Dialog';
 import { NotificationElement } from './NotificationElement';
 
 const popUpMessageDuration = 1500;
-const popUpMessageFadeOutDuration = 1000;
+const notificationFadeOutDuration = 1000;
 const popUpMessageContainer = document.createElement('div');
 popUpMessageContainer.id = 'notificationElementContainer';
 document.body.appendChild(popUpMessageContainer);
-document.documentElement.style.setProperty('--fade-out-duration', `${popUpMessageFadeOutDuration / 1000}s`);
+document.documentElement.style.setProperty('--fade-out-duration', `${notificationFadeOutDuration / 1000}s`);
 
 const notificationElementPool = new ObjectPool<NotificationElement>(1, {
     itemProvider() {
         return new NotificationElement();
     },
     itemActiveCheck(item) {
-        const active = !item.hidden;
-
-        return active;
+        return !item.hidden;
     },
     itemActivator(item) {
         item.show();
@@ -31,11 +29,22 @@ export function showNotification(content: string) {
     const notificationElement = notificationElementPool.obtain();
     notificationElement.setContent(content);
 
+    return notificationElement;
+}
+
+export function hideNotification(notificationElement: NotificationElement) {
+    notificationElement.fadeOut();
     window.setTimeout(() => {
-        window.setTimeout(() => {
-            notificationElementPool.release(notificationElement);
-        }, popUpMessageFadeOutDuration);
-        notificationElement.fadeOut();
+        notificationElementPool.release(notificationElement);
+    }, notificationFadeOutDuration);
+}
+
+export function popUpNotification(content: string) {
+    const notificationElement = notificationElementPool.obtain();
+    notificationElement.setContent(content);
+
+    window.setTimeout(() => {
+        hideNotification(notificationElement);
     }, popUpMessageDuration);
 }
 

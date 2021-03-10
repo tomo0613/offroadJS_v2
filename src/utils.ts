@@ -3,6 +3,8 @@ import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGLoader, SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeGeometry';
 
+import { hideNotification, showNotification } from './notificationModules/notificationManager';
+
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function NOP() {}
 
@@ -10,6 +12,7 @@ type ResourceType = GLTF|HTMLImageElement|SVGResult;
 
 export function loadResource<T extends ResourceType>(url: string): Promise<T> {
     const extension = url.split('.').pop();
+    const progressDisplay = showNotification(`Loading resource: ${url}`);
     let loader: ImageLoader|GLTFLoader|SVGLoader;
 
     switch (extension) {
@@ -28,16 +31,37 @@ export function loadResource<T extends ResourceType>(url: string): Promise<T> {
     }
 
     return new Promise((resolve, reject) => {
-        const onLoad = (resource) => resolve(resource);
-        const onProgress = NOP;
-        const onError = (e) => {
+        const onLoad = (resource) => {
+            resolve(resource);
+            hideNotification(progressDisplay);
+        };
+        const onError = (e: ErrorEvent) => {
             // eslint-disable-next-line no-console
-            console.error(`Failed to load resource: ${e.target.src}`);
+            console.error(`Failed to load resource: ${url}`);
             reject(e);
         };
 
         loader.load(url, onLoad, onProgress, onError);
     });
+
+    function onProgress({ loaded, total, lengthComputable }: ProgressEvent) {
+        const totalSize = lengthComputable ? bytesToReadable(total, 'M') : '?_';
+
+        progressDisplay.setContent(
+            `Loading resource: ${url} (${bytesToReadable(loaded, 'M')} / ${totalSize}MB)`,
+        );
+    }
+}
+
+function bytesToReadable(value: number, scale: 'k'|'M'|'G'|'T') {
+    let result = value;
+    const n = ['k', 'M', 'G', 'T'].indexOf(scale) + 1;
+
+    for (let i = 0; i < n; i++) {
+        result /= 1024;
+    }
+
+    return result.toFixed(2);
 }
 
 interface TranslateProps {

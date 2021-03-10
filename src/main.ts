@@ -19,7 +19,7 @@ import {
 import { MouseSelectHandler } from './mapModules/mouseSelectHandler';
 import { initTransformControls } from './mapModules/transformControls';
 import { mountMenuRoot } from './menu/menu';
-import { confirmDialog, showNotification } from './notificationModules/notificationManager';
+import { confirmDialog, popUpNotification } from './notificationModules/notificationManager';
 import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
 
@@ -248,7 +248,7 @@ if (cfg.fullscreen) {
                 gameProgress.start();
             }
         } else {
-            showNotification('paused');
+            popUpNotification('paused');
             if (gameProgress.started) {
                 gameProgress.stop();
             }

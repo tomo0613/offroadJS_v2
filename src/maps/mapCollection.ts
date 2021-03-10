@@ -5,6 +5,8 @@ import map03 from './map_03';
 import map04 from './map_04';
 import map05 from './map_05';
 import map06 from './map_06';
+import map07 from './map_07';
+import map08 from './map_08';
 
 export const mapCollection = {
     map01,
@@ -13,6 +15,8 @@ export const mapCollection = {
     map04,
     map05,
     map06,
+    map07,
+    map08,
     empty,
     test: [
         {

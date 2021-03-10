@@ -356,7 +356,7 @@ export class MapBuilder {
     }
 
     setUpEventTrigger(id: MapElementId, props: MapElementProps) {
-        const { event = TriggerMapElementEvent.setCameraPosition, dataSet = '' } = props;
+        const { event = TriggerMapElementEvent.setCameraPosition, dataSet = '0,0,0' } = props;
         const triggerElementBody = this.getBodyFromStore(id);
         const triggerElementMesh = this.getMeshFromStore(id) as Mesh;
         const oldListener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
