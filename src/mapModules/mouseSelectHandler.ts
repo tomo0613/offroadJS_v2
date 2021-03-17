@@ -1,4 +1,4 @@
-import { Camera, Object3D, Raycaster, Scene, Vector2, Intersection, Mesh } from 'three';
+import { Camera, Object3D, Raycaster, Scene, Vector2, Intersection } from 'three';
 
 import { MapBuilder } from './mapBuilder';
 
@@ -31,15 +31,17 @@ export class MouseSelectHandler {
         }
         if (enabled) {
             this.domElement.addEventListener('click', this.onClick);
+            this.domElement.addEventListener('dblclick', this.onClick);
         } else {
             this.domElement.removeEventListener('click', this.onClick);
+            this.domElement.removeEventListener('dblclick', this.onClick);
             this.hoveredObject = undefined;
         }
         this._enabled = enabled;
     }
 
     onClick = (e: MouseEvent) => {
-        if (!e.altKey) {
+        if (e.type === 'click' && !e.altKey) {
             return;
         }
         this.mousePosition.x = (e.clientX / window.innerWidth) * 2 - 1;

@@ -1,5 +1,5 @@
 import { Body, Box, Cylinder, Quaternion, RaycastVehicle, Transform, Vec3, World } from 'cannon-es';
-import { Object3D, Scene, Vector3 } from 'three';
+import { Material, Object3D, Scene, Vector3 } from 'three';
 
 import cfg from '../config';
 import { setMaterials } from './materials';
@@ -30,6 +30,8 @@ const {
     wheelRollInfluence,
 } = cfg.vehicle;
 
+const brakeLightBrightness = 0.3;
+
 const frontRightWheelIndex = 0;
 const frontLeftWheelIndex = 1;
 const rearRightWheelIndex = 2;
@@ -54,6 +56,7 @@ export default class Vehicle {
     currentSteeringAngle = 0;
     trackWidth = 0;
     wheelBase = 0;
+    materials: ReturnType<typeof setMaterials>;
 
     constructor(chassisMesh: Object3D, wheelMesh: Object3D) {
         const chassisBaseShape = new Box(new Vec3(0.9, 0.4, 2.1));
@@ -121,7 +124,7 @@ export default class Vehicle {
             });
         }
 
-        setMaterials(wheelMesh, chassisMesh);
+        this.materials = setMaterials(wheelMesh, chassisMesh);
         const wheelMeshes = {
             front_r: wheelMesh,
             front_l: wheelMesh.clone(),
@@ -198,6 +201,9 @@ export default class Vehicle {
         if (engineForceDirection === -1) {
             // reverse
             this.state.engineForce *= 0.9;
+            this.materials.tailLightMaterial.emissive.setHSL(0, 0, brakeLightBrightness);
+        } else {
+            this.materials.tailLightMaterial.emissive.setHSL(0, 0, 0);
         }
     }
 

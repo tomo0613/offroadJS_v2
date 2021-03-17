@@ -1,22 +1,21 @@
 import { Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, Object3D } from 'three';
 
 export function setMaterials(wheel: Object3D, chassis: Object3D) {
-    const baseMaterial = new MeshLambertMaterial({ color: 0x777777 });
-    const fenderMaterial = new MeshBasicMaterial({ color: 0x050505 });
-    const grillMaterial = new MeshBasicMaterial({ color: 0x222222 });
-    const chromeMaterial = new MeshPhongMaterial({ color: 0xCCCCCC });
-    const glassMaterial = new MeshPhongMaterial({ color: 0xACCCD7 });
-    const tailLightMaterial = new MeshPhongMaterial({ color: 0x550000 });
-    const headLightMaterial = new MeshPhongMaterial({ color: 0xFFFFBB });
-
-    const wheelMaterial = new MeshBasicMaterial();
-    wheelMaterial.alphaTest = 0.5;
-    wheelMaterial.skinning = true;
+    const materials = {
+        baseMaterial: new MeshLambertMaterial({ color: 0x777777 }),
+        fenderMaterial: new MeshBasicMaterial({ color: 0x050505 }),
+        grillMaterial: new MeshBasicMaterial({ color: 0x222222 }),
+        chromeMaterial: new MeshPhongMaterial({ color: 0xCCCCCC }),
+        glassMaterial: new MeshPhongMaterial({ color: 0xACCCD7 }),
+        tailLightMaterial: new MeshPhongMaterial({ color: 0x550000 }),
+        headLightMaterial: new MeshPhongMaterial({ color: 0xFFFFBB }),
+        wheelMaterial: new MeshBasicMaterial({ alphaTest: 0.5, skinning: true }),
+    };
 
     wheel.traverse((childMesh: Mesh) => {
         if (childMesh.material) {
-            wheelMaterial.map = (childMesh.material as MeshBasicMaterial).map;
-            childMesh.material = wheelMaterial;
+            materials.wheelMaterial.map = (childMesh.material as MeshBasicMaterial).map;
+            childMesh.material = materials.wheelMaterial;
             childMesh.material.needsUpdate = true;
         }
     });
@@ -27,25 +26,27 @@ export function setMaterials(wheel: Object3D, chassis: Object3D) {
         }
     });
 
+    return materials;
+
     function getChassisMaterialByPartName(partName: string) {
         switch (partName) {
             case 'front_bumper':
             case 'rear_bumper':
             case 'front_fender':
             case 'rear_fender':
-                return fenderMaterial;
+                return materials.fenderMaterial;
             case 'grill':
-                return grillMaterial;
+                return materials.grillMaterial;
             case 'brushGuard':
-                return chromeMaterial;
+                return materials.chromeMaterial;
             case 'glass':
-                return glassMaterial;
+                return materials.glassMaterial;
             case 'tail_lights':
-                return tailLightMaterial;
+                return materials.tailLightMaterial;
             case 'head_lights':
-                return headLightMaterial;
+                return materials.headLightMaterial;
             default:
-                return baseMaterial;
+                return materials.baseMaterial;
         }
     }
 }

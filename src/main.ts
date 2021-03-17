@@ -172,9 +172,6 @@ if (cfg.fullscreen) {
     });
     inputHandler.addKeyPressListener((keyPressed) => {
         switch (keyPressed) {
-            case 'KeyM':
-                toggleEditMode();
-                break;
             case 'KeyP':
                 pause();
                 break;
@@ -192,6 +189,14 @@ if (cfg.fullscreen) {
                 break;
             case 'KeyC':
                 cameraHandler.switchMode();
+                break;
+            case 'KeyM':
+                toggleEditMode();
+                break;
+            case 'Delete':
+                if (mapBuilder.editMode && mapBuilder.selectedMapElementId) {
+                    mapBuilder.destroy(mapBuilder.selectedMapElementId);
+                }
                 break;
             default:
         }

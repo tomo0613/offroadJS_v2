@@ -99,6 +99,16 @@ body {
     background-color: rgba(5, 5, 5, 0.8);
 }
 
+#menu p > span {
+    display: inline-flex;
+    justify-content: center;
+    background-color: white;
+    color: black;
+    border-radius: 3px;
+    padding: 0.1em;
+    min-width: 1.5em;
+}
+
 #menu .tabbedBox__tabPanel {
     height: 420px;
 }
