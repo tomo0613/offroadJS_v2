@@ -1,6 +1,6 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 
-import { NOP } from '../utils';
+import { noop } from '../utils';
 import { MapBuilderContext } from './editor';
 
 export function MapDataExportModal() {
@@ -8,7 +8,7 @@ export function MapDataExportModal() {
 
     return (
         <div className="modal__body">
-            <textarea value={JSON.stringify(mapBuilder.exportMap(), null, 4)} onChange={NOP}/>
+            <textarea value={JSON.stringify(mapBuilder.exportMap(), null, 4)} onChange={noop}/>
         </div>
     );
 }

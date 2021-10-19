@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import inputHandler from '../inputHandler';
@@ -22,7 +22,7 @@ gModalRoot.id = 'modal__root';
 gModalRoot.tabIndex = -1;
 document.body.appendChild(gModalRoot);
 
-const ModalContainer: React.FunctionComponent<ModalProps> = function ({ onClose, children }) {
+const ModalContainer: React.FC<ModalProps> = function ({ onClose, children }) {
     return (
         <div className="modal__container">
             {onClose && (
@@ -35,7 +35,7 @@ const ModalContainer: React.FunctionComponent<ModalProps> = function ({ onClose,
     );
 };
 
-export const Modal: React.FunctionComponent<ModalProps> = function ({ onClose, children }) {
+export const Modal: React.FC<ModalProps> = function ({ onClose, children }) {
     const previousActiveElement = document.activeElement as HTMLElement;
 
     useEffect(() => {

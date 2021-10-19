@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import { Modal } from '../uiComponents/index';
 import uiTexts from '../uiTexts';

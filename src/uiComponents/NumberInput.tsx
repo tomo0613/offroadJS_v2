@@ -1,6 +1,6 @@
-import React, { Component, createRef } from 'react';
+import { Component, createRef } from 'react';
 
-import { NOP, round, throttle, valueBetween } from '../utils';
+import { noop, round, throttle, valueBetween } from '../utils';
 import { InputContainer } from './InputContainer';
 
 interface NumberInputProps {
@@ -36,7 +36,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         id: '',
         label: '',
         value: 0,
-        onChange: NOP,
+        onChange: noop,
         step: 0.01,
         sensitivity: 1,
         min: -Infinity,
@@ -117,7 +117,7 @@ export class NumberInput extends Component<NumberInputProps, NumberInputState> {
         if (this.state.value === value) {
             return;
         }
-        const onSetState = allowString ? NOP : this.onSetValue;
+        const onSetState = allowString ? noop : this.onSetValue;
 
         this.setState({ value }, onSetState);
     }

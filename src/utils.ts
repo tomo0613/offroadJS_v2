@@ -6,7 +6,7 @@ import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeGeometry';
 import { hideNotification, showNotification } from './notificationModules/notificationManager';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
-export function NOP() {}
+export function noop() {}
 
 type ResourceType = GLTF|HTMLImageElement|SVGResult;
 

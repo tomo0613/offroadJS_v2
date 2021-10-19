@@ -1,6 +1,6 @@
-import React, { Component, createRef } from 'react';
+import { Component, createRef } from 'react';
 
-import { NOP } from '../utils';
+import { noop } from '../utils';
 import { InputContainer } from './InputContainer';
 
 interface TextInputProps {
@@ -21,7 +21,7 @@ export class TextInput extends Component<TextInputProps, TextInputState> {
         id: '',
         label: '',
         value: '',
-        onChange: NOP,
+        onChange: noop,
     };
 
     constructor(props: TextInputProps) {

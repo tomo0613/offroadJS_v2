@@ -1,6 +1,6 @@
-import React, { Component, createRef } from 'react';
+import { Component, createRef } from 'react';
 
-import { NOP, numberToHexString } from '../utils';
+import { noop, numberToHexString } from '../utils';
 import { InputContainer } from './InputContainer';
 
 interface ColorPickerProps {
@@ -33,7 +33,7 @@ export class ColorPicker extends Component<ColorPickerProps, ColorPickerState> {
         id: '',
         label: '',
         value: '',
-        onChange: NOP,
+        onChange: noop,
     };
 
     static addColorValues = (...colorValues: number[]) => {

@@ -5,7 +5,7 @@ import EventListener from '../common/EventListener';
 import cfg from '../config';
 import { renderEditor } from '../mapEditorUI/editor';
 import { ColorPicker } from '../uiComponents';
-import { degToRad, NOP } from '../utils';
+import { degToRad, noop } from '../utils';
 import { AnimationProps, defineAnimationProps } from './animatedMapElementHelper';
 import { getBaseElementComponents } from './baseMapElementComponents';
 import {
@@ -135,7 +135,7 @@ export class MapBuilder {
     listeners = new EventListener<MapBuilderEvent>();
     eventTriggerListeners = new EventListener<TriggerMapElementEvent>();
     editMode = false;
-    onPlaceVehicle = NOP as (pX: number, pY: number, pZ: number, rX: number, rY: number, rZ: number) => void;
+    onPlaceVehicle = noop as (pX: number, pY: number, pZ: number, rX: number, rY: number, rZ: number) => void;
 
     constructor(scene: Scene, world: World) {
         this.scene = scene;

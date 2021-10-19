@@ -40,6 +40,9 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
     ],
     rules: {
+        'react/jsx-uses-react': DISABLED,
+        'react/react-in-jsx-scope': DISABLED,
+        'import/no-extraneous-dependencies': [ERROR, { devDependencies: true }],
         'curly': [ERROR, 'all'],
         'brace-style': [ERROR, '1tbs', { allowSingleLine: false }],
         'sort-imports': DISABLED,

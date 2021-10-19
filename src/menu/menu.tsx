@@ -1,4 +1,4 @@
-import React, { StrictMode, createContext, useState, useEffect, useContext } from 'react';
+import { StrictMode, createContext, useState, useEffect, useContext } from 'react';
 import { render } from 'react-dom';
 import { WebGLRenderer } from 'three';
 

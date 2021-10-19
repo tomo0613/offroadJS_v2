@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import cfg from './config';
 import { popUpNotification } from './notificationModules/notificationManager';
-import { NOP, valueBetween } from './utils';
+import { noop, valueBetween } from './utils';
 import Vehicle from './vehicle/Vehicle';
 
 export enum CameraMode {
@@ -32,7 +32,7 @@ export class CameraHandler {
     cameraSpeed = 0.03;
     private currentCameraMode?: CameraMode;
     private chaseCameraMountPositionHelper = new Object3D();
-    update = NOP;
+    update = noop;
 
     constructor(domElement: HTMLElement) {
         this.domElement = domElement;
@@ -55,7 +55,7 @@ export class CameraHandler {
         switch (this.currentCameraMode) {
             case CameraMode.dynamic:
             case CameraMode.chase:
-                this.update = NOP;
+                this.update = noop;
                 break;
             case CameraMode.hood:
                 this.chaseCameraMountPositionHelper.getWorldPosition(chaseCameraMountPosition);
@@ -87,7 +87,7 @@ export class CameraHandler {
                 this.camera.rotation.set(0, 0, 0);
                 this.camera.fov = 60;
                 this.camera.updateProjectionMatrix();
-                this.update = NOP;
+                this.update = noop;
                 popUpNotification('Camera mode is set to: "hood"');
                 break;
             case CameraMode.free:

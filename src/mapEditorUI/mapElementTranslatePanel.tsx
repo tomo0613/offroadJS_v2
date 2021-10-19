@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 
 import { MapElementProps } from '../mapModules/mapBuilder';
 import { NumberInput } from '../uiComponents/index';

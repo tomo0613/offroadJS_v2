@@ -293,10 +293,10 @@ if (cfg.fullscreen) {
 
     async function loadAssets() {
         const [cubeTexture, wheelGLTF, chassisGLTF, pinIcon] = await Promise.all([
-            utils.loadResource<HTMLImageElement>('./img/skybox.jpg'),
-            utils.loadResource<GLTF>('./3D_objects/lowPoly_car_wheel.gltf'),
-            utils.loadResource<GLTF>('./3D_objects/mg.glb'),
-            utils.loadResource<SVGResult>('./img/pin.svg'),
+            utils.loadResource<HTMLImageElement>('../assets/img/skybox.jpg'),
+            utils.loadResource<GLTF>('../assets/3D_objects/lowPoly_car_wheel.gltf'),
+            utils.loadResource<GLTF>('../assets/3D_objects/mg.glb'),
+            utils.loadResource<SVGResult>('../assets/img/pin.svg'),
         ]);
 
         const skyBox = new CubeTexture(utils.sliceCubeTexture(cubeTexture));

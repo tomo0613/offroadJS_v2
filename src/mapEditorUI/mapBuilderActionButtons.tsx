@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import { useContext, useState } from 'react';
 
 import { MapElementShape } from '../mapModules/mapBuilder';
 import { SelectInput } from '../uiComponents/index';

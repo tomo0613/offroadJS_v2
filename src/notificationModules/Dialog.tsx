@@ -1,4 +1,4 @@
-import React, { StrictMode, useEffect, useRef, useState } from 'react';
+import { StrictMode, useEffect, useRef, useState } from 'react';
 import { render } from 'react-dom';
 
 import EventListener from '../common/EventListener';

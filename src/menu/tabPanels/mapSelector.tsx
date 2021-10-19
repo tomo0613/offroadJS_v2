@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import { useContext, useState } from 'react';
 
 import { mapCollection } from '../../maps/mapCollection';
 import { List, TabPanel } from '../../uiComponents/index';
@@ -16,7 +16,7 @@ const mapListItems = Object.keys(mapCollection);
 export default function MapSelectorTabPanel({ tabLabel, closeMenu }: MapSelectorTabPanelProps) {
     const { gameProgressManager } = useContext(MenuContext);
     const [selectedMap, setSelectedMap] = useState<string>();
-    // const [mapMeta, setMapMeat] = useState<{ name, create-date, author, rating... }>();
+    // const [mapMeta, setMapMeta] = useState<{ name, create-date, author, rating... }>();
 
     return (
         <TabPanel tabLabel={tabLabel}>
@@ -24,18 +24,21 @@ export default function MapSelectorTabPanel({ tabLabel, closeMenu }: MapSelector
                 label={mapListLabel}
                 contentList={mapListItems}
                 selected={selectedMap}
-                onSelect={setSelectedMap}
+                onClick={setSelectedMap}
+                onDoubleClick={loadMap}
             />
             {/* mapMeta */}
-            <button onClick={loadMap}>
+            <button onClick={() => {
+                loadMap();
+            }}>
                 {loadMapButtonLabel}
             </button>
         </TabPanel>
     );
 
-    function loadMap() {
-        if (selectedMap) {
-            gameProgressManager.loadMap(selectedMap);
+    function loadMap(mapId = selectedMap) {
+        if (mapId) {
+            gameProgressManager.loadMap(mapId);
             closeMenu();
         }
     }

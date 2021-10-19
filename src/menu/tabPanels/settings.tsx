@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 
 import config from '../../config';
 import { Checkbox, RangeInput, TabPanel, Switch } from '../../uiComponents/index';
@@ -84,7 +84,7 @@ function SettingsForm() {
         const list = changedFormValueListRef.current;
 
         for (let i = 0; i < formElementCount; i++) {
-            const { id, value, checked } = form.elements[i] as HTMLInputElement;
+            const { id, checked } = form.elements[i] as HTMLInputElement;
             if (defaultFormValues[id] !== checked) {
                 list.add(id);
             } else if (list.has(id)) {

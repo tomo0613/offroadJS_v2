@@ -1,5 +1,7 @@
 .build
 build
+tsc_build
 bundle
+dist
 web_modules
 node_modules

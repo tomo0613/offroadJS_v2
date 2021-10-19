@@ -1,4 +1,4 @@
-import React, { StrictMode, createContext, useState, useContext, useEffect } from 'react';
+import { StrictMode, createContext, useState, useContext, useEffect } from 'react';
 import { render } from 'react-dom';
 
 import { MapBuilder, MapBuilderEvent, MapElementProps, vehicleMapElementId } from '../mapModules/mapBuilder';

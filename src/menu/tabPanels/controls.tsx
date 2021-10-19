@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { TabPanel } from '../../uiComponents/index';
 
 interface ControlsTabPanelProps {

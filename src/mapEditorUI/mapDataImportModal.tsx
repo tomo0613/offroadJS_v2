@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from 'react';
+import { useContext, useRef } from 'react';
 
 import { MapElementProps } from '../mapModules/mapBuilder';
 import { MapBuilderContext } from './editor';

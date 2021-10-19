@@ -1,4 +1,4 @@
-import { debounce, isMobileDevice, NOP } from './utils';
+import { debounce, isMobileDevice, noop } from './utils';
 
 const navigationKeys = new Set([
     'Space',
@@ -118,7 +118,7 @@ function appendScreenButton(containerElementId: string, key: string, label: stri
         currentKey = key;
         keyPressListeners.forEach(invokeKeyPressHandler);
     }, 200, true);
-    const button = appendScreenInput(containerElementId, onEvent, NOP);
+    const button = appendScreenInput(containerElementId, onEvent, noop);
     button.textContent = label;
     button.id = key;
     button.classList.add('screenButton');

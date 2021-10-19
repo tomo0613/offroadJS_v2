@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 
 import { List } from '../uiComponents/index';
 import uiTexts from '../uiTexts';
@@ -14,7 +14,7 @@ export function MapElementList({ selectedMapElementId }: { selectedMapElementId:
             label={mapElementListLabel}
             contentList={mapBuilder.mapElementIdList}
             selected={selectedMapElementId}
-            onSelect={(mapElementId) => {
+            onClick={(mapElementId) => {
                 mapBuilder.selectMapElement(mapElementId);
             }}
         />

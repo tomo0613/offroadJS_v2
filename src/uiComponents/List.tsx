@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
-import { NOP } from '../utils';
+import { noop } from '../utils';
 
 interface ListProps {
     contentList: string[];
     label?: string;
     selected?: string;
-    onSelect?: (content: string) => void;
+    onClick?: (content: string) => void;
+    onDoubleClick?: (content: string) => void;
 }
 
 const scrollIntoViewOptions = {
@@ -14,12 +15,26 @@ const scrollIntoViewOptions = {
     block: 'nearest' as const,
 };
 
-export function List({ label, contentList, selected, onSelect = NOP }: ListProps) {
+export function List({ label, contentList, selected, onClick = noop, onDoubleClick = onClick }: ListProps) {
     const selectionRef = useRef<HTMLLIElement>(null);
 
     useEffect(() => {
         selectionRef?.current?.scrollIntoView(scrollIntoViewOptions);
     }, [selectionRef, selected]);
+
+    const onListItemClick = useCallback((target: HTMLElement, handler) => {
+        if (target.tagName === 'LI') {
+            handler((target as HTMLLIElement).dataset.content);
+        }
+    }, [contentList]);
+
+    const handleClick = useCallback(({ target }: React.MouseEvent<HTMLUListElement>) => {
+        onListItemClick(target as HTMLElement, onClick);
+    }, [onListItemClick, onClick]);
+
+    const handleDoubleClick = useCallback(({ target }: React.MouseEvent<HTMLUListElement>) => {
+        onListItemClick(target as HTMLElement, onDoubleClick);
+    }, [onListItemClick, onDoubleClick]);
 
     return (
         <div className="listContainer">
@@ -28,11 +43,8 @@ export function List({ label, contentList, selected, onSelect = NOP }: ListProps
             )}
             <ul
                 className="list"
-                onClick={({ target }: React.MouseEvent<HTMLUListElement>) => {
-                    if ((target as HTMLElement).tagName === 'LI') {
-                        onSelect((target as HTMLLIElement).dataset.content);
-                    }
-                }}
+                onClick={handleClick}
+                onDoubleClick={handleDoubleClick}
                 tabIndex={0}
             >
                 {contentList.map((content) => (

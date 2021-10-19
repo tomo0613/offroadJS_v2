@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 
 import uiTexts from '../uiTexts';
 import { MapBuilderContext } from './editor';

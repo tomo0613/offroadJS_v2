@@ -1,6 +1,5 @@
-import React from 'react';
 
-import { NOP } from '../utils';
+import { noop } from '../utils';
 import { InputContainer } from './InputContainer';
 
 interface Props {
@@ -10,7 +9,7 @@ interface Props {
     onChange?: (on: boolean, id?: string) => void;
 }
 
-export function Switch({ id, label, on = false, onChange = NOP }: Props) {
+export function Switch({ id, label, on = false, onChange = noop }: Props) {
     return (
         <InputContainer label={label} id={id}>
             <input type="checkbox" className="switch__input" id={id} name={id} checked={on} onChange={onInputChange}/>

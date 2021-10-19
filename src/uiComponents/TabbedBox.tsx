@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-import { NOP } from '../utils';
+import { noop } from '../utils';
 
 interface TabbedBoxProps {
     defaultTabIndex?: number;
@@ -20,7 +20,7 @@ interface TabPanelProps {
     tabLabel: string;
 }
 
-export const TabPanel: React.FunctionComponent<TabPanelProps> = function ({ children }) {
+export const TabPanel: React.FC<TabPanelProps> = function ({ children }) {
     return (
         <div className="tabbedBox__tabPanel">
             {children}
@@ -36,7 +36,7 @@ function Tab({ index, label, classNames, onClick }: TabProps) {
     );
 }
 
-export function TabbedBox({ children: tabPanels, defaultTabIndex = 0, onSelect = NOP, ...props }: TabbedBoxProps) {
+export function TabbedBox({ children: tabPanels, defaultTabIndex = 0, onSelect = noop, ...props }: TabbedBoxProps) {
     const [selectedTabIndex, setSelectedTabIndex] = useState(defaultTabIndex);
 
     return (

@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { InputContainer } from './InputContainer';
 
 interface Props {
