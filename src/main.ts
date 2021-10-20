@@ -1,6 +1,8 @@
 import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
 import wireframeRenderer from 'cannon-es-debugger';
-import { CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, Vector2, WebGLRenderer } from 'three';
+import {
+    Clock, CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, Vector2, WebGLRenderer, MathUtils,
+} from 'three';
 import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
@@ -48,6 +50,7 @@ if (cfg.fullscreen) {
 
 (async function init() {
     let paused = false;
+    const clock = new Clock();
     const scene = new Scene();
 
     const lightProbe = new LightProbe();
@@ -112,7 +115,7 @@ if (cfg.fullscreen) {
 
     mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
         vehicle.initialPosition.set(pX, pY, pZ);
-        vehicle.initialRotation.setFromEuler(utils.degToRad(rX), utils.degToRad(rY), utils.degToRad(rZ));
+        vehicle.initialRotation.setFromEuler(MathUtils.degToRad(rX), MathUtils.degToRad(rY), MathUtils.degToRad(rZ));
         vehicle.resetPosition();
     };
     mapBuilder.eventTriggerListeners.add(
@@ -248,11 +251,14 @@ if (cfg.fullscreen) {
         paused = !paused;
 
         if (!paused) {
-            render();
+            clock.start();
+            renderer.setAnimationLoop(animationLoop);
             if (gameProgress.started) {
                 gameProgress.start();
             }
         } else {
+            clock.stop();
+            renderer.setAnimationLoop(null);
             popUpNotification('paused');
             if (gameProgress.started) {
                 gameProgress.stop();
@@ -264,23 +270,22 @@ if (cfg.fullscreen) {
         wireframeRenderer(scene, world.bodies);
     }
 
-    render();
+    // start animation loop
+    renderer.setAnimationLoop(animationLoop);
 
-    function render(dt = performance.now()) {
-        if (paused) {
-            return;
-        }
-        requestAnimationFrame(render);
+    function animationLoop() {
+        const delta = clock.getDelta();
 
         cameraHandler.update();
         gameProgress.updateHUD();
 
-        gameProgress.checkpointHandler.updateVisuals(dt);
+        gameProgress.checkpointHandler.updateVisuals(delta);
 
         composer.render();
 
         // update physics
         world.step(worldStep);
+        // world.step(delta);
     }
 
     function onWindowResize() {
