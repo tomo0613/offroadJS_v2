@@ -34,7 +34,7 @@ export class GameProgressManager {
     private _mapBuilder: MapBuilder;
     checkpointHandler: CheckpointHandler;
     vehicle: Vehicle;
-    currentMap = '';
+    currentMap = 'map01'; // Default
 
     constructor(mapBuilder: MapBuilder, vehicle: Vehicle) {
         timeDisplay.textContent = timeDisplayDefaultContent;
@@ -91,7 +91,7 @@ export class GameProgressManager {
         lastCheckpointTriggerBody = undefined;
     }
 
-    loadMap(mapName = 'map01') {
+    loadMap(mapName = this.currentMap) {
         if (!mapCollection.hasOwnProperty(mapName)) {
             console.warn(`invalid map name ${mapName}`);
             return;

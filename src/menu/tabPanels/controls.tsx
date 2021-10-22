@@ -10,6 +10,7 @@ export default function ControlsTabPanel({ tabLabel }: ControlsTabPanelProps) {
             <p>{'Open menu: '}<span>{'Tab'}</span></p>
             <hr/>
             <p>{'Respawn at last checkpoint: '}<span>{'R'}</span></p>
+            <p>{'Reload map: '}<span>{'Alt + R'}</span></p>
             <p>{'Accelerate: '}<span>{'↑'}</span> / <span>{'W'}</span></p>
             <p>{'Reverse: '}<span>{'↓'}</span> / <span>{'S'}</span></p>
             <p>{'Steer left: '}<span>{'←'}</span> / <span>{'A'}</span></p>

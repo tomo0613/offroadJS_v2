@@ -38,17 +38,15 @@ export function initTransformControls(cameraHandler: CameraHandler, mapBuilder: 
         dragging = e.value;
     });
 
-    inputHandler.addKeyPressListener((keyPressed) => {
-        if (keyPressed === 'KeyG') {
-            if (transformControls.mode === 'translate') {
-                transformControls.setMode('rotate');
-            } else {
-                transformControls.setMode('translate');
-            }
+    inputHandler.addKeyPressListener('KeyG', () => {
+        if (transformControls.mode === 'translate') {
+            transformControls.setMode('rotate');
+        } else {
+            transformControls.setMode('translate');
         }
     });
 
-    inputHandler.addKeyDownListener((keysDown) => {
+    inputHandler.addKeyDownChangeListener((keysDown) => {
         if (keysDown.has('ShiftLeft')) {
             transformControls.setTranslationSnap(1);
         } else {

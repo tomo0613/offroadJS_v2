@@ -1,7 +1,7 @@
-export default class EventListener<EventType extends string|number> {
-    private listeners: Map<EventType, Set<VoidFnc>> = new Map();
+export default class EventListener<EventType extends string|number, HandlerType extends VoidFnc = VoidFnc> {
+    private listeners: Map<EventType, Set<HandlerType>> = new Map();
 
-    add(eventType: EventType, listener: VoidFnc) {
+    add(eventType: EventType, listener: HandlerType) {
         if (!listener) {
             throw new Error(`EventListener->add($listener) Invalid $listener: ${listener}, with type ${eventType}`);
         }
@@ -16,7 +16,7 @@ export default class EventListener<EventType extends string|number> {
         }
     }
 
-    remove(eventType: EventType, listener: VoidFnc) {
+    remove(eventType: EventType, listener: HandlerType) {
         if (this.listeners.has(eventType)) {
             const listeners = this.listeners.get(eventType);
 
@@ -32,8 +32,7 @@ export default class EventListener<EventType extends string|number> {
         this.listeners.clear();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    dispatch(eventType: EventType, ...args: any[]) {
+    dispatch(eventType: EventType, ...args: Parameters<HandlerType>) {
         if (this.listeners.has(eventType)) {
             const listeners = this.listeners.get(eventType);
 

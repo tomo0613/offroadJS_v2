@@ -29,10 +29,10 @@ export class CameraHandler {
     orbitControls: OrbitControls;
     cameraTarget?: Vehicle;
     cameraPosition = new Vector3();
-    cameraSpeed = 0.03;
+    cameraSpeed = 0.2;
     private currentCameraMode?: CameraMode;
     private chaseCameraMountPositionHelper = new Object3D();
-    update = noop;
+    update = noop as (delta: number) => void;
 
     constructor(domElement: HTMLElement) {
         this.domElement = domElement;
@@ -100,16 +100,17 @@ export class CameraHandler {
         this.currentCameraMode = mode;
     }
 
-    updateDynamicCamera() {
+    updateDynamicCamera(delta: number) {
         if (!this.camera.position.equals(this.cameraPosition)) {
-            this.camera.position.lerp(this.cameraPosition, this.cameraSpeed);
+            const t = 1 - this.cameraSpeed ** delta;
+            this.camera.position.lerp(this.cameraPosition, t);
         }
         if (this.cameraTarget) {
             this.camera.lookAt(this.cameraTarget.chassisMesh.position);
         }
     }
 
-    updateChaseCamera() {
+    updateChaseCamera(delta: number) {
         const cameraLookTarget = this.cameraTarget?.chassisMesh;
         const { currentVehicleSpeedKmHour: speed } = this.cameraTarget.base;
 
@@ -123,7 +124,8 @@ export class CameraHandler {
             chaseCameraMountPosition.setY(cameraLookTarget.position.y);
         }
 
-        this.camera.position.lerp(chaseCameraMountPosition, this.cameraSpeed);
+        const t = 1 - this.cameraSpeed ** delta;
+        this.camera.position.lerp(chaseCameraMountPosition, t);
 
         chaseCameraLookPosition.copy(cameraLookTarget.position);
         chaseCameraLookPosition.y += valueBetween(speed * -0.01, -4, 4);

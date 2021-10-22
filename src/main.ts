@@ -25,7 +25,7 @@ import { confirmDialog, popUpNotification } from './notificationModules/notifica
 import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
 
-const worldStep = 1 / 60;
+const physicsFrameTime = 1 / cfg.physicsFrameRate;
 
 const generalMaterial = new Material('general');
 const lowFrictionMaterial = new Material('lowFriction');
@@ -173,38 +173,44 @@ if (cfg.fullscreen) {
             transformControls.attach(selectedMesh);
         }
     });
-    inputHandler.addKeyPressListener((keyPressed) => {
-        switch (keyPressed) {
-            case 'KeyP':
-                pause();
-                break;
-            case 'KeyO':
-                console.log(
-                    cameraHandler.camera.position.x,
-                    ',',
-                    cameraHandler.camera.position.y,
-                    ',',
-                    cameraHandler.camera.position.z,
-                );
-                break;
-            case 'KeyR':
-                gameProgress.respawnAtLastCheckpoint();
-                break;
-            case 'KeyC':
-                cameraHandler.switchMode();
-                break;
-            case 'KeyM':
-                toggleEditMode();
-                break;
-            case 'Delete':
-                if (mapBuilder.editMode && mapBuilder.selectedMapElementId) {
-                    mapBuilder.destroy(mapBuilder.selectedMapElementId);
-                }
-                break;
-            default:
+
+    inputHandler.addKeyPressListener('KeyP', () => {
+        pause();
+    });
+
+    inputHandler.addKeyPressListener('KeyO', () => {
+        console.log(
+            cameraHandler.camera.position.x,
+            ',',
+            cameraHandler.camera.position.y,
+            ',',
+            cameraHandler.camera.position.z,
+        );
+    });
+
+    inputHandler.addKeyPressListener('KeyR', (e) => {
+        if (e.altKey) {
+            gameProgress.loadMap();
+        } else {
+            gameProgress.respawnAtLastCheckpoint();
         }
     });
-    inputHandler.addKeyDownListener((keysDown) => {
+
+    inputHandler.addKeyPressListener('KeyC', () => {
+        cameraHandler.switchMode();
+    });
+
+    inputHandler.addKeyPressListener('KeyM', () => {
+        toggleEditMode();
+    });
+
+    inputHandler.addKeyPressListener('Delete', () => {
+        if (mapBuilder.editMode && mapBuilder.selectedMapElementId) {
+            mapBuilder.destroy(mapBuilder.selectedMapElementId);
+        }
+    });
+
+    inputHandler.addKeyDownChangeListener((keysDown) => {
         let engineForceDirection: -1|0|1 = 0;
         let steeringDirection: -1|0|1 = 0;
 
@@ -276,7 +282,7 @@ if (cfg.fullscreen) {
     function animationLoop() {
         const delta = clock.getDelta();
 
-        cameraHandler.update();
+        cameraHandler.update(delta);
         gameProgress.updateHUD();
 
         gameProgress.checkpointHandler.updateVisuals(delta);
@@ -284,8 +290,7 @@ if (cfg.fullscreen) {
         composer.render();
 
         // update physics
-        world.step(worldStep);
-        // world.step(delta);
+        world.step(physicsFrameTime, delta);
     }
 
     function onWindowResize() {

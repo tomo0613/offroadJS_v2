@@ -45,11 +45,11 @@ function ModalStateController() {
     const [hidden, setHidden] = useState(true);
 
     useEffect(() => {
-        inputHandler.addKeyPressListener(openModalOnKeyPress);
+        inputHandler.addKeyPressListener('Tab', openModalOnKeyPress);
         gameProgressManager.listeners.add(GameProgressEvent.openMapSelectorPanel, openMapSelectorPanel);
 
         return () => {
-            inputHandler.removeKeyPressListener(openModalOnKeyPress);
+            inputHandler.removeKeyPressListener('Tab', openModalOnKeyPress);
             gameProgressManager.listeners.remove(GameProgressEvent.openMapSelectorPanel, openMapSelectorPanel);
         };
     }, []);
@@ -62,11 +62,9 @@ function ModalStateController() {
         setHidden(true);
     }
 
-    function openModalOnKeyPress(keyPressed: KeyboardEvent['key']) {
-        if (keyPressed === 'Tab') {
-            if (hidden) {
-                setHidden(false);
-            }
+    function openModalOnKeyPress() {
+        if (hidden) {
+            setHidden(false);
         }
     }
 

@@ -1,3 +1,4 @@
+import EventListener from './common/EventListener';
 import { debounce, isMobileDevice, noop } from './utils';
 
 const navigationKeys = new Set([
@@ -21,37 +22,37 @@ const controlKeys = new Set([
     'KeyP', // Ctrl + P – print
     'KeyS', // Ctrl + S – save the page to your computer
 ]);
-const keysDown = new Set<KeyboardEvent['key']>();
-let currentKey: KeyboardEvent['key'];
+const keysDown = new Set<KeyboardEvent['code']>();
+let currentKey: KeyboardEvent['code'];
 
-type KeyDownListener = (_keysDown: typeof keysDown) => void;
-type KeyPressListener = (keyPressed: KeyboardEvent['key']) => void;
+type KeysDownChangeListener = (_keysDown: typeof keysDown) => void;
+type EventHandler = (event: KeyboardEvent | MouseEvent | TouchEvent) => void;
 
-const keyDownListeners = new Set<KeyDownListener>();
-const keyPressListeners = new Set<KeyPressListener>();
+const keyDownListeners = new Set<KeysDownChangeListener>();
+const keyPressListeners = new EventListener<KeyboardEvent['code'], EventHandler>();
 
 export default {
-    addKeyDownListener,
-    removeKeyDownListener,
     addKeyPressListener,
     removeKeyPressListener,
+    addKeyDownChangeListener,
+    removeKeyDownChangeListener,
     clearKeysDown,
 };
 
-function addKeyDownListener(listener: KeyDownListener) {
+function addKeyDownChangeListener(listener: KeysDownChangeListener) {
     keyDownListeners.add(listener);
 }
 
-function removeKeyDownListener(listener: KeyDownListener) {
+function removeKeyDownChangeListener(listener: KeysDownChangeListener) {
     keyDownListeners.delete(listener);
 }
 
-function addKeyPressListener(listener: KeyPressListener) {
-    keyPressListeners.add(listener);
+function addKeyPressListener(key: KeyboardEvent['code'], handler: EventHandler) {
+    keyPressListeners.add(key, handler);
 }
 
-function removeKeyPressListener(listener: KeyPressListener) {
-    keyPressListeners.delete(listener);
+function removeKeyPressListener(key: KeyboardEvent['code'], handler: EventHandler) {
+    keyPressListeners.remove(key, handler);
 }
 
 function clearKeysDown() {
@@ -76,12 +77,12 @@ window.onkeydown = window.onkeyup = (e: KeyboardEvent) => {
 
     if (e.type === 'keyup') {
         keysDown.delete(currentKey);
-        keyPressListeners.forEach(invokeKeyPressHandler);
+        keyPressListeners.dispatch(currentKey, e);
     } else {
         keysDown.add(currentKey);
     }
 
-    keyDownListeners.forEach(invokeKeyDownHandler);
+    handleKeysDownChange();
 };
 
 appendScreenButton('topLeftPanel', 'Tab', '⋮');
@@ -114,9 +115,9 @@ function appendScreenInput(containerElementId: string, onEventStart: VoidFnc, on
 }
 
 function appendScreenButton(containerElementId: string, key: string, label: string) {
-    const onEvent = debounce(() => {
+    const onEvent = debounce((e: MouseEvent | TouchEvent) => {
         currentKey = key;
-        keyPressListeners.forEach(invokeKeyPressHandler);
+        keyPressListeners.dispatch(currentKey, e);
     }, 200, true);
     const button = appendScreenInput(containerElementId, onEvent, noop);
     button.textContent = label;
@@ -127,11 +128,11 @@ function appendScreenButton(containerElementId: string, key: string, label: stri
 function appendScreenKey(containerElementId: string, key: string, label: string) {
     const onEventStart = () => {
         keysDown.add(key);
-        keyDownListeners.forEach(invokeKeyDownHandler);
+        handleKeysDownChange();
     };
     const onEventEnd = () => {
         keysDown.delete(key);
-        keyDownListeners.forEach(invokeKeyDownHandler);
+        handleKeysDownChange();
     };
     const button = appendScreenInput(containerElementId, onEventStart, onEventEnd);
     button.textContent = label;
@@ -139,10 +140,10 @@ function appendScreenKey(containerElementId: string, key: string, label: string)
     button.classList.add('screenKey');
 }
 
-function invokeKeyDownHandler(keyDownHandler: KeyDownListener) {
-    keyDownHandler(keysDown);
+function handleKeysDownChange() {
+    keyDownListeners.forEach(invokeKeyDownHandler);
 }
 
-function invokeKeyPressHandler(keyPressHandler: KeyPressListener) {
-    keyPressHandler(currentKey);
+function invokeKeyDownHandler(keyDownHandler: KeysDownChangeListener) {
+    keyDownHandler(keysDown);
 }

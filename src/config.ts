@@ -18,6 +18,7 @@ const config = {
      * https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.2
      */
     powerPreference: 'high-performance',
+    physicsFrameRate: 120,
     world: {
         gravity: {
             x: 0,
