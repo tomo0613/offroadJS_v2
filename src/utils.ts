@@ -10,7 +10,7 @@ export function noop() {}
 
 type ResourceType = GLTF|HTMLImageElement|SVGResult;
 
-export function loadResource<T extends ResourceType>(url: string): Promise<T> {
+export function loadResource<T extends ResourceType>(url: string, estimatedSize = '?'): Promise<T> {
     const extension = url.split('.').pop();
     const progressDisplay = showNotification(`Loading resource: ${url}`);
     let loader: ImageLoader|GLTFLoader|SVGLoader;
@@ -45,10 +45,10 @@ export function loadResource<T extends ResourceType>(url: string): Promise<T> {
     });
 
     function onProgress({ loaded, total, lengthComputable }: ProgressEvent) {
-        const totalSize = lengthComputable ? bytesToReadable(total, 'M') : '?_';
+        const totalSize = lengthComputable ? `${bytesToReadable(total, 'k')} kB` : estimatedSize;
 
         progressDisplay.setContent(
-            `Loading resource: ${url} (${bytesToReadable(loaded, 'M')} / ${totalSize}MB)`,
+            `Loading resource: ${url} (${bytesToReadable(loaded, 'k')} / ${totalSize})`,
         );
     }
 }
