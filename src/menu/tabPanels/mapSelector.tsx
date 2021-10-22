@@ -6,15 +6,14 @@ import { MenuContext } from '../menu';
 
 interface MapSelectorTabPanelProps {
     tabLabel: string;
-    closeMenu: VoidFnc;
 }
 
 const mapListLabel = 'mapList';
 const loadMapButtonLabel = 'load';
 const mapListItems = Object.keys(mapCollection);
 
-export default function MapSelectorTabPanel({ tabLabel, closeMenu }: MapSelectorTabPanelProps) {
-    const { gameProgressManager } = useContext(MenuContext);
+export default function MapSelectorTabPanel({ tabLabel }: MapSelectorTabPanelProps) {
+    const { gameProgressManager, closeMenu } = useContext(MenuContext);
     const [selectedMap, setSelectedMap] = useState<string>();
     // const [mapMeta, setMapMeta] = useState<{ name, create-date, author, rating... }>();
 
