@@ -6,7 +6,7 @@ import {
 import { MapElementProps, MapElementShape } from '../mapModules/mapBuilder';
 import { NumberInput } from '../uiComponents/index';
 import uiTexts from '../uiTexts';
-import { MapBuilderContext } from './editor';
+import { EditorPanelContext } from './editor';
 
 interface MapElementTransformPanelProps {
     mapElementProps: MapElementProps;
@@ -41,7 +41,7 @@ const editablePropertiesByShape: Record<MapElementShape, (keyof MapElementProps)
 };
 
 export function MapElementTransformPanel({ mapElementProps }: MapElementTransformPanelProps) {
-    const mapBuilder = useContext(MapBuilderContext);
+    const { mapBuilder } = useContext(EditorPanelContext);
     const defaultProps = getDefaultPropsByShape(mapElementProps.shape);
     const {
         shape,

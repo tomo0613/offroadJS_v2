@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 import { Modal } from '../uiComponents/index';
 import uiTexts from '../uiTexts';
-import { MapDataExportModal } from './mapDataExportModal';
-import { MapDataImportModal } from './mapDataImportModal';
+import { MapDataExportModal } from './MapDataExportModal';
+import { MapDataImportModal } from './MapDataImportModal';
 
 const { importButtonLabel, exportButtonLabel } = uiTexts;
 

@@ -271,10 +271,10 @@ export default [
         shape: 'box',
         width: 4,
         height: 4,
-        length: 4,
+        length: 3.8,
         position_x: 5,
         position_y: 3.1,
-        position_z: -2,
+        position_z: -1.9,
     },
     {
         shape: 'box',
@@ -284,6 +284,17 @@ export default [
         position_x: 9,
         position_z: -3.9,
         position_y: 1.2,
+        lowFriction: true,
+    },
+    {
+        shape: 'box',
+        width: 4,
+        height: 4,
+        length: 0.2,
+        position_x: 5,
+        position_z: -3.9,
+        position_y: 3.1,
+        lowFriction: true,
     },
     {
         shape: 'box',
@@ -293,6 +304,7 @@ export default [
         position_x: 7,
         position_z: -8.1,
         position_y: 1.2,
+        lowFriction: true,
     },
     {
         shape: 'box',

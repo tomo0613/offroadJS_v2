@@ -1,10 +1,10 @@
 import { useContext } from 'react';
 
 import { noop } from '../utils';
-import { MapBuilderContext } from './editor';
+import { EditorPanelContext } from './editor';
 
 export function MapDataExportModal() {
-    const mapBuilder = useContext(MapBuilderContext);
+    const { mapBuilder } = useContext(EditorPanelContext);
 
     return (
         <div className="modal__body">

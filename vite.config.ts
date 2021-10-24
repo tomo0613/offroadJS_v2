@@ -3,6 +3,7 @@ import { defineConfig, Plugin } from 'vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    publicDir: 'assets',
     plugins: [
         vite_react(),
         devServer_crossOriginIsolation(),

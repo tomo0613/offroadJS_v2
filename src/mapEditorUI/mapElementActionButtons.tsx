@@ -1,12 +1,12 @@
 import { useContext } from 'react';
 
 import uiTexts from '../uiTexts';
-import { MapBuilderContext } from './editor';
+import { EditorPanelContext } from './editor';
 
 const { cloneButtonLabel, removeButtonLabel } = uiTexts;
 
 export function MapElementActionButtons() {
-    const mapBuilder = useContext(MapBuilderContext);
+    const { mapBuilder } = useContext(EditorPanelContext);
 
     return (
         <div>

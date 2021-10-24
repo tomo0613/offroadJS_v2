@@ -3,7 +3,7 @@ import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler } from 'three';
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
-import { renderEditor } from '../mapEditorUI/editor';
+import { mountEditorPanel } from '../mapEditorUI/editor';
 import { ColorPicker } from '../uiComponents';
 import { degToRad, noop } from '../utils';
 import { AnimationProps, defineAnimationProps } from './animatedMapElementHelper';
@@ -15,6 +15,7 @@ import {
 export enum MapBuilderEvent {
     mapElementChange = 'mapElementChange',
     mapElementSelect = 'mapElementSelect',
+    editModeChange = 'editModeChange',
 }
 
 export enum TriggerMapElementEvent {
@@ -143,6 +144,8 @@ export class MapBuilder {
 
         generalMaterial = world.materials.find((material) => material.name === 'general');
         lowFrictionMaterial = world.materials.find((material) => material.name === 'lowFriction');
+
+        mountEditorPanel(this);
     }
 
     get mapElementIdList() {
@@ -292,17 +295,16 @@ export class MapBuilder {
         this.editMode = !this.editMode;
 
         if (this.editMode) {
-            renderEditor(this);
             this.mapElementIdList.forEach((id) => {
                 this.setEventTriggerVisibility(id, true);
             });
-            document.getElementById('editorPanel').classList.remove('hidden');
         } else {
             this.mapElementIdList.forEach((id) => {
                 this.setEventTriggerVisibility(id, false);
             });
-            document.getElementById('editorPanel').classList.add('hidden');
         }
+
+        this.listeners.dispatch(MapBuilderEvent.editModeChange, this.editMode);
     }
 
     clone(id: MapElementId) {

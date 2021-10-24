@@ -3,7 +3,7 @@ import { useContext, useState } from 'react';
 import { MapElementShape } from '../mapModules/mapBuilder';
 import { SelectInput } from '../uiComponents/index';
 import uiTexts from '../uiTexts';
-import { MapBuilderContext } from './editor';
+import { EditorPanelContext } from './editor';
 
 const { createButtonLabel } = uiTexts;
 const mapElementShapeSelectorOptionList = [
@@ -11,7 +11,7 @@ const mapElementShapeSelectorOptionList = [
 ] as MapElementShape[];
 
 export function MapBuilderActionButtons() {
-    const mapBuilder = useContext(MapBuilderContext);
+    const { mapBuilder } = useContext(EditorPanelContext);
     const [selectedMapElementShape, setSelectedMapElementShape] = useState<MapElementShape>(MapElementShape.box);
 
     return (

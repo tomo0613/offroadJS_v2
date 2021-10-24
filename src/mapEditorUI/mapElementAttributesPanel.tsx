@@ -5,7 +5,7 @@ import {
 } from '../mapModules/mapBuilder';
 import { ColorPicker, NumberInput, SelectInput, Switch, TextInput } from '../uiComponents/index';
 import { numberToHexString } from '../utils';
-import { MapBuilderContext } from './editor';
+import { EditorPanelContext } from './editor';
 
 interface MapElementAttributesPanelProps {
     mapElementProps: MapElementProps;
@@ -29,7 +29,7 @@ const triggerEventOptionList: TriggerMapElementEvent[] = [
 ];
 
 export function MapElementAttributesPanel({ mapElementProps }: MapElementAttributesPanelProps) {
-    const mapBuilder = useContext(MapBuilderContext);
+    const { mapBuilder } = useContext(EditorPanelContext);
     const {
         type = MapElementType.default, mass = 0, event = TriggerMapElementEvent.setCameraPosition, dataSet = '',
     } = mapElementProps;

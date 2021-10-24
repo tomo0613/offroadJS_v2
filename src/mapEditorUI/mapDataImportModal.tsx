@@ -1,7 +1,7 @@
 import { useContext, useRef } from 'react';
 
 import { MapElementProps } from '../mapModules/mapBuilder';
-import { MapBuilderContext } from './editor';
+import { EditorPanelContext } from './editor';
 
 const importButtonText = 'import';
 const importTextAreaPlaceholder = `[
@@ -27,7 +27,7 @@ const importTextAreaPlaceholder = `[
 ]`;
 
 export function MapDataImportModal({ closeModal }: { closeModal: VoidFnc }) {
-    const mapBuilder = useContext(MapBuilderContext);
+    const { mapBuilder } = useContext(EditorPanelContext);
     const inputRef = useRef<HTMLTextAreaElement>();
 
     return (

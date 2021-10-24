@@ -1,57 +1,37 @@
-import { nodeResolve as rollup_nodeResolve } from '@rollup/plugin-node-resolve';
-import rollup_html from '@web/rollup-plugin-html';
-import FileSystem from 'fs-extra';
 import { defineConfig, Plugin } from 'vite';
 
-const tscBuildDir = 'tsc_build';
-const distDir = 'dist';
+const assetUrlRegExp = /assets\//g;
 
 export default defineConfig({
+    publicDir: 'assets',
+    esbuild: {
+        jsxInject: 'import React from "react"',
+    },
     build: {
         rollupOptions: {
-            input: `./${tscBuildDir}/index.html`,
+            output: {
+                entryFileNames: 'esm/[name][hash].js',
+                chunkFileNames: 'esm/[name][hash].js',
+                assetFileNames: 'static/[name]-[hash][extname]',
+                manualChunks: {
+                    react: ['react', 'react-dom'],
+                    three: ['three'],
+                    cannon: ['cannon-es'],
+                },
+            },
             plugins: [
-                buildPlugin(),
-                rollup_html(),
-                rollup_nodeResolve(),
+                codeTransformPlugin(),
             ],
         },
-        // chunkSizeWarningLimit: 900,
+        chunkSizeWarningLimit: 550,
     },
 });
 
-function buildPlugin(): Plugin {
+function codeTransformPlugin(): Plugin {
     return {
-        name: 'build',
-        options: async (options) => {
-            await addStaticFilesToBuildDir();
-
-            return options;
-        },
-        closeBundle: async () => {
-            await FileSystem.copy('./assets', `./${distDir}/assets`);
+        name: 'code-transform',
+        transform(code) {
+            return code.replace(assetUrlRegExp, '');
         },
     };
-}
-
-async function addStaticFilesToBuildDir() {
-    await Promise.all([
-        copyIndexHtml(),
-        FileSystem.copy('./assets', `./${tscBuildDir}/assets`),
-        FileSystem.copy('./style', `./${tscBuildDir}/style`),
-    ]);
-}
-
-async function copyIndexHtml() {
-    try {
-        const htmlContent = await FileSystem.readFile('./index.html');
-        let indexHtmlContent = htmlContent.toString();
-
-        indexHtmlContent = indexHtmlContent.replace('./src/main.ts', './main.js');
-
-        await FileSystem.writeFile(`./${tscBuildDir}/index.html`, indexHtmlContent);
-    } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
-    }
 }

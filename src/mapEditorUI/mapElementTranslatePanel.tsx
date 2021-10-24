@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { MapElementProps } from '../mapModules/mapBuilder';
 import { NumberInput } from '../uiComponents/index';
 import uiTexts from '../uiTexts';
-import { MapBuilderContext } from './editor';
+import { EditorPanelContext } from './editor';
 
 interface MapElementTranslatePanelProps {
     mapElementProps: MapElementProps;
@@ -12,7 +12,7 @@ interface MapElementTranslatePanelProps {
 const { translatePanelLabel, positionLabel, rotationLabel } = uiTexts;
 
 export function MapElementTranslatePanel({ mapElementProps }: MapElementTranslatePanelProps) {
-    const mapBuilder = useContext(MapBuilderContext);
+    const { mapBuilder } = useContext(EditorPanelContext);
     const {
         position_x = 0, position_y = 0, position_z = 0,
         rotation_x = 0, rotation_y = 0, rotation_z = 0,
