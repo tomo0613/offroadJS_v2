@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
+import { createContext, useState, useContext, useEffect, lazy, Suspense, useMemo } from 'react';
 import { render } from 'react-dom';
 
 import { MapBuilder, MapBuilderEvent, MapElementProps } from '../mapModules/mapBuilder';
