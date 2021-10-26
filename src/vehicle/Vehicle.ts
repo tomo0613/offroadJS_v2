@@ -1,5 +1,5 @@
 import { Body, Box, Cylinder, Quaternion, RaycastVehicle, Transform, Vec3, World } from 'cannon-es';
-import { Material, Object3D, Scene, Vector3 } from 'three';
+import { Object3D, Scene, Vector3 } from 'three';
 
 import cfg from '../config';
 import { setMaterials } from './materials';

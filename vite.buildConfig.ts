@@ -1,7 +1,6 @@
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig } from 'vite';
 
-const INDEX = 'index.js';
-const assetUrlRegExp = /assets\//g;
+const INDEX = 'index';
 
 export default defineConfig({
     base: './',
@@ -47,19 +46,7 @@ export default defineConfig({
                     return 'vendor';
                 },
             },
-            plugins: [
-                codeTransformPlugin(),
-            ],
         },
         chunkSizeWarningLimit: 660,
     },
 });
-
-function codeTransformPlugin(): Plugin {
-    return {
-        name: 'code-transform',
-        transform(code) {
-            return code.replace(assetUrlRegExp, '');
-        },
-    };
-}

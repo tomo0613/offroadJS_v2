@@ -85,6 +85,17 @@ window.onkeydown = window.onkeyup = (e: KeyboardEvent) => {
     handleKeysDownChange();
 };
 
+window.onbeforeunload = (e: BeforeUnloadEvent) => {
+    if (keysDown.has('ControlLeft')) {
+        e.preventDefault();
+        keysDown.clear();
+
+        return '';
+    }
+
+    return undefined;
+};
+
 appendScreenButton('topLeftPanel', 'Tab', '⋮');
 
 if (isMobileDevice()) {

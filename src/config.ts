@@ -38,7 +38,7 @@ const config = {
     },
     vehicle: {
         mass: 30,
-        steeringSpeed: 0.05,
+        steeringSpeed: 0.02,
         maxSteeringAngle: 0.7,
         maxBrakeForce: 22,
         maxEngineForce: 220,

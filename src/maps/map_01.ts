@@ -80,7 +80,7 @@ export default [
         shape: 'box',
         mass: 40,
         position_x: 11,
-        position_y: 3,
+        position_y: 3.1,
         position_z: -6,
         width: 4,
         height: 4,
