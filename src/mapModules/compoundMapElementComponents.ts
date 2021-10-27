@@ -1,7 +1,8 @@
-import { Object3D, Vector3 } from 'three';
+import { Object3D, Vector3, MathUtils } from 'three';
 
-import { degToRad, radToDeg } from '../utils';
 import { MapElementOrientationProps, MapElementProps, MapElementShape } from './mapBuilder';
+
+const { degToRad, radToDeg } = MathUtils;
 
 export const loopDefaultProps = {
     segmentCount: 13,

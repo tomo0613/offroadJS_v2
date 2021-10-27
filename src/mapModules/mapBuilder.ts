@@ -1,16 +1,18 @@
 import { Body, BODY_TYPES, ContactEquation, Material, Quaternion, Vec3, World } from 'cannon-es';
-import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler } from 'three';
+import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler, MathUtils } from 'three';
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
 import { mountEditorPanel } from '../mapEditorUI/editor';
 import { ColorPicker } from '../uiComponents';
-import { degToRad, noop } from '../utils';
+import { noop } from '../utils';
 import { AnimationProps, defineAnimationProps } from './animatedMapElementHelper';
 import { getBaseElementComponents } from './baseMapElementComponents';
 import {
     compoundShapes, getCompoundElementChildrenPropertyList, LoopProps, SlopeTransitionProps, CantedCurveProps,
 } from './compoundMapElementComponents';
+
+const { degToRad } = MathUtils;
 
 export enum MapBuilderEvent {
     mapElementChange = 'mapElementChange',

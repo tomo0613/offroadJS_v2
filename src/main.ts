@@ -25,6 +25,8 @@ import { confirmDialog, popUpNotification } from './notificationModules/notifica
 import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
 
+const { degToRad } = MathUtils;
+
 const physicsFrameTime = 1 / cfg.physicsFrameRate;
 
 const generalMaterial = new Material('general');
@@ -96,6 +98,7 @@ if (cfg.fullscreen) {
         .addToScene(scene);
 
     cameraHandler.setCameraTarget(vehicle);
+    cameraHandler.cameraMode = CameraMode.cinematic;
     cameraHandler.camera.aspect = window.aspectRatio;
     cameraHandler.camera.updateProjectionMatrix();
 
@@ -115,7 +118,7 @@ if (cfg.fullscreen) {
 
     mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
         vehicle.initialPosition.set(pX, pY, pZ);
-        vehicle.initialRotation.setFromEuler(MathUtils.degToRad(rX), MathUtils.degToRad(rY), MathUtils.degToRad(rZ));
+        vehicle.initialRotation.setFromEuler(degToRad(rX), degToRad(rY), degToRad(rZ));
         vehicle.resetPosition();
     };
     mapBuilder.eventTriggerListeners.add(

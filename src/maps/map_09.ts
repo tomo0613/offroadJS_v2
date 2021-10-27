@@ -105,7 +105,7 @@ export default [
         type: 'trigger',
         shape: 'box',
         event: 'setCameraMode',
-        dataSet: 'dynamic,-5,24,19',
+        dataSet: 'cinematic,-5,24,19',
         position_y: 12,
     },
     {

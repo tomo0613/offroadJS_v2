@@ -161,7 +161,7 @@ export default [
         height: 2 * 2,
         position_x: -26.8,
         event: 'setCameraMode',
-        dataSet: 'dynamic,-16,21,-2',
+        dataSet: 'cinematic,-16,21,-2',
     },
     {
         shape: 'box',

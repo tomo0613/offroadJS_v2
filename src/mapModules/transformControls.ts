@@ -1,9 +1,12 @@
+import { MathUtils } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 import { CameraHandler } from '../cameraHandler';
 import inputHandler from '../inputHandler';
-import { radToDeg, round, throttle } from '../utils';
+import { round, throttle } from '../utils';
 import { MapBuilder } from './mapBuilder';
+
+const { radToDeg } = MathUtils;
 
 export function initTransformControls(cameraHandler: CameraHandler, mapBuilder: MapBuilder) {
     const transformControls = new TransformControls(cameraHandler.camera, cameraHandler.domElement);

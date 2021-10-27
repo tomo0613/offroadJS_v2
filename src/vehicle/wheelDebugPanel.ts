@@ -1,6 +1,6 @@
 import { RaycastVehicle } from 'cannon-es';
 
-import { radToDeg, round } from '../utils';
+import { round } from '../utils';
 
 const wheelInfoContainerElements: HTMLDivElement[] = [];
 let initialized = false;
@@ -64,4 +64,8 @@ function update(wheelInfos: RaycastVehicle['wheelInfos'], torqueDistribution: nu
             steering: ${round(radToDeg(wheelInfo.steering))}°
         `;
     }
+}
+
+function radToDeg(rad: number) {
+    return rad * 180 / Math.PI;
 }

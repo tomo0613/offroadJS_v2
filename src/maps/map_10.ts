@@ -312,7 +312,7 @@ export default [
         shape: 'box',
         type: 'trigger',
         event: 'setCameraMode',
-        dataSet: 'dynamic,0, 13, 17',
+        dataSet: 'cinematic,0, 13, 17',
         width: 1,
         length: 10,
         height: 1,

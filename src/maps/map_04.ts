@@ -201,7 +201,7 @@ export default [
         shape: 'sphere',
         type: 'trigger',
         event: 'setCameraMode',
-        dataSet: 'dynamic,26,20,43',
+        dataSet: 'cinematic,26,20,43',
         position_x: -5,
         position_y: 11,
         position_z: 8,
