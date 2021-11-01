@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 
 import { Modal } from '../uiComponents';
 import { GameProgressEvent } from './gameProgressManager';
@@ -12,6 +12,13 @@ const selectMapButtonText = 'select map';
 
 export function MapFinishedModal({ closeModal }: { closeModal: VoidFnc }) {
     const gameProgress = useContext(GameProgressContext);
+    const nextButtonRef = useRef<HTMLButtonElement>();
+
+    useEffect(() => {
+        if (nextButtonRef.current) {
+            nextButtonRef.current.focus();
+        }
+    }, [nextButtonRef.current]);
 
     return (
         <Modal>
@@ -20,7 +27,7 @@ export function MapFinishedModal({ closeModal }: { closeModal: VoidFnc }) {
             <div className="modal__footer">
                 <button onClick={retry}>{retryButtonText}</button>
                 <button onClick={openMapSelectorPanel}>{selectMapButtonText}</button>
-                <button onClick={next}>{nextButtonText}</button>
+                <button onClick={next} ref={nextButtonRef}>{nextButtonText}</button>
             </div>
         </Modal>
     );

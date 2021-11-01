@@ -50,7 +50,7 @@ if (cfg.fullscreen) {
     });
 }
 
-(async function init() {
+(async function main() {
     let paused = false;
     const clock = new Clock();
     const scene = new Scene();

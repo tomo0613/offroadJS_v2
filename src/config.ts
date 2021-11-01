@@ -35,6 +35,9 @@ const config = {
             y: 7,
             z: 27,
         },
+        mountOffset_v3: [0, 4, 9],
+        mountOffsetReverse_v3: [5, 4, -9],
+        lookOffset_v3: [0, 1, -5],
     },
     vehicle: {
         mass: 30,

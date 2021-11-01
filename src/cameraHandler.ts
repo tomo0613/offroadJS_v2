@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import cfg from './config';
 import { popUpNotification } from './notificationModules/notificationManager';
-import { noop, valueBetween } from './utils';
+import { noop } from './utils';
 import Vehicle from './vehicle/Vehicle';
 
 export enum CameraMode {
@@ -20,8 +20,12 @@ const cameraModeList = [
     CameraMode.hood,
 ];
 
-const chaseCameraMountOffset = new Vector3(0, 5, 10);
-const chaseCameraLookOffset = new Vector3(0, 1, -5);
+const xAxis = new Vector3(0, 1, 0);
+const cameraSpeed = 0.2;
+const chaseCameraMountOffset = new Vector3(...cfg.camera.mountOffset_v3);
+const chaseCameraMountOffsetReverse = new Vector3(...cfg.camera.mountOffsetReverse_v3);
+const chaseCameraLookOffset = new Vector3(...cfg.camera.lookOffset_v3);
+// const chaseCameraMinDistance = chaseCameraMountOffset.distanceTo(new Vector3(0, 0, 0));
 
 export class CameraHandler {
     domElement: HTMLElement;
@@ -29,7 +33,6 @@ export class CameraHandler {
     orbitControls: OrbitControls;
     cameraTarget?: Vehicle;
     cameraPosition = new Vector3();
-    cameraSpeed = 0.2;
     private currentCameraMode?: CameraMode;
     private idealChaseCameraLookPosition = new Vector3();
     private idealChaseCameraMountPosition = new Vector3();
@@ -61,7 +64,7 @@ export class CameraHandler {
                 break;
             case CameraMode.hood:
                 this.cameraTarget.chassisMesh.remove(this.camera);
-                this.camera.position.copy(this.cameraTarget.chassisMesh.position);
+                this.camera.position.copy(this.cameraTargetPosition);
                 this.camera.position.y += 5;
 
                 this.camera.fov = cfg.camera.fov;
@@ -76,10 +79,15 @@ export class CameraHandler {
         switch (mode) {
             case CameraMode.cinematic:
                 this.update = this.updateDynamicCamera;
+
                 popUpNotification('Camera mode is set to: "cinematic"');
                 break;
             case CameraMode.chase:
+                // if (!this.cameraTarget?.chassisMesh) {
+                //     return;
+                // }
                 this.update = this.updateChaseCamera;
+
                 popUpNotification('Camera mode is set to: "chase"');
                 break;
             case CameraMode.hood:
@@ -89,10 +97,13 @@ export class CameraHandler {
                 this.camera.fov = 60;
                 this.camera.updateProjectionMatrix();
                 this.update = noop;
+
                 popUpNotification('Camera mode is set to: "hood"');
                 break;
             case CameraMode.free:
                 this.orbitControls.enabled = true;
+                this.orbitControls.target.copy(this.cameraTargetPosition);
+
                 popUpNotification('Camera mode is set to: "free" (use mouse to look around)');
                 break;
             default:
@@ -101,51 +112,65 @@ export class CameraHandler {
         this.currentCameraMode = mode;
     }
 
-    setIdealChaseCameraMountPosition() {
-        this.idealChaseCameraMountPosition.copy(chaseCameraMountOffset);
+    get cameraTargetPosition() {
+        return this.cameraTarget.chassisMesh.position;
+    }
+
+    rotate(angle: number) {
+        this.camera.rotateOnAxis(xAxis, angle);
+    }
+
+    setIdealChaseCameraMountPosition(reverse: boolean) {
+        if (reverse) {
+            this.idealChaseCameraMountPosition.copy(chaseCameraMountOffsetReverse);
+        } else {
+            this.idealChaseCameraMountPosition.copy(chaseCameraMountOffset);
+        }
+
         this.idealChaseCameraMountPosition.applyQuaternion(this.cameraTarget.chassisMesh.quaternion);
-        this.idealChaseCameraMountPosition.add(this.cameraTarget.chassisMesh.position);
+        this.idealChaseCameraMountPosition.add(this.cameraTargetPosition);
 
         // do not let camera below target
-        if (this.idealChaseCameraMountPosition.y < this.cameraTarget.chassisMesh.position.y) {
-            this.idealChaseCameraMountPosition.setY(this.cameraTarget.chassisMesh.position.y);
+        if (this.idealChaseCameraMountPosition.y < this.cameraTargetPosition.y) {
+            this.idealChaseCameraMountPosition.setY(this.cameraTargetPosition.y);
         }
     }
 
-    setIdealChaseCameraLookPosition() {
+    setIdealChaseCameraLookPosition(reverse: boolean) {
         this.idealChaseCameraLookPosition.copy(chaseCameraLookOffset);
+
+        if (reverse) {
+            this.idealChaseCameraLookPosition.z *= -1;
+        }
+
         this.idealChaseCameraLookPosition.applyQuaternion(this.cameraTarget.chassisMesh.quaternion);
-        this.idealChaseCameraLookPosition.add(this.cameraTarget.chassisMesh.position);
+        this.idealChaseCameraLookPosition.add(this.cameraTargetPosition);
     }
 
     updateDynamicCamera(delta: number) {
-        if (!this.camera.position.equals(this.cameraPosition)) {
-            const t = 1 - this.cameraSpeed ** delta;
+        // https://github.com/mrdoob/three.js/issues/7346
+        if (this.camera.position.manhattanDistanceTo(this.cameraPosition) > Number.EPSILON) {
+            const t = 1 - cameraSpeed ** delta;
             this.camera.position.lerp(this.cameraPosition, t);
         }
-        if (this.cameraTarget) {
-            this.camera.lookAt(this.cameraTarget.chassisMesh.position);
-        }
+
+        this.camera.lookAt(this.cameraTargetPosition);
     }
 
     updateChaseCamera(delta: number) {
-        const cameraLookTarget = this.cameraTarget?.chassisMesh;
-        // const { currentVehicleSpeedKmHour: speed } = this.cameraTarget.base;
-
-        if (!cameraLookTarget) {
-            return;
-        }
-
-        this.setIdealChaseCameraMountPosition();
-        this.setIdealChaseCameraLookPosition();
-
+        // const cameraToTargetDistance = this.camera.position.distanceTo(this.cameraTargetPosition);
+        const { currentVehicleSpeedKmHour: speed } = this.cameraTarget.base;
+        const reverse = Math.round(-speed) < -1;
         // https://www.youtube.com/watch?v=UuNPHOJ_V5o&t=650s
-        const dt = 1 - this.cameraSpeed ** delta;
+        const dt = 1 - cameraSpeed ** delta;
+
+        this.setIdealChaseCameraMountPosition(reverse);
+        this.setIdealChaseCameraLookPosition(reverse);
 
         this.camera.position.lerp(this.idealChaseCameraMountPosition, dt);
         this.actualChaseCameraLookPosition.lerp(this.idealChaseCameraLookPosition, dt);
 
-        this.camera.lookAt(this.idealChaseCameraLookPosition);
+        this.camera.lookAt(this.actualChaseCameraLookPosition);
     }
 
     switchMode() {

@@ -7,10 +7,10 @@ import inputHandler from '../inputHandler';
 import { Loading } from '../uiComponents/Loading';
 import { noop } from '../utils';
 
-const gModalControllerRootElement = document.createElement('aside');
-gModalControllerRootElement.id = 'menuModalControllerRoot';
-gModalControllerRootElement.classList.add('hidden');
-document.body.appendChild(gModalControllerRootElement);
+const gModalControllerContainerElement = document.createElement('aside');
+gModalControllerContainerElement.id = 'menuModalControllerRoot';
+gModalControllerContainerElement.classList.add('hidden');
+document.body.appendChild(gModalControllerContainerElement);
 
 interface MenuModalContextProviderProps {
     gameProgressManager: GameProgressManager;
@@ -31,12 +31,12 @@ export const MenuContext = createContext(defaultContextValue);
 
 export function mountMenuRoot(gameProgressManager: GameProgressManager, renderer: WebGLRenderer) {
     render(
-        <MenuModalContextProvider gameProgressManager={gameProgressManager} renderer={renderer} />,
-        gModalControllerRootElement,
+        <MenuModalRoot gameProgressManager={gameProgressManager} renderer={renderer} />,
+        gModalControllerContainerElement,
     );
 }
 
-function MenuModalContextProvider({ gameProgressManager, renderer }: MenuModalContextProviderProps) {
+function MenuModalRoot({ gameProgressManager, renderer }: MenuModalContextProviderProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
