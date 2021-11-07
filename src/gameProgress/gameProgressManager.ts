@@ -3,7 +3,7 @@ import { Scene } from 'three';
 
 import EventListener from '../common/EventListener';
 import Timer from '../common/Timer';
-import { MapBuilder } from '../mapModules/mapBuilder';
+import { MapBuilder, MapData } from '../mapModules/mapBuilder';
 import { mapCollection } from '../maps/mapCollection';
 import { formatTime } from '../utils';
 import Vehicle from '../vehicle/Vehicle';
@@ -15,8 +15,19 @@ export enum GameProgressEvent {
     openMapSelectorPanel = 'openMapSelectorPanel',
 }
 
+interface Goals {
+    time: number;
+    respawnCount: number;
+}
+
+interface MapMetaData {
+    author: string;
+    goals: Goals;
+}
+
 let lastCheckpointTriggerBody: Body;
 
+const respawnTimePenalty = 5e3;
 const hud = document.createElement('aside');
 const timeDisplay = document.createElement('span');
 const timeDisplayDefaultContent = '00:00.000';
@@ -28,9 +39,10 @@ export class GameProgressManager {
     timer = new Timer();
     listeners = new EventListener<GameProgressEvent>();
     started = false;
-    result = '';
     checkpointsReached = 0;
     respawnCount = 0;
+    time: number;
+    goals: Goals;
     private _mapBuilder: MapBuilder;
     checkpointHandler: CheckpointHandler;
     vehicle: Vehicle;
@@ -63,6 +75,7 @@ export class GameProgressManager {
             this.vehicle.chassisBody.position.copy(lastCheckpointTriggerBody.position);
             this.vehicle.chassisBody.quaternion.copy(lastCheckpointTriggerBody.quaternion);
             this.respawnCount++;
+            this.timer.add(respawnTimePenalty);
         } else {
             this.reset();
         }
@@ -75,14 +88,15 @@ export class GameProgressManager {
 
     stop() {
         this.timer.stop();
-        this.result = formatTime(this.timer.time);
+        this.time = this.timer.time;
+        // ToDo local store time by map elements md5
     }
 
     reset() {
         this.started = false;
         this.checkpointsReached = 0;
         this.respawnCount = 0;
-        this.result = '';
+        this.time = undefined;
         timeDisplay.textContent = timeDisplayDefaultContent;
         this.timer.reset();
 
@@ -96,7 +110,11 @@ export class GameProgressManager {
             console.warn(`invalid map name ${mapName}`);
             return;
         }
-        this._mapBuilder.importMap(mapCollection[mapName]);
+        const { meta, elements } = mapCollection[mapName] as MapData<MapMetaData>;
+
+        this.goals = meta.goals;
+        this._mapBuilder.importMap(elements);
+        // ToDo invalidate time on change ?
         this.currentMap = mapName;
         this.reset();
     }

@@ -229,3 +229,9 @@ Object.defineProperties(Object, {
     omit: { value: omit },
     pick: { value: pick },
 });
+
+export function textContent(stringList: TemplateStringsArray, ...valueList: unknown[]) {
+    return stringList.reduce((text, string, i) => (
+        text + string.replace(/ {2,}/g, '') + (valueList[i] || '')
+    ), '').trim();
+}

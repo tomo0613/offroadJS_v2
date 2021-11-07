@@ -30,4 +30,8 @@ export default class Timer {
         this.stopped = false;
         this.startTime = 0;
     }
+
+    add(time: number) {
+        this.startTime -= time;
+    }
 }

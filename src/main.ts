@@ -164,7 +164,7 @@ if (cfg.fullscreen) {
             }
         },
     );
-    mapBuilder.listeners.add(MapBuilderEvent.mapElementSelect, (selectedMapElementId: string) => {
+    mapBuilder.listeners.add(MapBuilderEvent.mapElementSelect, (selectedMapElementId: string | undefined) => {
         outlinePass.selectedObjects.length = 0;
         transformControls.detach();
 

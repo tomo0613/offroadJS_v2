@@ -114,6 +114,11 @@ type CompoundProps = LoopProps & SlopeTransitionProps & CantedCurveProps;
 export type MapElementProps = BoxProps & CylinderProps & SphereProps & PrismProps & EventTriggerProps & CompoundProps;
 export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps|AnimationProps>;
 
+export interface MapData<MapMetaData = Record<string, unknown>> {
+    meta: MapMetaData;
+    elements: MapElementProps[];
+}
+
 export const vehicleMapElementId = 'vehicle_0';
 const defaultPlatformColor = 0xBBBBBB;
 const dynamicPlatformColor = 0x95C0E5;
@@ -131,7 +136,7 @@ ColorPicker.addColorValues(defaultPlatformColor, dynamicPlatformColor, kinematic
 export class MapBuilder {
     scene: Scene;
     world: World;
-    selectedMapElementId: MapElementId;
+    selectedMapElementId: MapElementId | undefined;
     perviousSelectedMapElementId: MapElementId;
     private mapElementComponentStore: MapElementComponentStore = new Map();
     private mapElementIdStore = new Set<string>();
@@ -595,17 +600,23 @@ export class MapBuilder {
         this.listeners.dispatch(MapBuilderEvent.mapElementChange, { ...mapElementProps });
     }
 
-    importMap = (mapData: MapElementProps[]) => {
+    importMap = (mapElementData: MapElementProps[]) => {
+        const lastSelectedMapElementId = this.selectedMapElementId;
+
         this.mapElementIdStore.forEach(this.destroy);
         gId = 0;
 
-        mapData.forEach((props) => {
+        mapElementData.forEach((props) => {
             if (props.type === MapElementType.vehicle) {
-                this.placeVehicle(props);
+                this.placeVehicle({ ...props });
             } else {
-                this.build(props);
+                this.build({ ...props });
             }
         });
+
+        if (this.editMode && lastSelectedMapElementId) {
+            this.selectMapElement(lastSelectedMapElementId);
+        }
     }
 
     exportMap = () => (
