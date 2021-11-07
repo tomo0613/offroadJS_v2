@@ -3,6 +3,7 @@ export default {
         author: '',
         goals: {
             time: 40e3,
+            // time: 35e3,
             respawnCount: 0,
         },
     },

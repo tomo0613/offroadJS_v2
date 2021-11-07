@@ -111,10 +111,16 @@ export class GameProgressManager {
             return;
         }
         const { meta, elements } = mapCollection[mapName] as MapData<MapMetaData>;
+        const lastSelectedMapElementId = this._mapBuilder.selectedMapElementId;
 
         this.goals = meta.goals;
         this._mapBuilder.importMap(elements);
         // ToDo invalidate time on change ?
+
+        if (mapName === this.currentMap && this._mapBuilder.editMode && lastSelectedMapElementId) {
+            this._mapBuilder.selectMapElement(lastSelectedMapElementId);
+        }
+
         this.currentMap = mapName;
         this.reset();
     }

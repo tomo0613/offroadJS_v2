@@ -24,9 +24,10 @@ function GoalsSection() {
             </h4>
             {Boolean(goals.time) && (
                 <p>
-                    {`Finis under: ${formatTime(goals.time)}`}
+                    {'Finis under: '}
+                    <span className="textHighlight_2">{formatTime(goals.time)}</span>
                     <span className="end_adornment">
-                        {time <= goals.time ? '✅' : '🟥'}
+                        {time <= goals.time ? '✅' : '🟧'}
                     </span>
                 </p>
             )}
@@ -51,12 +52,14 @@ export function MapFinishedModal({ closeModal }: { closeModal: VoidFnc }) {
             </span>
             <span className="modal__body">
                 <p>
-                    {`Your time: ${formatTime(gameProgress.time)}`}
-                    <span className="end_adornment">🕑</span>
+                    {'Your time: '}
+                    <span className="textHighlight_1">{formatTime(gameProgress.time)}</span>
+                    <span className="end_adornment">⏱</span>
                 </p>
                 {Boolean(gameProgress.respawnCount) && (
                     <p>
-                        {`Respawn count: ${gameProgress.respawnCount}`}
+                        {'Respawn count: '}
+                        <span className="textHighlight_1">{gameProgress.respawnCount}</span>
                     </p>
                 )}
                 <GoalsSection/>

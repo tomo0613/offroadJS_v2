@@ -281,7 +281,7 @@ export class MapBuilder {
 
         if (this.selectedMapElementId === id) {
             this.selectedMapElementId = undefined;
-            this.listeners.dispatch(MapBuilderEvent.mapElementSelect, this.selectedMapElementId);
+            this.listeners.dispatch(MapBuilderEvent.mapElementSelect, undefined);
         }
         if (this.perviousSelectedMapElementId === id) {
             this.perviousSelectedMapElementId = undefined;
@@ -601,8 +601,6 @@ export class MapBuilder {
     }
 
     importMap = (mapElementData: MapElementProps[]) => {
-        const lastSelectedMapElementId = this.selectedMapElementId;
-
         this.mapElementIdStore.forEach(this.destroy);
         gId = 0;
 
@@ -613,10 +611,6 @@ export class MapBuilder {
                 this.build({ ...props });
             }
         });
-
-        if (this.editMode && lastSelectedMapElementId) {
-            this.selectMapElement(lastSelectedMapElementId);
-        }
     }
 
     exportMap = () => (
