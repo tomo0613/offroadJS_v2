@@ -1,4 +1,4 @@
-import { Box3, ExtrudeBufferGeometry, Group, ImageLoader, Mesh, MeshBasicMaterial, Vector3 } from 'three';
+import { Box3, ExtrudeGeometry, Group, ImageLoader, Mesh, MeshBasicMaterial, Vector3 } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGLoader, SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeGeometry';
@@ -88,7 +88,7 @@ export function svgToMesh({ paths }: SVGResult, translateProps = {} as Translate
         const shapes = path.toShapes(false);
         for (let j = 0; j < shapes.length; j++) {
             const shape = shapes[j];
-            const geometry = new ExtrudeBufferGeometry(shape, extrudeOptions);
+            const geometry = new ExtrudeGeometry(shape, extrudeOptions);
             const mesh = new Mesh(geometry, material);
             group.add(mesh);
         }
@@ -195,6 +195,10 @@ function appendLeadingZero(value: number) {
 
 export function numberToHexString(colorValue: number) {
     return `#${colorValue.toString(16).toUpperCase()}`;
+}
+
+export function hexStringToNumber(colorValue: string) {
+    return parseInt(colorValue.replace('#', ''), 16);
 }
 
 export function round(n: number) {

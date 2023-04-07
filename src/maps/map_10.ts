@@ -25,7 +25,7 @@ export default {
         },
         {
             shape: 'box',
-            color: '#aad0ff',
+            color: 0xaad0ff,
             fixedRotation: true,
             width: 5,
             height: 3.79,
@@ -37,7 +37,7 @@ export default {
         },
         {
             shape: 'box',
-            color: '#aad0ff',
+            color: 0xaad0ff,
             fixedRotation: true,
             width: 5,
             height: 0.17,
@@ -55,7 +55,7 @@ export default {
             height: 0.2,
             length: 1,
             width: 24.9,
-            color: '#959dff',
+            color: 0x959dff,
             mass: 30,
         },
         {
@@ -302,7 +302,7 @@ export default {
         },
         {
             shape: 'sphere',
-            color: '#77a7ff',
+            color: 0x77a7ff,
             position_x: 6.25,
             position_y: 1.5,
             position_z: -10,
@@ -310,7 +310,7 @@ export default {
         },
         {
             shape: 'sphere',
-            color: '#77a7ff',
+            color: 0x77a7ff,
             position_x: -5.36,
             position_y: 1.5,
             position_z: -10,

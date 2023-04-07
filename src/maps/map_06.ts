@@ -52,7 +52,7 @@ export default {
         },
         {
             shape: 'box',
-            color: '#a59c89',
+            color: 0xa59c89,
             height: 0.2,
             width: 16,
             length: 12,

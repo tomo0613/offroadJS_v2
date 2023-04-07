@@ -1,5 +1,5 @@
 import { Body } from 'cannon-es';
-import { BoxBufferGeometry, Mesh, MeshPhongMaterial, Scene, Vector3 } from 'three';
+import { BoxGeometry, Mesh, MeshPhongMaterial, Scene, Vector3 } from 'three';
 
 import ObjectPool from '../common/ObjectPool';
 import { MapBuilder, TriggerMapElementEvent, TriggeredEvent } from '../mapModules/mapBuilder';
@@ -119,7 +119,7 @@ export class CheckpointHandler {
 
 export function getCheckpointIcon3d() {
     const checkpointIcon3d = new Mesh(
-        new BoxBufferGeometry(0.8, 0.8, 0.8),
+        new BoxGeometry(0.8, 0.8, 0.8),
         new MeshPhongMaterial({
             color: 0x000000,
             specular: 0x666666,

@@ -1,3 +1,5 @@
+import EventListener from './common/EventListener';
+
 const prefKeys = [
     'fullscreen',
     'antialias',
@@ -68,15 +70,17 @@ const config = {
 type ConfigKeys = keyof typeof config;
 type PrefCache = Record<typeof prefKeys[number], boolean|number>;
 
-const userPrefCache = prefKeys.reduce((prefCache, prefKey) => {
-    const userPrefValue = window.localStorage.getItem(prefKey);
+export const configListener = new EventListener<ConfigKeys>();
 
-    if (userPrefValue) {
-        try {
+const userPrefCache = prefKeys.reduce((prefCache, prefKey) => {
+    try {
+        const userPrefValue = window.localStorage.getItem(prefKey);
+
+        if (userPrefValue) {
             prefCache[prefKey] = JSON.parse(userPrefValue) as boolean|number;
-        } catch (e) {
-            console.warn(e);
         }
+    } catch (error) {
+        console.error(error);
     }
 
     return prefCache;
@@ -89,7 +93,14 @@ export default new Proxy(config, {
     set(target, key: ConfigKeys, value: boolean|number) {
         if (prefKeys.includes(key as (typeof prefKeys)[number])) {
             userPrefCache[key] = value;
-            window.localStorage.setItem(key, String(value));
+
+            configListener.dispatch(key, value);
+
+            try {
+                window.localStorage.setItem(key, String(value));
+            } catch (error) {
+                console.error(error);
+            }
         }
 
         return true;

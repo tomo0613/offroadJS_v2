@@ -12,23 +12,6 @@ interface MapElementTransformPanelProps {
     mapElementProps: MapElementProps;
 }
 
-const {
-    transformPanelLabel,
-    widthLabel,
-    heightLabel,
-    lengthLabel,
-    radiusTopLabel,
-    radiusBottomLabel,
-    sidesLabel,
-    segmentWidthLabel,
-    segmentHeightLabel,
-    segmentLengthLabel,
-    segmentCountLabel,
-    offsetLabel,
-    radiusLabel,
-    angleLabel,
-} = uiTexts;
-
 const editablePropertiesByShape: Record<MapElementShape, (keyof MapElementProps)[]> = {
     box: ['width', 'height', 'length'],
     cylinder: ['height', 'radiusTop', 'radiusBottom', 'sides'],
@@ -60,88 +43,88 @@ export function MapElementTransformPanel({ mapElementProps }: MapElementTransfor
 
     return (
         <>
-            <span className="label">{transformPanelLabel}</span>
+            <span className="label">{uiTexts.transformPanelLabel}</span>
             {isPropertyEditable('width', shape) && (
                 <NumberInput
-                    label={widthLabel} id="width"
+                    label={uiTexts.widthLabel} id="width"
                     value={width} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('height', shape) && (
                 <NumberInput
-                    label={heightLabel} id="height"
+                    label={uiTexts.heightLabel} id="height"
                     value={height} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('length', shape) && (
                 <NumberInput
-                    label={lengthLabel} id="length"
+                    label={uiTexts.lengthLabel} id="length"
                     value={length} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('offset', shape) && (
                 <NumberInput
-                    label={offsetLabel} id="offset"
+                    label={uiTexts.offsetLabel} id="offset"
                     value={offset} onChange={onChange}
                 />
             )}
             {isPropertyEditable('radiusTop', shape) && (
                 <NumberInput
-                    label={radiusTopLabel} id="radiusTop"
+                    label={uiTexts.radiusTopLabel} id="radiusTop"
                     value={radiusTop} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('radiusBottom', shape) && (
                 <NumberInput
-                    label={radiusBottomLabel} id="radiusBottom"
+                    label={uiTexts.radiusBottomLabel} id="radiusBottom"
                     value={radiusBottom} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('sides', shape) && (
                 <NumberInput
-                    label={sidesLabel} id="sides"
+                    label={uiTexts.sidesLabel} id="sides"
                     value={sides} onChange={onChange} min={3} step={1}
                 />
             )}
             {isPropertyEditable('segmentCount', shape) && (
                 <NumberInput
-                    label={segmentCountLabel} id="segmentCount"
+                    label={uiTexts.segmentCountLabel} id="segmentCount"
                     value={segmentCount} onChange={onChange} min={1} step={1}
                 />
             )}
             {isPropertyEditable('segmentWidth', shape) && (
                 <NumberInput
-                    label={segmentWidthLabel} id="segmentWidth"
+                    label={uiTexts.segmentWidthLabel} id="segmentWidth"
                     value={segmentWidth} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('segmentHeight', shape) && (
                 <NumberInput
-                    label={segmentHeightLabel} id="segmentHeight"
+                    label={uiTexts.segmentHeightLabel} id="segmentHeight"
                     value={segmentHeight} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('segmentLength', shape) && (
                 <NumberInput
-                    label={segmentLengthLabel} id="segmentLength"
+                    label={uiTexts.segmentLengthLabel} id="segmentLength"
                     value={segmentLength} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('segmentPositionOffset', shape) && (
                 <NumberInput
-                    label={offsetLabel} id="segmentPositionOffset"
+                    label={uiTexts.offsetLabel} id="segmentPositionOffset"
                     value={segmentPositionOffset} onChange={onChange}
                 />
             )}
             {isPropertyEditable('radius', shape) && (
                 <NumberInput
-                    label={radiusLabel} id="radius"
+                    label={uiTexts.radiusLabel} id="radius"
                     value={radius} onChange={onChange} min={0}
                 />
             )}
             {isPropertyEditable('angle', shape) && (
                 <NumberInput
-                    label={angleLabel} id="angle"
+                    label={uiTexts.angleLabel} id="angle"
                     value={angle} onChange={onChange} min={0} max={180} step={1}
                 />
             )}

@@ -5,18 +5,16 @@ import uiTexts from '../uiTexts';
 import { MapDataExportModal } from './MapDataExportModal';
 import { MapDataImportModal } from './MapDataImportModal';
 
-const { importButtonLabel, exportButtonLabel } = uiTexts;
-
 export function MapDataActionButtons() {
     const [activeModal, setActiveModal] = useState<'import'|'export'>();
 
     return (
         <div>
             <button onClick={openImportModalAction}>
-                {importButtonLabel}
+                {uiTexts.importButtonLabel}
             </button>
             <button onClick={openExportModalAction}>
-                {exportButtonLabel}
+                {uiTexts.exportButtonLabel}
             </button>
             {activeModal && (
                 <Modal onClose={closeModalAction}>

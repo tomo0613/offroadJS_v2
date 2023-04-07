@@ -9,8 +9,6 @@ interface MapElementTranslatePanelProps {
     mapElementProps: MapElementProps;
 }
 
-const { translatePanelLabel, positionLabel, rotationLabel } = uiTexts;
-
 export function MapElementTranslatePanel({ mapElementProps }: MapElementTranslatePanelProps) {
     const { mapBuilder } = useContext(EditorPanelContext);
     const {
@@ -20,29 +18,29 @@ export function MapElementTranslatePanel({ mapElementProps }: MapElementTranslat
 
     return (
         <>
-            <span className="label">{translatePanelLabel}</span>
+            <span className="label">{uiTexts.translatePanelLabel}</span>
             <NumberInput
-                label={`${positionLabel}.X:`} id="position_x" value={position_x} sensitivity={10}
+                label={`${uiTexts.positionLabel}.X:`} id="position_x" value={position_x} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label={`${positionLabel}.Y:`} id="position_y" value={position_y} sensitivity={10}
+                label={`${uiTexts.positionLabel}.Y:`} id="position_y" value={position_y} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label={`${positionLabel}.Z:`} id="position_z" value={position_z} sensitivity={10}
+                label={`${uiTexts.positionLabel}.Z:`} id="position_z" value={position_z} sensitivity={10}
                 onChange={onInputChange}
             />
             <NumberInput
-                label={`${rotationLabel}.X:`} id="rotation_x" value={rotation_x} sensitivity={10}
+                label={`${uiTexts.rotationLabel}.X:`} id="rotation_x" value={rotation_x} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
             <NumberInput
-                label={`${rotationLabel}.Y:`} id="rotation_y" value={rotation_y} sensitivity={10}
+                label={`${uiTexts.rotationLabel}.Y:`} id="rotation_y" value={rotation_y} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
             <NumberInput
-                label={`${rotationLabel}.Z:`} id="rotation_z" value={rotation_z} sensitivity={10}
+                label={`${uiTexts.rotationLabel}.Z:`} id="rotation_z" value={rotation_z} sensitivity={10}
                 onChange={onInputChange} min={-360} max={360}
             />
         </>

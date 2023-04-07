@@ -14,7 +14,6 @@ export enum DialogEvent {
 
 export const dialogListener = new EventListener();
 
-const { okButtonLabel, cancelButtonLabel } = uiTexts;
 const gModalControllerRootElement = document.createElement('aside');
 gModalControllerRootElement.id = 'menuModalControllerRoot';
 gModalControllerRootElement.classList.add('hidden');
@@ -71,10 +70,10 @@ function DialogModal({ message, closeModal }: { message: string; closeModal: Voi
             <span className="modal__body dialog__message">{message}</span>
             <div className="modal__footer dialog__buttonBar">
                 <button className="dialog__button" onClick={onConfirm} data-confirm="false">
-                    {cancelButtonLabel}
+                    {uiTexts.cancelButtonLabel}
                 </button>
                 <button className="dialog__button" onClick={onConfirm} data-confirm="true" ref={confirmButtonRef}>
-                    {okButtonLabel}
+                    {uiTexts.okButtonLabel}
                 </button>
             </div>
         </Modal>

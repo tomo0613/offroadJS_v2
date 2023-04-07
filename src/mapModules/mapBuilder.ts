@@ -1,5 +1,5 @@
-import { Body, BODY_TYPES, ContactEquation, Material, Quaternion, Vec3, World } from 'cannon-es';
-import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler, MathUtils } from 'three';
+import { Body, BODY_TYPES, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
+import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler, MathUtils, ColorRepresentation } from 'three';
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
@@ -61,7 +61,7 @@ interface CommonMapElementProps extends MapElementOrientationProps {
     type?: MapElementType;
     shape?: MapElementShape;
     mass?: number;
-    color?: string;
+    color?: ColorRepresentation;
     lowFriction?: boolean;
     fixedRotation?: boolean;
 }
@@ -149,8 +149,18 @@ export class MapBuilder {
         this.scene = scene;
         this.world = world;
 
-        generalMaterial = world.materials.find((material) => material.name === 'general');
-        lowFrictionMaterial = world.materials.find((material) => material.name === 'lowFriction');
+        const contactMaterials = Object.values(world.contactMaterialTable.data).filter(isContactMaterial);
+        const materialMap = contactMaterials.reduce<Map<string, Material>>((m, cm) => {
+            const [material_1, material_2] = cm.materials;
+
+            m.set(material_1.name, material_1);
+            m.set(material_2.name, material_2);
+
+            return m;
+        }, new Map());
+
+        generalMaterial = materialMap.get('general');
+        lowFrictionMaterial = materialMap.get('lowFriction');
 
         mountEditorPanel(this);
     }
@@ -222,12 +232,13 @@ export class MapBuilder {
             const animationProps = defineAnimationProps(body, props.dataSet);
 
             body.type = BODY_TYPES.KINEMATIC;
-            body.preStep = animationProps.movementHandler;
+
             if (!animationProps.triggerStart) {
                 body.velocity.set(animationProps.velocity_x, animationProps.velocity_y, animationProps.velocity_z);
             }
 
             this.mapElementComponentStore.set(`${mapElementId}_animationProps`, animationProps);
+            this.world.addEventListener('preStep', animationProps.movementHandler);
         }
 
         if (mass || type === MapElementType.animated) {
@@ -271,6 +282,12 @@ export class MapBuilder {
             const listener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
             body.removeEventListener(Body.COLLIDE_EVENT_NAME, listener);
             this.mapElementComponentStore.delete(`${id}_listener`);
+        }
+
+        if (type === MapElementType.animated) {
+            const animationProps = this.getAnimationPropsFromStore(id);
+            this.world.removeEventListener('preStep', animationProps.movementHandler);
+            this.mapElementComponentStore.delete(`${id}_animationProps`);
         }
 
         this.mapElementIdStore.delete(id);
@@ -626,13 +643,13 @@ function disposeGeometryAndMaterial(mesh: Mesh) {
     (mesh.material as MeshLambertMaterial).dispose();
 }
 
-export function setMeshColor(mesh: Mesh|Group, hexColorValue?: number|string, opacity?: number) {
+export function setMeshColor(mesh: Mesh|Group, colorValue?: ColorRepresentation, opacity?: number) {
     const material = (isCompoundMesh(mesh)
         ? (mesh.children[0] as Mesh).material
         : mesh.material) as MeshLambertMaterial;
 
-    if (hexColorValue) {
-        material.color.set(hexColorValue);
+    if (colorValue) {
+        material.color.set(colorValue);
     }
     if (opacity) {
         material.transparent = opacity < 1;
@@ -656,4 +673,8 @@ export function getColorValueByProps(mapElementProps: MapElementProps) {
 
 function isCompoundMesh(mesh: Mesh|Group): mesh is Group {
     return !!mesh.children.length;
+}
+
+function isContactMaterial(value: unknown): value is ContactMaterial {
+    return value instanceof ContactMaterial;
 }

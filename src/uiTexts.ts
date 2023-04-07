@@ -42,6 +42,13 @@ const uiTexts = {
     removeButtonLabel: 'remove',
 
     createButtonLabel: 'create',
+
+    fullscreenSwitchLabel: 'Fullscreen:',
+    renderWireFrameSwitchLabel: 'Render wireFrame:',
+    resolutionScaleSliderLabel: 'Resolution scale:',
+    antialiasCheckboxLabel: 'Antialias:',
+    renderShadowsCheckboxLabel: 'Render shadows:',
+    applySettingsButtonLabel: 'Apply settings',
 };
 
 type UiTexts = typeof uiTexts;

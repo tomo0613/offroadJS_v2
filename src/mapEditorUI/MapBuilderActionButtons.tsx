@@ -5,7 +5,6 @@ import { SelectInput } from '../uiComponents/index';
 import uiTexts from '../uiTexts';
 import { EditorPanelContext } from './editor';
 
-const { createButtonLabel } = uiTexts;
 const mapElementShapeSelectorOptionList = [
     'box', 'cylinder', 'sphere', 'tetrahedron', 'triangularPrism', 'loop', 'slopeTransition', 'cantedCurve',
 ] as MapElementShape[];
@@ -17,7 +16,7 @@ export function MapBuilderActionButtons() {
     return (
         <div>
             <button onClick={createNewMapElementAction}>
-                {createButtonLabel}
+                {uiTexts.createButtonLabel}
             </button>
             <SelectInput
                 value={selectedMapElementShape}

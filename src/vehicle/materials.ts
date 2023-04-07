@@ -1,5 +1,7 @@
 import { Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, Object3D } from 'three';
 
+import cfg from '../config';
+
 export function setMaterials(wheel: Object3D, chassis: Object3D) {
     const materials = {
         baseMaterial: new MeshLambertMaterial({ color: 0x777777 }),
@@ -9,7 +11,7 @@ export function setMaterials(wheel: Object3D, chassis: Object3D) {
         glassMaterial: new MeshPhongMaterial({ color: 0xACCCD7 }),
         tailLightMaterial: new MeshPhongMaterial({ color: 0x550000 }),
         headLightMaterial: new MeshPhongMaterial({ color: 0xFFFFBB }),
-        wheelMaterial: new MeshBasicMaterial({ alphaTest: 0.5, skinning: true }),
+        wheelMaterial: new MeshBasicMaterial({ alphaTest: 0.5 }),
     };
 
     wheel.traverse((childMesh: Mesh) => {
@@ -18,11 +20,18 @@ export function setMaterials(wheel: Object3D, chassis: Object3D) {
             childMesh.material = materials.wheelMaterial;
             childMesh.material.needsUpdate = true;
         }
+        if (cfg.renderShadows) {
+            childMesh.castShadow = true;
+        }
     });
 
     chassis.traverse((childMesh: Mesh) => {
         if (childMesh.material) {
             childMesh.material = getChassisMaterialByPartName(childMesh.name);
+        }
+        if (cfg.renderShadows) {
+            childMesh.castShadow = true;
+            childMesh.receiveShadow = true;
         }
     });
 

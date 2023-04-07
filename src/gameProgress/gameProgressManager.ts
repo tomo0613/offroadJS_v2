@@ -33,7 +33,7 @@ const timeDisplay = document.createElement('span');
 const timeDisplayDefaultContent = '00:00.000';
 hud.id = 'hud';
 
-const mapOrder = ['map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07', 'map08', 'map09', 'map10'];
+const mapOrder = ['map11', 'map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07', 'map08', 'map09', 'map10'];
 
 export class GameProgressManager {
     timer = new Timer();
@@ -46,7 +46,7 @@ export class GameProgressManager {
     private _mapBuilder: MapBuilder;
     checkpointHandler: CheckpointHandler;
     vehicle: Vehicle;
-    currentMap = 'map01'; // Default
+    currentMap = mapOrder[0]; // Default
 
     constructor(mapBuilder: MapBuilder, vehicle: Vehicle) {
         timeDisplay.textContent = timeDisplayDefaultContent;

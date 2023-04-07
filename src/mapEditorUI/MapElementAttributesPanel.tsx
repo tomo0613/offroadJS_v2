@@ -4,7 +4,7 @@ import {
     getColorValueByProps, MapElementProps, MapElementType, setMeshColor, TriggerMapElementEvent,
 } from '../mapModules/mapBuilder';
 import { ColorPicker, NumberInput, SelectInput, Switch, TextInput } from '../uiComponents/index';
-import { numberToHexString } from '../utils';
+import { hexStringToNumber, numberToHexString } from '../utils';
 import { EditorPanelContext } from './editor';
 
 interface MapElementAttributesPanelProps {
@@ -34,7 +34,7 @@ export function MapElementAttributesPanel({ mapElementProps }: MapElementAttribu
         type = MapElementType.default, mass = 0, event = TriggerMapElementEvent.setCameraPosition, dataSet = '',
     } = mapElementProps;
     const colorValue = getColorValueByProps(mapElementProps);
-    const hexColorValue = typeof colorValue === 'number' ? numberToHexString(colorValue) : colorValue;
+    const hexColorValue = typeof colorValue === 'number' ? numberToHexString(colorValue) : String(colorValue);
 
     return (
         <>
@@ -70,7 +70,7 @@ export function MapElementAttributesPanel({ mapElementProps }: MapElementAttribu
     }
 
     function onColor(value: string) {
-        setMeshColor(mapBuilder.getMeshFromStore(mapBuilder.selectedMapElementId), value);
+        setMeshColor(mapBuilder.getMeshFromStore(mapBuilder.selectedMapElementId), hexStringToNumber(value));
     }
 }
 

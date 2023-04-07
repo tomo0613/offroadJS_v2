@@ -122,7 +122,7 @@ export default {
             position_x: 2.1,
             position_y: -7.1,
             position_z: 10,
-            color: '#c4c4c4',
+            color: 0xc4c4c4,
         },
         {
             shape: 'box',

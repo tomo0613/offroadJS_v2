@@ -3,18 +3,16 @@ import { useContext } from 'react';
 import uiTexts from '../uiTexts';
 import { EditorPanelContext } from './editor';
 
-const { cloneButtonLabel, removeButtonLabel } = uiTexts;
-
 export function MapElementActionButtons() {
     const { mapBuilder } = useContext(EditorPanelContext);
 
     return (
         <div>
             <button onClick={cloneMapElementAction}>
-                {cloneButtonLabel}
+                {uiTexts.cloneButtonLabel}
             </button>
             <button onClick={destroyMapElementAction}>
-                {removeButtonLabel}
+                {uiTexts.removeButtonLabel}
             </button>
         </div>
     );

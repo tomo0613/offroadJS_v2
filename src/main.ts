@@ -1,9 +1,8 @@
 import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
-import wireframeRenderer from 'cannon-es-debugger';
+import WireframeRenderer from 'cannon-es-debugger';
 import {
-    Clock, CubeTexture, DirectionalLight, LightProbe, Mesh, Scene, Vector2, WebGLRenderer, MathUtils,
+    Clock, CubeTexture, DirectionalLight, HemisphereLight, Mesh, Scene, Vector2, WebGLRenderer, MathUtils,
 } from 'three';
-import { LightProbeGenerator } from 'three/examples/jsm/lights/LightProbeGenerator';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
@@ -11,7 +10,7 @@ import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 
 import { CameraHandler, CameraMode } from './cameraHandler';
-import cfg from './config';
+import cfg, { configListener } from './config';
 import { getCheckpointIcon3d } from './gameProgress/checkpointHandler';
 import { GameProgressManager } from './gameProgress/gameProgressManager';
 import inputHandler from './inputHandler';
@@ -31,7 +30,6 @@ const physicsFrameTime = 1 / cfg.physicsFrameRate;
 
 const generalMaterial = new Material('general');
 const lowFrictionMaterial = new Material('lowFriction');
-const vehicleTireMaterial = new Material('vehicleTire');
 const general_to_general_cm = new ContactMaterial(generalMaterial, generalMaterial, {
     friction: 1e-3,
 });
@@ -55,20 +53,41 @@ if (cfg.fullscreen) {
     const clock = new Clock();
     const scene = new Scene();
 
-    const lightProbe = new LightProbe();
-    const sunLight = new DirectionalLight(0xf5f4d3, 0.5);
-    sunLight.position.set(-30, 50, -30);
-    sunLight.castShadow = cfg.renderShadows;
-    scene.add(lightProbe, sunLight);
+    const directionalLight = new DirectionalLight(0xf5f4d3, 0.5);
+    directionalLight.position.set(-30, 50, -30);
+    directionalLight.castShadow = cfg.renderShadows;
+
+    const hemisphereLight = new HemisphereLight(0xffffff, 0xffffff, 1);
+    hemisphereLight.color.setHSL(0.6, 0.2, 0.7);
+    hemisphereLight.groundColor.setHSL(0.095, 1, 0.75);
+
+    scene.add(directionalLight, hemisphereLight);
+
+    if (cfg.renderShadows) {
+        const shadowMapSize = 2 ** 14; // 16384
+        const shadowAreaSize = 100;
+        directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize);
+        directionalLight.shadow.camera.top = shadowAreaSize / 2;
+        directionalLight.shadow.camera.right = shadowAreaSize / 2;
+        directionalLight.shadow.camera.left = -shadowAreaSize / 2;
+        directionalLight.shadow.camera.bottom = -shadowAreaSize / 2;
+    }
 
     const world = new World();
     const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
     world.gravity.set(gravityX, gravityY, gravityZ);
     world.broadphase = new SAPBroadphase(world);
-    world.materials.push(generalMaterial, lowFrictionMaterial, vehicleTireMaterial);
     world.defaultContactMaterial.friction = 0.001;
     world.addContactMaterial(general_to_general_cm);
     world.addContactMaterial(lowFriction_to_general_cm);
+
+    const wireframeRenderer = WireframeRenderer(scene, world, {
+        onInit(body, mesh) {
+            configListener.add('renderWireFrame', (renderWireFrame: boolean) => {
+                mesh.visible = renderWireFrame;
+            });
+        },
+    });
 
     const renderer = new WebGLRenderer({ antialias: cfg.antialias, powerPreference: cfg.powerPreference });
     renderer.setPixelRatio(window.devicePixelRatio); // cfg.renderScale;
@@ -275,10 +294,6 @@ if (cfg.fullscreen) {
         }
     }
 
-    if (cfg.renderWireFrame) {
-        wireframeRenderer(scene, world.bodies);
-    }
-
     // start animation loop
     renderer.setAnimationLoop(animationLoop);
 
@@ -290,10 +305,24 @@ if (cfg.fullscreen) {
 
         gameProgress.checkpointHandler.updateVisuals(delta);
 
+        // ToDo move shadow camera
+        // if (cfg.renderShadows) {
+        //     // directionalLight.shadow.camera.position.setX(vehicle.chassisMesh.position.x);
+        //     // directionalLight.shadow.camera.position.setZ(vehicle.chassisMesh.position.z);
+        //     directionalLight.shadow.camera.top = vehicle.chassisMesh.position.x + 50;
+        //     directionalLight.shadow.camera.right = vehicle.chassisMesh.position.z + 50;
+        //     directionalLight.shadow.camera.left = vehicle.chassisMesh.position.z - 50;
+        //     directionalLight.shadow.camera.bottom = vehicle.chassisMesh.position.x - 50;
+        // }
+
         composer.render();
 
         // update physics
         world.step(physicsFrameTime, delta);
+
+        if (cfg.renderWireFrame) {
+            wireframeRenderer.update();
+        }
     }
 
     function onWindowResize() {
@@ -315,8 +344,6 @@ if (cfg.fullscreen) {
         const skyBox = new CubeTexture(utils.sliceCubeTexture(cubeTexture));
         skyBox.needsUpdate = true;
         scene.background = skyBox;
-
-        lightProbe.copy(LightProbeGenerator.fromCubeTexture(skyBox));
 
         return [
             chassisGLTF.scene,

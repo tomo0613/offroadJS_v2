@@ -9,8 +9,10 @@ import map07 from './map_07';
 import map08 from './map_08';
 import map09 from './map_09';
 import map10 from './map_10';
+import map11 from './map_11';
 
 export const mapCollection = {
+    map11,
     map01,
     map02,
     map03,

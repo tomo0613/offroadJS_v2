@@ -16,6 +16,16 @@ export default {
             rotation_y: 90,
         },
         {
+            shape: 'sphere',
+            type: 'trigger',
+            event: 'setCameraMode',
+            dataSet: 'cinematic,25,11,25',
+            radius: 3,
+            position_x: 10,
+            position_y: 1,
+            position_z: 10,
+        },
+        {
             shape: 'box',
             width: 30,
             height: 0.2,
@@ -385,16 +395,6 @@ export default {
             position_x: 1,
             position_y: 6,
             position_z: -11,
-        },
-        {
-            type: 'trigger',
-            shape: 'sphere',
-            event: 'setCameraPosition',
-            dataSet: '25,11,25',
-            radius: 3,
-            position_x: 10,
-            position_y: 1,
-            position_z: 10,
         },
         {
             type: 'trigger',

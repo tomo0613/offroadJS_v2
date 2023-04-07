@@ -1,6 +1,6 @@
 import { Box, ConvexPolyhedron, Cylinder, Shape, Sphere, Vec3 } from 'cannon-es';
 import {
-    BoxBufferGeometry, BufferGeometry, CylinderBufferGeometry, Quaternion, SphereBufferGeometry, Vector3,
+    BoxGeometry, BufferGeometry, CylinderGeometry, Quaternion, SphereGeometry, Vector3,
 } from 'three';
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
 
@@ -45,7 +45,7 @@ export function getBaseElementComponents(props: MapElementProps): [Shape, Buffer
 
 /*  Box  */
 function getBoxGeometry(width = 2, height = 2, length = 2) {
-    return new BoxBufferGeometry(width, height, length);
+    return new BoxGeometry(width, height, length);
 }
 
 function getBoxShape(width = 2, height = 2, length = 2) {
@@ -54,7 +54,7 @@ function getBoxShape(width = 2, height = 2, length = 2) {
 
 /*  Cylinder  */
 function getCylinderGeometry(radiusTop = 1, radiusBottom = 1, height = 2, sides = 6) {
-    return new CylinderBufferGeometry(radiusTop, radiusBottom, height, Math.max(3, sides));
+    return new CylinderGeometry(radiusTop, radiusBottom, height, Math.max(3, sides));
 }
 
 function getCylinderShape(radiusTop = 1, radiusBottom = 1, height = 2, sides = 6) {
@@ -63,7 +63,7 @@ function getCylinderShape(radiusTop = 1, radiusBottom = 1, height = 2, sides = 6
 
 /*  Sphere  */
 function getSphereGeometry(radius = 1) {
-    return new SphereBufferGeometry(radius);
+    return new SphereGeometry(radius);
 }
 
 function getSphereShape(radius = 1) {
