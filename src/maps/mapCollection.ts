@@ -1,28 +1,28 @@
 import empty from './map_00';
-import map01 from './map_01';
-import map02 from './map_02';
-import map03 from './map_03';
-import map04 from './map_04';
-import map05 from './map_05';
-import map06 from './map_06';
-import map07 from './map_07';
-import map08 from './map_08';
-import map09 from './map_09';
-import map10 from './map_10';
-import map11 from './map_11';
+import i01 from './map_i01';
+import o01 from './map_o01';
+import o02 from './map_o02';
+import o03 from './map_o03';
+import o04 from './map_o04';
+import o05 from './map_o05';
+import o06 from './map_o06';
+import o07 from './map_o07';
+import o08 from './map_o08';
+import o09 from './map_o09';
+import o10 from './map_o10';
 
 export const mapCollection = {
-    map11,
-    map01,
-    map02,
-    map03,
-    map04,
-    map05,
-    map06,
-    map07,
-    map08,
-    map09,
-    map10,
+    i01,
+    o01,
+    o02,
+    o03,
+    o04,
+    o05,
+    o06,
+    o07,
+    o08,
+    o09,
+    o10,
     empty,
     test: {
         meta: {},

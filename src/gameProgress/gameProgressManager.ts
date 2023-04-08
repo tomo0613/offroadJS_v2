@@ -16,13 +16,8 @@ export enum GameProgressEvent {
 }
 
 interface Goals {
-    time: number;
-    respawnCount: number;
-}
-
-interface MapMetaData {
-    author: string;
-    goals: Goals;
+    time?: number;
+    respawnCount?: number;
 }
 
 let lastCheckpointTriggerBody: Body;
@@ -33,7 +28,7 @@ const timeDisplay = document.createElement('span');
 const timeDisplayDefaultContent = '00:00.000';
 hud.id = 'hud';
 
-const mapOrder = ['map11', 'map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07', 'map08', 'map09', 'map10'];
+const [defaultMapId] = Object.entries(mapCollection)[0];
 
 export class GameProgressManager {
     timer = new Timer();
@@ -46,7 +41,7 @@ export class GameProgressManager {
     private _mapBuilder: MapBuilder;
     checkpointHandler: CheckpointHandler;
     vehicle: Vehicle;
-    currentMap = mapOrder[0]; // Default
+    currentMapId = defaultMapId;
 
     constructor(mapBuilder: MapBuilder, vehicle: Vehicle) {
         timeDisplay.textContent = timeDisplayDefaultContent;
@@ -105,32 +100,33 @@ export class GameProgressManager {
         lastCheckpointTriggerBody = undefined;
     }
 
-    loadMap(mapName = this.currentMap) {
-        if (!mapCollection.hasOwnProperty(mapName)) {
-            console.warn(`invalid map name ${mapName}`);
+    loadMap(mapId = this.currentMapId) {
+        if (!mapCollection.hasOwnProperty(mapId)) {
+            // eslint-disable-next-line no-console
+            console.warn(`invalid map name ${mapId}`);
+
             return;
         }
-        const { meta, elements } = mapCollection[mapName] as MapData<MapMetaData>;
+        const { meta, elements } = mapCollection[mapId] as MapData;
         const lastSelectedMapElementId = this._mapBuilder.selectedMapElementId;
 
-        this.goals = meta.goals;
+        this.goals = meta.goals || {};
         this._mapBuilder.importMap(elements);
         // ToDo invalidate time on change ?
 
-        if (mapName === this.currentMap && this._mapBuilder.editMode && lastSelectedMapElementId) {
+        if (mapId === this.currentMapId && this._mapBuilder.editMode && lastSelectedMapElementId) {
             this._mapBuilder.selectMapElement(lastSelectedMapElementId);
         }
 
-        this.currentMap = mapName;
+        this.currentMapId = mapId;
         this.reset();
     }
 
     loadNextMap() {
-        const currentMapIndex = mapOrder.indexOf(this.currentMap);
+        const { meta } = mapCollection[this.currentMapId] as MapData;
 
-        if (currentMapIndex < mapOrder.length - 1) {
-            const mapName = mapOrder[currentMapIndex + 1];
-            this.loadMap(mapName);
+        if (meta.next) {
+            this.loadMap(meta.next);
         } else {
             this.reset();
         }

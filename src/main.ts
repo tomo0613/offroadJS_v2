@@ -1,8 +1,9 @@
 import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
 import WireframeRenderer from 'cannon-es-debugger';
 import {
-    Clock, CubeTexture, DirectionalLight, HemisphereLight, Mesh, Scene, Vector2, WebGLRenderer, MathUtils,
+    Clock, CubeTexture, DirectionalLight, HemisphereLight, MathUtils, Mesh, Scene, Vector2, WebGLRenderer,
 } from 'three';
+import { CSM, CMSMode as CSMMode } from 'three/examples/jsm/csm/CSM';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
@@ -50,28 +51,15 @@ if (cfg.fullscreen) {
 
 (async function main() {
     let paused = false;
+    let cascadedShadowMap: CSM | undefined;
     const clock = new Clock();
     const scene = new Scene();
-
-    const directionalLight = new DirectionalLight(0xf5f4d3, 0.5);
-    directionalLight.position.set(-30, 50, -30);
-    directionalLight.castShadow = cfg.renderShadows;
 
     const hemisphereLight = new HemisphereLight(0xffffff, 0xffffff, 1);
     hemisphereLight.color.setHSL(0.6, 0.2, 0.7);
     hemisphereLight.groundColor.setHSL(0.095, 1, 0.75);
 
-    scene.add(directionalLight, hemisphereLight);
-
-    if (cfg.renderShadows) {
-        const shadowMapSize = 2 ** 14; // 16384
-        const shadowAreaSize = 100;
-        directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize);
-        directionalLight.shadow.camera.top = shadowAreaSize / 2;
-        directionalLight.shadow.camera.right = shadowAreaSize / 2;
-        directionalLight.shadow.camera.left = -shadowAreaSize / 2;
-        directionalLight.shadow.camera.bottom = -shadowAreaSize / 2;
-    }
+    scene.add(hemisphereLight);
 
     const world = new World();
     const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
@@ -97,6 +85,32 @@ if (cfg.fullscreen) {
     const cameraHandler = new CameraHandler(renderer.domElement);
     renderer.domElement.tabIndex = -1; /* OrbitControls sets tabIndex="0" */
     renderer.domElement.focus();
+
+    if (cfg.renderShadows) {
+        cascadedShadowMap = new CSM({
+            parent: scene,
+            camera: cameraHandler.camera,
+            cascades: 3,
+            maxFar: 500,
+
+            mode: 'logarithmic' as CSMMode.logarithmic,
+            // mode: 'custom' as CSMMode.custom,
+            // customSplitsCallback: (cascades, cameraNear, cameraFar, breaks) => {
+            //     for (let i = cascades - 1; i >= 0; i--) {
+            //         breaks.push((1 / 4) ** i);
+            //     }
+            // },
+
+            shadowMapSize: 4096 * 2,
+            lightIntensity: 0.25,
+            // lightDirection: new Vector3(-30, 50, -30).normalize(),
+        });
+    } else {
+        const directionalLight = new DirectionalLight(0xf5f4d3, 0.5);
+        directionalLight.position.set(-30, 50, -30).normalize();
+
+        scene.add(directionalLight);
+    }
 
     // setup postprocessing
     const composer = new EffectComposer(renderer);
@@ -305,15 +319,9 @@ if (cfg.fullscreen) {
 
         gameProgress.checkpointHandler.updateVisuals(delta);
 
-        // ToDo move shadow camera
-        // if (cfg.renderShadows) {
-        //     // directionalLight.shadow.camera.position.setX(vehicle.chassisMesh.position.x);
-        //     // directionalLight.shadow.camera.position.setZ(vehicle.chassisMesh.position.z);
-        //     directionalLight.shadow.camera.top = vehicle.chassisMesh.position.x + 50;
-        //     directionalLight.shadow.camera.right = vehicle.chassisMesh.position.z + 50;
-        //     directionalLight.shadow.camera.left = vehicle.chassisMesh.position.z - 50;
-        //     directionalLight.shadow.camera.bottom = vehicle.chassisMesh.position.x - 50;
-        // }
+        if (cascadedShadowMap) {
+            cascadedShadowMap.update();
+        }
 
         composer.render();
 

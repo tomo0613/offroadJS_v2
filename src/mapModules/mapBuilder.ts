@@ -114,8 +114,15 @@ type CompoundProps = LoopProps & SlopeTransitionProps & CantedCurveProps;
 export type MapElementProps = BoxProps & CylinderProps & SphereProps & PrismProps & EventTriggerProps & CompoundProps;
 export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps|AnimationProps>;
 
-export interface MapData<MapMetaData = Record<string, unknown>> {
-    meta: MapMetaData;
+export interface MapData {
+    meta: {
+        author?: string;
+        goals?: {
+            time?: number;
+            respawnCount?: number;
+        };
+        next?: string;
+    };
     elements: MapElementProps[];
 }
 
@@ -218,11 +225,6 @@ export class MapBuilder {
         if (fixedRotation) {
             body.fixedRotation = true;
             body.updateMassProperties();
-        }
-
-        if (cfg.renderShadows) {
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
         }
 
         this.world.addBody(body);
@@ -351,6 +353,12 @@ export class MapBuilder {
                 // ToDo reuse geometries|shapes ?
                 const [shape, geometry] = getBaseElementComponents(childProps);
                 const mesh = new Mesh(geometry, meshMaterial);
+
+                if (cfg.renderShadows) {
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                }
+
                 tmp_euler.set(
                     degToRad(childProps.rotation_x || 0),
                     degToRad(childProps.rotation_y || 0),
@@ -369,6 +377,11 @@ export class MapBuilder {
             const [shape, geometry] = getBaseElementComponents(props);
             mapElementBody.addShape(shape);
             mapElementMesh = new Mesh(geometry, meshMaterial);
+
+            if (cfg.renderShadows) {
+                mapElementMesh.castShadow = true;
+                mapElementMesh.receiveShadow = true;
+            }
         }
 
         const mapElementId = this

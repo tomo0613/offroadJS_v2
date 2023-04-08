@@ -13,7 +13,7 @@ const selectMapButtonText = 'Select map';
 function GoalsSection() {
     const { goals, time } = useContext(GameProgressContext);
 
-    if (!goals) {
+    if (!goals.time) {
         return null;
     }
 

@@ -5,6 +5,7 @@ export default {
             time: 20e3,
             // time: 14e3,
         },
+        next: 'o10',
     },
     elements: [
         {

@@ -6,6 +6,7 @@ export default {
             // time: 15e3,
             respawnCount: 0,
         },
+        next: 'o09',
     },
     elements: [
         {

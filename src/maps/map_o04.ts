@@ -5,6 +5,7 @@ export default {
             time: 55e3,
             respawnCount: 0,
         },
+        next: 'o05',
     },
     elements: [
         {
@@ -120,6 +121,15 @@ export default {
             position_x: 36.53,
             rotation_z: 10,
             position_z: 0,
+        },
+        {
+            shape: 'box',
+            position_y: 16.31,
+            width: 8,
+            height: 0.2,
+            length: 4,
+            position_x: 29.16,
+            rotation_z: 30,
         },
         {
             shape: 'box',
