@@ -7,8 +7,8 @@ export type AnimationProps = ReturnType<typeof defineAnimationProps>;
 export function defineAnimationProps(body: Body, dataSet: string) {
     const initialVelocity = new Vec3();
     const inverseVelocity = new Vec3();
-    const origin = new Vec3();
-    const target = new Vec3();
+    const startPosition = new Vec3();
+    const endPosition = new Vec3();
     const {
         movement: { x = 0, y = 0, z = 0 },
         speed = 1,
@@ -18,11 +18,11 @@ export function defineAnimationProps(body: Body, dataSet: string) {
     } = JSON.parse(dataSet);
     const movementPrecision = speed * 0.05;
 
-    origin.copy(body.position);
-    target.set(x, y, z);
-    target.vadd(body.position, target);
+    startPosition.copy(body.position);
+    endPosition.set(x, y, z);
+    endPosition.vadd(body.position, endPosition);
 
-    target.vsub(origin, tmp_direction);
+    endPosition.vsub(startPosition, tmp_direction);
     tmp_direction.normalize();
     tmp_direction.scale(speed, initialVelocity);
     initialVelocity.negate(inverseVelocity);
@@ -36,34 +36,34 @@ export function defineAnimationProps(body: Body, dataSet: string) {
     };
 
     function movementHandler() {
-        if (body.position.almostEquals(target, movementPrecision) && isMovingTowards(target)) {
+        if (body.position.almostEquals(endPosition, movementPrecision) && isMovingTowards(endPosition)) {
             if (alternate) {
                 if (alternateDelay) {
                     body.velocity.setZero();
-                    window.setTimeout(moveTowardsOrigin, alternateDelay * 1000);
+                    window.setTimeout(startMovingTowardsStartPosition, alternateDelay * 1000);
                 } else {
-                    moveTowardsOrigin();
+                    startMovingTowardsStartPosition();
                 }
             } else {
                 body.velocity.setZero();
             }
-            body.position.copy(target);
-        } else if (body.position.almostEquals(origin, movementPrecision) && isMovingTowards(origin)) {
+            body.position.copy(endPosition);
+        } else if (body.position.almostEquals(startPosition, movementPrecision) && isMovingTowards(startPosition)) {
             if (alternateDelay) {
                 body.velocity.setZero();
-                window.setTimeout(moveTowardsTarget, alternateDelay * 1000);
+                window.setTimeout(startMovingTowardsEndPosition, alternateDelay * 1000);
             } else {
-                moveTowardsTarget();
+                startMovingTowardsEndPosition();
             }
-            body.position.copy(origin);
+            body.position.copy(startPosition);
         }
     }
 
-    function moveTowardsOrigin() {
+    function startMovingTowardsStartPosition() {
         body.velocity.copy(inverseVelocity);
     }
 
-    function moveTowardsTarget() {
+    function startMovingTowardsEndPosition() {
         body.velocity.copy(initialVelocity);
     }
 
