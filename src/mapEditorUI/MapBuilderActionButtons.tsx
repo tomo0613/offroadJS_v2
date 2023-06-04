@@ -5,9 +5,7 @@ import { SelectInput } from '../uiComponents/index';
 import uiTexts from '../uiTexts';
 import { EditorPanelContext } from './editor';
 
-const mapElementShapeSelectorOptionList = [
-    'box', 'cylinder', 'sphere', 'tetrahedron', 'triangularPrism', 'loop', 'slopeTransition', 'cantedCurve',
-] as MapElementShape[];
+const mapElementShapeSelectorOptionList = Object.values(MapElementShape);
 
 export function MapBuilderActionButtons() {
     const { mapBuilder } = useContext(EditorPanelContext);

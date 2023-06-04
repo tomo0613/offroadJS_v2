@@ -18,6 +18,7 @@ const editablePropertiesByShape: Record<MapElementShape, (keyof MapElementProps)
     sphere: ['radius'],
     tetrahedron: ['width', 'height', 'length'],
     triangularPrism: ['width', 'height', 'length', 'offset'],
+    trapezoidalPrism: ['width', 'height', 'length', 'lengthTop', 'skew'],
     loop: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'segmentPositionOffset', 'radius'],
     slopeTransition: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'angle'],
     cantedCurve: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'radius', 'angle'],
@@ -29,8 +30,10 @@ export function MapElementTransformPanel({ mapElementProps }: MapElementTransfor
     const {
         shape,
         width = 2, height = 2, length = 2,
+        lengthTop = 4,
         // ToDo
         offset = 0,
+        skew = 0,
         radius = defaultProps.radius || 1,
         radiusTop = 1, radiusBottom = 1, sides = 6,
         segmentCount = defaultProps.segmentCount,
@@ -62,10 +65,22 @@ export function MapElementTransformPanel({ mapElementProps }: MapElementTransfor
                     value={length} onChange={onChange} min={0}
                 />
             )}
+            {isPropertyEditable('lengthTop', shape) && (
+                <NumberInput
+                    label={uiTexts.lengthTopLabel} id="lengthTop"
+                    value={lengthTop} onChange={onChange} min={0}
+                />
+            )}
             {isPropertyEditable('offset', shape) && (
                 <NumberInput
                     label={uiTexts.offsetLabel} id="offset"
                     value={offset} onChange={onChange}
+                />
+            )}
+            {isPropertyEditable('skew', shape) && (
+                <NumberInput
+                    label={uiTexts.skewLabel} id="skew"
+                    value={skew} onChange={onChange}
                 />
             )}
             {isPropertyEditable('radiusTop', shape) && (

@@ -1,46 +1,61 @@
 import { Box, ConvexPolyhedron, Cylinder, Shape, Sphere, Vec3 } from 'cannon-es';
 import {
-    BoxGeometry, BufferGeometry, CylinderGeometry, Quaternion, SphereGeometry, Vector3,
+    BoxGeometry, BufferGeometry, CylinderGeometry, Mesh, Quaternion, SphereGeometry, Vector3,
 } from 'three';
+import { threeToCannon, ShapeType } from 'three-to-cannon';
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
 
 import { MapElementProps, MapElementShape } from './mapBuilder';
 
-export function getBaseElementComponents(props: MapElementProps): [Shape, BufferGeometry]|[] {
-    const { width, height, length, radius, radiusTop, radiusBottom, sides, offset } = props;
-
-    let shape: Shape;
-    let geometry: BufferGeometry;
-
-    switch (props.shape) {
+export function getBaseElementComponents({
+    shape, width, height, length, lengthTop, radius, radiusTop, radiusBottom, sides, offset, skew,
+}: MapElementProps): [Shape, BufferGeometry]|[] {
+    switch (shape) {
         case MapElementShape.box:
-            shape = getBoxShape(width, height, length);
-            geometry = getBoxGeometry(width, height, length);
-            break;
+            return [
+                getBoxShape(width, height, length),
+                getBoxGeometry(width, height, length),
+            ];
         case MapElementShape.cylinder:
-            shape = getCylinderShape(radiusTop, radiusBottom, height, sides);
-            geometry = getCylinderGeometry(radiusTop, radiusBottom, height, sides);
-            break;
+            return [
+                getCylinderShape(radiusTop, radiusBottom, height, sides),
+                getCylinderGeometry(radiusTop, radiusBottom, height, sides),
+            ];
         case MapElementShape.sphere:
-            shape = getSphereShape(radius);
-            geometry = getSphereGeometry(radius);
-            break;
-        case MapElementShape.tetrahedron:
-            shape = getTetrahedronShape(width, height, length);
-            geometry = getConvexGeometryByShape(shape as ConvexPolyhedron);
-            break;
-        case MapElementShape.triangularPrism:
-            shape = getTriangularPrismShape(width, height, length, offset);
-            geometry = getConvexGeometryByShape(shape as ConvexPolyhedron);
-            break;
+            return [
+                getSphereShape(radius),
+                getSphereGeometry(radius),
+            ];
+        case MapElementShape.tetrahedron: {
+            const convexShape = getTetrahedronShape(width, height, length);
+
+            return [
+                convexShape,
+                getConvexGeometryByShape(convexShape),
+            ];
+        }
+        case MapElementShape.triangularPrism: {
+            const convexShape = getTriangularPrismShape(width, height, length, offset);
+
+            return [
+                convexShape,
+                getConvexGeometryByShape(convexShape),
+            ];
+        }
+        case MapElementShape.trapezoidalPrism: {
+            // const convexShape = makeTrapezoidalPrismShape(width, height, lengthTop, length, skew);
+            const geometry = makeTrapezoidalPrismGeometry(width, height, lengthTop, length, skew);
+            const obj = new Mesh(geometry);
+            const res = threeToCannon(obj, { type: ShapeType.HULL });
+
+            return [
+                res.shape,
+                geometry,
+            ];
+        }
         default:
             return [];
     }
-
-    return [
-        shape,
-        geometry,
-    ];
 }
 
 /*  Box  */
@@ -68,6 +83,53 @@ function getSphereGeometry(radius = 1) {
 
 function getSphereShape(radius = 1) {
     return new Sphere(radius);
+}
+
+/**
+ * Trapezoidal prism
+ *
+ *    E------F.
+ *   /|      | `.
+ *  H-+------+---G
+ *  | |      |   |
+ *  | A------B.  |
+ *  |/         `.|
+ *  D------------C
+ */
+function makeTrapezoidalPrismGeometry(width = 2, height = 2, lengthTop = 4, lengthBack = 2, skew = 0) {
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+    const halfLengthTop = lengthTop / 2;
+    const halfLengthBack = lengthBack / 2;
+    const a = new Vector3(-halfLengthBack, -halfHeight, -halfWidth + skew);
+    const b = new Vector3(halfLengthBack, -halfHeight, -halfWidth - skew);
+    const c = new Vector3(halfLengthTop, halfHeight, -halfWidth - skew);
+    const d = new Vector3(-halfLengthTop, halfHeight, -halfWidth + skew);
+    const e = new Vector3(-halfLengthBack, -halfHeight, halfWidth + skew);
+    const f = new Vector3(halfLengthBack, -halfHeight, halfWidth - skew);
+    const g = new Vector3(halfLengthTop, halfHeight, halfWidth - skew);
+    const h = new Vector3(-halfLengthTop, halfHeight, halfWidth + skew);
+
+    return new ConvexGeometry([a, b, c, d, e, f, g, h]);
+}
+
+/**
+ * Tetrahedron
+ *
+ *      D
+ *     /|\
+ *    / | \
+ *   /__|__\
+ *  A'-.|.-'B
+ *      C
+ */
+function makeTetrahedronGeometry(width = 1, height = 1, length = 1) {
+    const a = new Vector3(0, 0, 0);
+    const b = new Vector3(width * 2, 0, 0);
+    const c = new Vector3(0, height * 2, 0);
+    const d = new Vector3(0, 0, length * 2);
+
+    return new ConvexGeometry([a, b, c, d]);
 }
 
 /* TriangularPrism & Tetrahedron */
@@ -111,6 +173,14 @@ function getTetrahedronShape(width = 1, height = 1, length = 1) {
     return new ConvexPolyhedron({ vertices, faces });
 }
 
+/**
+ * Triangular prism
+ *     ______
+ *   .'\    .'\
+ *  +---\--+   \
+ *   "-_ \  "-_ \
+ *      "-+-----"+
+ */
 function getTriangularPrismShape(width = 2, height = 2, length = 2, offset = 0) {
     const halfExtentX = width / 2;
     const halfExtentY = height / 2;

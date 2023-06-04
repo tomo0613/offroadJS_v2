@@ -43,6 +43,7 @@ export enum MapElementShape {
     sphere = 'sphere',
     tetrahedron = 'tetrahedron',
     triangularPrism = 'triangularPrism',
+    trapezoidalPrism = 'trapezoidalPrism',
     loop = 'loop',
     slopeTransition = 'slopeTransition',
     cantedCurve = 'cantedCurve',
@@ -85,6 +86,9 @@ interface CylinderShapeProps {
 
 interface PrismShapeProps extends BoxShapeProps {
     offset?: number;
+    lengthBack?: number;
+    lengthTop?: number;
+    skew?: number;
 }
 
 interface EventTriggerProps {
