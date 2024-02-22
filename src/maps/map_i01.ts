@@ -2,10 +2,10 @@ export default {
     meta: {
         author: '',
         goals: {
-            time: 11e3,
+            time: 11_000,
             respawnCount: 0,
         },
-        next: 'o01',
+        next: 'i02',
     },
     elements: [
         {

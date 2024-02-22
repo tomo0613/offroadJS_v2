@@ -6,6 +6,11 @@ input, select, button {
     color: whitesmoke;
 }
 
+button + button,
+button + select {
+    margin-left: 8px;
+}
+
 input[type="range"] + input {
     width: 3em;
     margin-left: 4px;

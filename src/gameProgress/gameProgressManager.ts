@@ -22,7 +22,7 @@ interface Goals {
 
 let lastCheckpointTriggerBody: Body;
 
-const respawnTimePenalty = 5e3;
+const respawnTimePenalty = 5_000;
 const hud = document.createElement('aside');
 const timeDisplay = document.createElement('span');
 const timeDisplayDefaultContent = '00:00.000';

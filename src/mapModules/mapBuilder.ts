@@ -647,12 +647,13 @@ export class MapBuilder {
         });
     }
 
-    exportMap = () => (
+    exportMap = () => ({
+        meta: {},
         // ToDo remove default values
-        Array.from(this.mapElementComponentStore.entries())
+        elements: Array.from(this.mapElementComponentStore.entries())
             .filter(([key]) => key.endsWith('props'))
-            .map(([, value]) => value)
-    )
+            .map(([, value]) => value),
+    })
 }
 
 function disposeGeometryAndMaterial(mesh: Mesh) {

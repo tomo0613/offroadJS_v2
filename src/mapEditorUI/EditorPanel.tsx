@@ -14,7 +14,7 @@ export default function EditorPanel() {
     const { mapBuilder, mapElementProps } = useContext(EditorPanelContext);
 
     return (
-        <>
+        <div id='editorPanelContent'>
             <MapDataActionButtons/>
             <MapElementList/>
             {mapBuilder.selectedMapElementId && mapElementProps && <>
@@ -26,6 +26,6 @@ export default function EditorPanel() {
                 </>}
             </>}
             <MapBuilderActionButtons/>
-        </>
+        </div>
     );
 }

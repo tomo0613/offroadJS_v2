@@ -1,5 +1,6 @@
 import empty from './map_00';
 import i01 from './map_i01';
+import i02 from './map_i02';
 import o01 from './map_o01';
 import o02 from './map_o02';
 import o03 from './map_o03';
@@ -13,6 +14,7 @@ import o10 from './map_o10';
 
 export const mapCollection = {
     i01,
+    i02,
     o01,
     o02,
     o03,
