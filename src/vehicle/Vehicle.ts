@@ -30,7 +30,7 @@ const {
     wheelRollInfluence,
 } = cfg.vehicle;
 
-const brakeLightBrightness = 0.3;
+const brakeLightBrightness = 0.1;
 
 const frontRightWheelIndex = 0;
 const frontLeftWheelIndex = 1;

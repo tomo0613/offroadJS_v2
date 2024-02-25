@@ -11,7 +11,7 @@ export function setMaterials(wheel: Object3D, chassis: Object3D) {
         glassMaterial: new MeshPhongMaterial({ color: 0xACCCD7 }),
         tailLightMaterial: new MeshPhongMaterial({ color: 0x550000 }),
         headLightMaterial: new MeshPhongMaterial({ color: 0xFFFFBB }),
-        wheelMaterial: new MeshBasicMaterial({ alphaTest: 0.5 }),
+        wheelMaterial: new MeshBasicMaterial(),
     };
 
     wheel.traverse((childMesh: Mesh) => {

@@ -421,6 +421,9 @@ export class MapBuilder {
 
         setMeshColor(triggerElementMesh, triggerOutlieColor, 0.3);
 
+        triggerElementMesh.castShadow = false;
+        triggerElementMesh.receiveShadow = false;
+
         if (!this.editMode) {
             triggerElementMesh.visible = false;
         }

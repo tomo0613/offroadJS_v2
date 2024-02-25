@@ -1,14 +1,26 @@
 import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
 import WireframeRenderer from 'cannon-es-debugger';
 import {
-    Clock, CubeTexture, DirectionalLight, HemisphereLight, MathUtils, Mesh, Scene, Vector2, WebGLRenderer,
+    Clock,
+    CubeTexture,
+    DirectionalLight,
+    HemisphereLight,
+    MathUtils,
+    Mesh,
+    SRGBColorSpace,
+    Scene,
+    Vector2,
+    WebGLRenderer,
 } from 'three';
-import { CSM, CMSMode as CSMMode } from 'three/examples/jsm/csm/CSM';
+import { CSM } from 'three/examples/jsm/csm/CSM';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+// https://discourse.threejs.org/t/updates-to-color-management-in-three-js-r152/50791
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader';
 
 import { CameraHandler, CameraMode } from './cameraHandler';
 import cfg, { configListener } from './config';
@@ -55,7 +67,7 @@ if (cfg.fullscreen) {
     const clock = new Clock();
     const scene = new Scene();
 
-    const hemisphereLight = new HemisphereLight(0xffffff, 0xffffff, 1);
+    const hemisphereLight = new HemisphereLight(0xffffff, 0xffffff, 2);
     hemisphereLight.color.setHSL(0.6, 0.2, 0.7);
     hemisphereLight.groundColor.setHSL(0.095, 1, 0.75);
 
@@ -93,8 +105,8 @@ if (cfg.fullscreen) {
             cascades: 3,
             maxFar: 500,
 
-            mode: 'logarithmic' as CSMMode.logarithmic,
-            // mode: 'custom' as CSMMode.custom,
+            mode: 'logarithmic',
+            // mode: 'custom',
             // customSplitsCallback: (cascades, cameraNear, cameraFar, breaks) => {
             //     for (let i = cascades - 1; i >= 0; i--) {
             //         breaks.push((1 / 4) ** i);
@@ -102,7 +114,7 @@ if (cfg.fullscreen) {
             // },
 
             shadowMapSize: 4096 * 2,
-            lightIntensity: 0.25,
+            lightIntensity: 1,
             // lightDirection: new Vector3(-30, 50, -30).normalize(),
         });
     } else {
@@ -117,10 +129,15 @@ if (cfg.fullscreen) {
     const renderPass = new RenderPass(scene, cameraHandler.camera);
     const resolution = new Vector2(window.innerWidth, window.innerHeight);
     const outlinePass = new OutlinePass(resolution, scene, cameraHandler.camera);
+    const gammaCorrectionShaderPass = new ShaderPass(GammaCorrectionShader);
     outlinePass.edgeStrength = 2;
     outlinePass.visibleEdgeColor.setHex(0xE67300);
     outlinePass.hiddenEdgeColor.setHex(0x663300);
+    outlinePass.enabled = false;
+    gammaCorrectionShaderPass.enabled = false;
     composer.addPass(renderPass);
+    composer.addPass(outlinePass);
+    composer.addPass(gammaCorrectionShaderPass);
 
     document.body.appendChild(renderer.domElement);
     window.onresize = utils.debounce(onWindowResize, 500);
@@ -275,14 +292,16 @@ if (cfg.fullscreen) {
         mapBuilder.toggleEditMode();
 
         if (mapBuilder.editMode) {
-            composer.addPass(outlinePass);
+            outlinePass.enabled = true;
+            gammaCorrectionShaderPass.enabled = true;
             transformControls.enabled = true;
             mouseSelectHandler.enabled = true;
             if (mapBuilder.selectedMapElementId) {
                 transformControls.attach(mapBuilder.getMeshFromStore(mapBuilder.selectedMapElementId));
             }
         } else {
-            composer.passes.splice(1, 1);
+            outlinePass.enabled = false;
+            gammaCorrectionShaderPass.enabled = false;
             transformControls.detach();
             transformControls.enabled = false;
             mouseSelectHandler.enabled = false;
@@ -351,6 +370,7 @@ if (cfg.fullscreen) {
 
         const skyBox = new CubeTexture(utils.sliceCubeTexture(cubeTexture));
         skyBox.needsUpdate = true;
+        skyBox.colorSpace = SRGBColorSpace;
         scene.background = skyBox;
 
         return [

@@ -35,13 +35,13 @@
     "cannon-es-debugger": "^1.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "three": "^0.151.3",
+    "three": "^0.161.0",
     "three-to-cannon": "^4.3.0"
   },
   "devDependencies": {
     "@types/react": "^16.14.5",
     "@types/react-dom": "^16.9.11",
-    "@types/three": "^0.150.1",
+    "@types/three": "^0.161.2",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
     "@vitejs/plugin-react": "^3.1.0",
