@@ -67,9 +67,7 @@ if (cfg.fullscreen) {
     const clock = new Clock();
     const scene = new Scene();
 
-    const hemisphereLight = new HemisphereLight(0xffffff, 0xffffff, 2);
-    hemisphereLight.color.setHSL(0.6, 0.2, 0.7);
-    hemisphereLight.groundColor.setHSL(0.095, 1, 0.75);
+    const hemisphereLight = new HemisphereLight(0x8BA3B1, 0xBBA877, 4);
 
     scene.add(hemisphereLight);
 
@@ -118,7 +116,7 @@ if (cfg.fullscreen) {
             // lightDirection: new Vector3(-30, 50, -30).normalize(),
         });
     } else {
-        const directionalLight = new DirectionalLight(0xf5f4d3, 0.5);
+        const directionalLight = new DirectionalLight(0xF5FDFF, 3);
         directionalLight.position.set(-30, 50, -30).normalize();
 
         scene.add(directionalLight);
