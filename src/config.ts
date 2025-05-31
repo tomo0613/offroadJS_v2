@@ -6,6 +6,7 @@ const prefKeys = [
     'renderShadows',
     'renderWireFrame',
     'resolutionScale',
+    'audioVolume',
 ] as const;
 
 const config = {
@@ -14,6 +15,7 @@ const config = {
     renderShadows: false,
     renderWireFrame: false,
     resolutionScale: 1,
+    audioVolume: 0.5,
     /**
      * WebGL powerPreference
      * "high-performance" | "low-power" | "default"

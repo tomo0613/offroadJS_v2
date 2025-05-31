@@ -38,7 +38,7 @@ export function initTransformControls(cameraHandler: CameraHandler, mapBuilder: 
             orbitControlsEnabled = cameraHandler.orbitControls.enabled;
             cameraHandler.orbitControls.enabled = false;
         }
-        dragging = e.value;
+        dragging = Boolean(e.value);
     });
 
     inputHandler.addKeyPressListener('KeyG', () => {

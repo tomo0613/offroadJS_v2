@@ -1,6 +1,9 @@
 import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
 import WireframeRenderer from 'cannon-es-debugger';
 import {
+    Audio,
+    AudioListener,
+    AudioLoader,
     Clock,
     CubeTexture,
     DirectionalLight,
@@ -25,7 +28,7 @@ import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectio
 import { CameraHandler, CameraMode } from './cameraHandler';
 import cfg, { configListener } from './config';
 import { getCheckpointIcon3d } from './gameProgress/checkpointHandler';
-import { GameProgressManager } from './gameProgress/gameProgressManager';
+import { GameProgressEvent, GameProgressManager } from './gameProgress/gameProgressManager';
 import inputHandler from './inputHandler';
 import {
     MapBuilder, TriggerMapElementEvent, TriggeredEvent, MapBuilderEvent, vehicleMapElementId,
@@ -150,12 +153,29 @@ if (cfg.fullscreen) {
     cameraHandler.camera.aspect = window.aspectRatio;
     cameraHandler.camera.updateProjectionMatrix();
 
+    const audioListener = new AudioListener();
+    cameraHandler.camera.add(audioListener);
+    const audioSource = new Audio(audioListener);
+    const audioLoader = new AudioLoader();
+    audioLoader.load('music/A Himitsu - Cease.ogg', (buffer) => {
+        audioSource.setBuffer(buffer);
+        audioSource.setLoop(true);
+    });
+
     const mapBuilder = new MapBuilder(scene, world);
 
     const gameProgress = new GameProgressManager(mapBuilder, vehicle);
     gameProgress.initCheckpointHandler(scene, {
         checkpoint: getCheckpointIcon3d(),
         finish: pinIcon3d as unknown as Mesh,
+    });
+    gameProgress.listeners.add(GameProgressEvent.start, () => {
+        if (!audioSource.isPlaying) {
+            audioSource.play();
+        }
+    });
+    configListener.add('audioVolume', (value) => {
+        audioSource.setVolume(value);
     });
 
     const mouseSelectHandler = new MouseSelectHandler(scene, cameraHandler.camera, renderer.domElement, mapBuilder);

@@ -2,6 +2,7 @@
 3d HTML5 game, built on top of [three.js] and [cannon.es] ( originally [cannon.js] )
 - browser playable
 - written in TypeScript ( JS )
+- music: [A Himitsu - Cease](bit.ly/ahimitsucease)
 
 [PLAY]
 

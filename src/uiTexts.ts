@@ -48,6 +48,8 @@ const uiTexts = {
     fullscreenSwitchLabel: 'Fullscreen:',
     renderWireFrameSwitchLabel: 'Render wireFrame:',
     resolutionScaleSliderLabel: 'Resolution scale:',
+    audioEnabled: 'Audio enabled:',
+    audioVolume: 'Audio volume:',
     antialiasCheckboxLabel: 'Antialias:',
     renderShadowsCheckboxLabel: 'Render shadows:',
     applySettingsButtonLabel: 'Apply settings',

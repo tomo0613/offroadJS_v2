@@ -40,6 +40,10 @@ export default function SettingsTabPanel({ tabLabel }: SettingsTabPanelProps) {
         config.resolutionScale = value;
     }
 
+    function setAudioVolume(value: number) {
+        config.audioVolume = value;
+    }
+
     return (
         <TabPanel tabLabel={tabLabel}>
             <Switch
@@ -62,6 +66,15 @@ export default function SettingsTabPanel({ tabLabel }: SettingsTabPanelProps) {
                 step={0.1}
                 defaultValue={config.resolutionScale}
                 onChange={setResolutionScale}
+            />
+            <RangeInput
+                id="audioVolume"
+                label={uiTexts.audioVolume}
+                min={0}
+                max={1}
+                step={0.1}
+                defaultValue={config.audioVolume}
+                onChange={setAudioVolume}
             />
             <hr/>
             <SettingsForm/>

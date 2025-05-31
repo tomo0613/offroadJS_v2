@@ -11,6 +11,7 @@ import { CheckpointHandler, Icon3dList } from './checkpointHandler';
 import { mountModalController } from './gameProgressModalController';
 
 export enum GameProgressEvent {
+    start = 'start',
     openModal = 'openModal',
     openMapSelectorPanel = 'openMapSelectorPanel',
 }
@@ -79,6 +80,8 @@ export class GameProgressManager {
     start() {
         this.started = true;
         this.timer.start();
+
+        this.listeners.dispatch(GameProgressEvent.start);
     }
 
     stop() {
