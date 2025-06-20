@@ -7,6 +7,7 @@ const prefKeys = [
     'renderWireFrame',
     'resolutionScale',
     'audioVolume',
+    'autoResetDelay',
 ] as const;
 
 const config = {
@@ -16,12 +17,13 @@ const config = {
     renderWireFrame: false,
     resolutionScale: 1,
     audioVolume: 0.5,
+    autoResetDelay: 2500,
     /**
      * WebGL powerPreference
      * "high-performance" | "low-power" | "default"
      * https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.2
      */
-    powerPreference: 'high-performance',
+    powerPreference: 'high-performance' as 'high-performance' | 'low-power' | 'default',
     physicsFrameRate: 120,
     world: {
         gravity: {

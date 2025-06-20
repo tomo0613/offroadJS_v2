@@ -12,6 +12,7 @@ import { mountModalController } from './gameProgressModalController';
 
 export enum GameProgressEvent {
     start = 'start',
+    reset = 'reset',
     openModal = 'openModal',
     openMapSelectorPanel = 'openMapSelectorPanel',
 }
@@ -72,6 +73,8 @@ export class GameProgressManager {
             this.vehicle.chassisBody.quaternion.copy(lastCheckpointTriggerBody.quaternion);
             this.respawnCount++;
             this.timer.add(respawnTimePenalty);
+
+            this.listeners.dispatch(GameProgressEvent.reset);
         } else {
             this.reset();
         }
@@ -101,6 +104,8 @@ export class GameProgressManager {
         this._mapBuilder.resetDynamicMapElements();
         this.checkpointHandler.init(this._mapBuilder, this);
         lastCheckpointTriggerBody = undefined;
+
+        this.listeners.dispatch(GameProgressEvent.reset);
     }
 
     loadMap(mapId = this.currentMapId) {

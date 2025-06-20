@@ -1,7 +1,10 @@
-import { Box3, ExtrudeGeometry, Group, ImageLoader, Mesh, MeshBasicMaterial, Vector3 } from 'three';
-import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { SVGLoader, SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
-import { ExtrudeGeometryOptions } from 'three/src/geometries/ExtrudeGeometry';
+import {
+    Box3, ExtrudeGeometry, type ExtrudeGeometryOptions, Group, ImageLoader, Mesh, MeshBasicMaterial, Vector3,
+} from 'three';
+/* eslint-disable import/extensions */
+import { GLTF, GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { SVGLoader, SVGResult } from 'three/addons/loaders/SVGLoader.js';
+/* eslint-enable import/extensions */
 
 import { hideNotification, showNotification } from './notificationModules/notificationManager';
 

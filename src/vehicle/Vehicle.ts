@@ -1,5 +1,5 @@
 import { Body, Box, Cylinder, Quaternion, RaycastVehicle, Transform, Vec3, World } from 'cannon-es';
-import { Object3D, Scene, Vector3 } from 'three';
+import { Object3D, Scene, Vector3, Quaternion as _Quaternion } from 'three';
 
 import cfg from '../config';
 import { setMaterials } from './materials';
@@ -177,7 +177,7 @@ export default class Vehicle {
 
             tmp_transform = this.base.wheelInfos[i].worldTransform;
             this.wheelMeshes[i].position.copy(tmp_transform.position as unknown as Vector3);
-            this.wheelMeshes[i].quaternion.copy(tmp_transform.quaternion as unknown as THREE.Quaternion);
+            this.wheelMeshes[i].quaternion.copy(tmp_transform.quaternion as unknown as _Quaternion);
 
             if (renderWireFrame) {
                 tmp_wheelBody = this.wheelBodies[i];
@@ -186,12 +186,12 @@ export default class Vehicle {
                 tmp_wheelBody.quaternion.copy(tmp_transform.quaternion);
 
                 this.wheelMeshes[i].position.copy(tmp_wheelBody.position as unknown as Vector3);
-                this.wheelMeshes[i].quaternion.copy(tmp_wheelBody.quaternion as unknown as THREE.Quaternion);
+                this.wheelMeshes[i].quaternion.copy(tmp_wheelBody.quaternion as unknown as _Quaternion);
             }
         }
 
         this.chassisMesh.position.copy(this.chassisBody.position as unknown as Vector3);
-        this.chassisMesh.quaternion.copy(this.chassisBody.quaternion as unknown as THREE.Quaternion);
+        this.chassisMesh.quaternion.copy(this.chassisBody.quaternion as unknown as _Quaternion);
         this.chassisMesh.translateOnAxis(translateAxis, 0.6);
     }
 

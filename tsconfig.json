@@ -1,12 +1,18 @@
 {
     "compilerOptions": {
-        "moduleResolution": "node",
-        "module": "esnext",
         "target": "esnext",
+
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "esModuleInterop": true,
+
+        "noEmit": true,
+        "sourceMap": true,
+        "skipLibCheck": true,
+
         "jsx": "react-jsx",
         "outDir": "tsc_build",
         "baseUrl": "./",
-        "paths": {},
         "allowSyntheticDefaultImports": true
     },
     "include": [

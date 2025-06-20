@@ -3,7 +3,8 @@ import {
     BoxGeometry, BufferGeometry, CylinderGeometry, Mesh, Quaternion, SphereGeometry, Vector3,
 } from 'three';
 import { threeToCannon, ShapeType } from 'three-to-cannon';
-import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
+// eslint-disable-next-line import/extensions
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 
 import { MapElementProps, MapElementShape } from './mapBuilder';
 

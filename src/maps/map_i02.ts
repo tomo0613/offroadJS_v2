@@ -201,5 +201,15 @@ export default {
             rotation_y: 0,
             rotation_z: 0,
         },
+        {
+            shape: 'box',
+            position_y: -5,
+            height: 1,
+            width: 80,
+            length: 140,
+            position_x: -15,
+            position_z: -35,
+            type: 'trigger',
+        },
     ],
 };

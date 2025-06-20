@@ -94,5 +94,16 @@ export default {
             position_z: -30,
             rotation_y: 180,
         },
+        {
+            shape: 'box',
+            position_x: 15,
+            position_y: -2,
+            position_z: -10,
+            height: 1,
+            width: 80,
+            length: 80,
+            type: 'trigger',
+            event: 'reset',
+        },
     ],
 };

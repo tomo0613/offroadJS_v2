@@ -15,15 +15,16 @@ import {
     Vector2,
     WebGLRenderer,
 } from 'three';
-import { CSM } from 'three/examples/jsm/csm/CSM';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-// https://discourse.threejs.org/t/updates-to-color-management-in-three-js-r152/50791
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader';
+/* eslint-disable import/extensions */
+import { CSM } from 'three/addons/csm/CSM.js';
+import { GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import { SVGResult } from 'three/addons/loaders/SVGLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+/* eslint-enable import/extensions */
 
 import { CameraHandler, CameraMode } from './cameraHandler';
 import cfg, { configListener } from './config';
@@ -39,6 +40,7 @@ import { mountMenuRoot } from './menu/menu';
 import { confirmDialog, popUpNotification } from './notificationModules/notificationManager';
 import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
+import { ColorizeShader } from './vfx/colorizeShader';
 
 const { degToRad } = MathUtils;
 
@@ -124,21 +126,24 @@ if (cfg.fullscreen) {
 
         scene.add(directionalLight);
     }
+    let autoResetTimeoutId: number;
 
     // setup postprocessing
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, cameraHandler.camera);
     const resolution = new Vector2(window.innerWidth, window.innerHeight);
     const outlinePass = new OutlinePass(resolution, scene, cameraHandler.camera);
-    const gammaCorrectionShaderPass = new ShaderPass(GammaCorrectionShader);
     outlinePass.edgeStrength = 2;
     outlinePass.visibleEdgeColor.setHex(0xE67300);
     outlinePass.hiddenEdgeColor.setHex(0x663300);
     outlinePass.enabled = false;
-    gammaCorrectionShaderPass.enabled = false;
+    const colorizeShaderPass = new ShaderPass(ColorizeShader);
+    colorizeShaderPass.enabled = false;
+    const outputPass = new OutputPass();
     composer.addPass(renderPass);
     composer.addPass(outlinePass);
-    composer.addPass(gammaCorrectionShaderPass);
+    composer.addPass(colorizeShaderPass);
+    composer.addPass(outputPass);
 
     document.body.appendChild(renderer.domElement);
     window.onresize = utils.debounce(onWindowResize, 500);
@@ -174,13 +179,21 @@ if (cfg.fullscreen) {
             audioSource.play();
         }
     });
+    gameProgress.listeners.add(GameProgressEvent.reset, () => {
+        if (colorizeShaderPass.enabled) {
+            colorizeShaderPass.enabled = false;
+        }
+        if (autoResetTimeoutId) {
+            window.clearTimeout(autoResetTimeoutId);
+        }
+    });
     configListener.add('audioVolume', (value) => {
         audioSource.setVolume(value);
     });
 
     const mouseSelectHandler = new MouseSelectHandler(scene, cameraHandler.camera, renderer.domElement, mapBuilder);
     const transformControls = initTransformControls(cameraHandler, mapBuilder);
-    scene.add(transformControls);
+    scene.add(transformControls.getHelper());
 
     mountMenuRoot(gameProgress, renderer);
 
@@ -228,7 +241,10 @@ if (cfg.fullscreen) {
         TriggerMapElementEvent.reset,
         ({ relatedTarget }: TriggeredEvent) => {
             if (relatedTarget === vehicle.chassisBody) {
-                gameProgress.reset();
+                colorizeShaderPass.enabled = true;
+                colorizeShaderPass.uniforms.opacity.value = 0.01;
+
+                autoResetTimeoutId = window.setTimeout(autoReset, cfg.autoResetDelay);
             }
         },
     );
@@ -311,7 +327,6 @@ if (cfg.fullscreen) {
 
         if (mapBuilder.editMode) {
             outlinePass.enabled = true;
-            gammaCorrectionShaderPass.enabled = true;
             transformControls.enabled = true;
             mouseSelectHandler.enabled = true;
             if (mapBuilder.selectedMapElementId) {
@@ -319,7 +334,6 @@ if (cfg.fullscreen) {
             }
         } else {
             outlinePass.enabled = false;
-            gammaCorrectionShaderPass.enabled = false;
             transformControls.detach();
             transformControls.enabled = false;
             mouseSelectHandler.enabled = false;
@@ -368,6 +382,15 @@ if (cfg.fullscreen) {
         if (cfg.renderWireFrame) {
             wireframeRenderer.update();
         }
+
+        // colorizeShaderPass fade-in (grayscale)
+        if (colorizeShaderPass.enabled && colorizeShaderPass.uniforms.opacity.value < 1) {
+            colorizeShaderPass.uniforms.opacity.value += 0.01;
+        }
+    }
+
+    function autoReset() {
+        gameProgress.respawnAtLastCheckpoint();
     }
 
     function onWindowResize() {

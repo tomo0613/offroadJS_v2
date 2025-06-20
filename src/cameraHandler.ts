@@ -1,5 +1,6 @@
 import { PerspectiveCamera, Vector3 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+// eslint-disable-next-line import/extensions
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import cfg from './config';
 import { popUpNotification } from './notificationModules/notificationManager';

@@ -1,5 +1,6 @@
 import { MathUtils } from 'three';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+// eslint-disable-next-line import/extensions
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { CameraHandler } from '../cameraHandler';
 import inputHandler from '../inputHandler';

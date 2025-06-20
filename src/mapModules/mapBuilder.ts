@@ -1,5 +1,7 @@
 import { Body, BODY_TYPES, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
-import { Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler, MathUtils, ColorRepresentation } from 'three';
+import {
+    Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler, MathUtils, ColorRepresentation, Quaternion as _Quaternion,
+} from 'three';
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
@@ -211,7 +213,7 @@ export class MapBuilder {
 
         const updateOrientation = () => {
             mesh.position.copy(body.position as unknown as Vector3);
-            mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
+            mesh.quaternion.copy(body.quaternion as unknown as _Quaternion);
         };
 
         body.position.set(position_x, position_y, position_z);
@@ -224,7 +226,7 @@ export class MapBuilder {
                 degToRad(rotation_y),
                 degToRad(rotation_z),
             );
-            mesh.quaternion.copy(body.quaternion as unknown as THREE.Quaternion);
+            mesh.quaternion.copy(body.quaternion as unknown as _Quaternion);
         }
         if (fixedRotation) {
             body.fixedRotation = true;
