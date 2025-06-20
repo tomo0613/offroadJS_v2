@@ -179,5 +179,16 @@ export default {
             radius: 3,
             dataSet: '18.770735429093357, 20.96953167533059, -46.35856186137107',
         },
+        {
+            shape: 'box',
+            height: 1,
+            width: 50,
+            length: 100,
+            position_x: 10,
+            position_y: -2,
+            position_z: -4,
+            type: 'trigger',
+            event: 'reset',
+        },
     ],
 };

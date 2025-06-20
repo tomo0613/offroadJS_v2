@@ -13,6 +13,7 @@ export default function SettingsTabPanel({ tabLabel }: SettingsTabPanelProps) {
     const { renderer } = useContext(MenuContext);
     const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
     const [renderWireFrame, setRenderWireFrame] = useState(config.renderWireFrame);
+    const [showTelemetry, setShowTelemetry] = useState(config.showTelemetry);
 
     useEffect(() => {
         if (document.fullscreenElement && !fullscreen) {
@@ -42,6 +43,16 @@ export default function SettingsTabPanel({ tabLabel }: SettingsTabPanelProps) {
 
     function setAudioVolume(value: number) {
         config.audioVolume = value;
+    }
+
+    function toggleShowTelemetry(on: boolean) {
+        setShowTelemetry(on);
+
+        config.showTelemetry = on;
+    }
+
+    function setAutoResetDelay(value: number) {
+        config.autoResetDelay = value;
     }
 
     return (
@@ -75,6 +86,22 @@ export default function SettingsTabPanel({ tabLabel }: SettingsTabPanelProps) {
                 step={0.1}
                 defaultValue={config.audioVolume}
                 onChange={setAudioVolume}
+            />
+            <Switch
+                id="showTelemetry"
+                label={uiTexts.showTelemetry}
+                on={showTelemetry}
+                onChange={toggleShowTelemetry}
+            />
+            <hr/>
+            <RangeInput
+                id="autoResetDelay"
+                label={uiTexts.autoResetDelay}
+                min={100}
+                max={5_000}
+                step={100}
+                defaultValue={config.autoResetDelay}
+                onChange={setAutoResetDelay}
             />
             <hr/>
             <SettingsForm/>

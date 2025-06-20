@@ -125,5 +125,16 @@ export default {
             color: '#757575',
             lowFriction: true,
         },
+        {
+            shape: 'box',
+            height: 1,
+            width: 60,
+            length: 60,
+            position_x: 0,
+            position_y: -2,
+            position_z: -2,
+            type: 'trigger',
+            event: 'reset',
+        },
     ],
 };

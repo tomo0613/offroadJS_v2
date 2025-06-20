@@ -349,5 +349,16 @@ export default {
             position_y: 2,
             position_z: -7,
         },
+        {
+            shape: 'box',
+            height: 1,
+            width: 80,
+            length: 60,
+            position_x: 0,
+            position_y: -4,
+            position_z: -4,
+            type: 'trigger',
+            event: 'reset',
+        },
     ],
 };

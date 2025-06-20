@@ -50,6 +50,8 @@ const uiTexts = {
     resolutionScaleSliderLabel: 'Resolution scale:',
     audioEnabled: 'Audio enabled:',
     audioVolume: 'Audio volume:',
+    showTelemetry: 'Show telemetry:',
+    autoResetDelay: 'Auto reset delay (ms):',
     antialiasCheckboxLabel: 'Antialias:',
     renderShadowsCheckboxLabel: 'Render shadows:',
     applySettingsButtonLabel: 'Apply settings',

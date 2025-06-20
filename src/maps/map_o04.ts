@@ -244,5 +244,16 @@ export default {
             position_z: 1.67,
             radius: 3,
         },
+        {
+            shape: 'box',
+            height: 1,
+            width: 150,
+            length: 60,
+            position_x: 20,
+            position_y: 4,
+            position_z: 5,
+            type: 'trigger',
+            event: 'reset',
+        },
     ],
 };

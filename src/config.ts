@@ -8,6 +8,7 @@ const prefKeys = [
     'resolutionScale',
     'audioVolume',
     'autoResetDelay',
+    'showTelemetry',
 ] as const;
 
 const config = {
@@ -17,6 +18,7 @@ const config = {
     renderWireFrame: false,
     resolutionScale: 1,
     audioVolume: 0.5,
+    showTelemetry: false,
     autoResetDelay: 2500,
     /**
      * WebGL powerPreference

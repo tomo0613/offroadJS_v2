@@ -203,13 +203,14 @@ export default {
         },
         {
             shape: 'box',
-            position_y: -5,
             height: 1,
             width: 80,
             length: 140,
             position_x: -15,
+            position_y: -5,
             position_z: -35,
             type: 'trigger',
+            event: 'reset',
         },
     ],
 };

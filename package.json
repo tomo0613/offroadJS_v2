@@ -35,12 +35,14 @@
     "cannon-es-debugger": "^1.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "stats.js": "^0.17.0",
     "three": "^0.177.0",
     "three-to-cannon": "^4.3.0"
   },
   "devDependencies": {
     "@types/react": "^16.14.5",
     "@types/react-dom": "^16.9.11",
+    "@types/stats": "^0.16.30",
     "@types/three": "^0.177.0",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",

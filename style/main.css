@@ -30,6 +30,11 @@ body {
     left: 10px;
 }
 
+#telemetryPanel > div {
+    margin-top: 60px;
+    margin-left: 10px;
+}
+
 #topRightPanel {
     top: 10px;
     right: 10px;

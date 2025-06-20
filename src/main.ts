@@ -1,5 +1,6 @@
 import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
 import WireframeRenderer from 'cannon-es-debugger';
+import Stats from 'stats.js';
 import {
     Audio,
     AudioListener,
@@ -65,6 +66,22 @@ if (cfg.fullscreen) {
         }
     });
 }
+
+const stats = new Stats();
+const telemetryPanel = document.getElementById('telemetryPanel');
+telemetryPanel.appendChild(stats.dom);
+
+if (!cfg.showTelemetry) {
+    telemetryPanel.classList.add('hidden');
+}
+
+configListener.add('showTelemetry', (showTelemetry: boolean) => {
+    if (showTelemetry) {
+        telemetryPanel.classList.remove('hidden');
+    } else {
+        telemetryPanel.classList.add('hidden');
+    }
+});
 
 (async function main() {
     let paused = false;
@@ -363,6 +380,10 @@ if (cfg.fullscreen) {
     renderer.setAnimationLoop(animationLoop);
 
     function animationLoop() {
+        if (cfg.showTelemetry) {
+            stats.begin();
+        }
+
         const delta = clock.getDelta();
 
         cameraHandler.update(delta);
@@ -386,6 +407,10 @@ if (cfg.fullscreen) {
         // colorizeShaderPass fade-in (grayscale)
         if (colorizeShaderPass.enabled && colorizeShaderPass.uniforms.opacity.value < 1) {
             colorizeShaderPass.uniforms.opacity.value += 0.01;
+        }
+
+        if (cfg.showTelemetry) {
+            stats.end();
         }
     }
 
