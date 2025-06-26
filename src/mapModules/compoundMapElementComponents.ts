@@ -40,7 +40,7 @@ export type LoopProps = Partial<typeof loopDefaultProps> & MapElementOrientation
 export type SlopeTransitionProps = Partial<typeof slopeTransitionDefaultProps> & MapElementOrientationProps;
 export type CantedCurveProps = Partial<typeof cantedCurveDefaultProps> & MapElementOrientationProps;
 
-export const compoundShapes = ['loop', 'slopeTransition', 'cantedCurve'];
+export const compoundShapes = ['loop', 'slopeTransition', 'cantedCurve', 'cantedCurveB'];
 
 const tmp_rotationAxis = new Vector3();
 const tmp_position = new Vector3();
@@ -56,6 +56,8 @@ export function getCompoundElementChildrenPropertyList(props: MapElementProps) {
             return generateSlopeTransitionElementChildrenPropertyList(props);
         case MapElementShape.cantedCurve:
             return generateCantedCurveElementChildrenPropertyList(props);
+        case MapElementShape.cantedCurveB:
+            return _generateCantedCurveElementChildrenPropertyList(props);
         default:
             return [];
     }
@@ -87,6 +89,71 @@ function generateLoopElementChildrenPropertyList(props: LoopProps) {
     }
 
     return loopElementChildrenPropertyList;
+}
+
+// const a = new Vector3(-halfWidth, -halfHeight, -halfLength);
+// const b = new Vector3(halfWidth, -halfHeight, -halfLength + overlap);
+// const b = new Vector3(halfWidth, -halfHeight, -halfLength);
+// const c = new Vector3().copy(b).setY(halfHeight);
+// const d = new Vector3().copy(a).setY(halfHeight);
+// const e = new Vector3(-halfWidth, -halfHeight, halfLength);
+// const f = new Vector3(halfWidth, -halfHeight, halfLength);
+// const g = new Vector3().copy(f).setY(halfHeight);
+// const h = new Vector3().copy(e).setY(halfHeight);
+/**
+ *    D------C.
+ *   /|      | `.
+ *  H-+------+---G
+ *  | |      |   |
+ *  | A------B.  height(y)
+ *  |length(-z)`.|
+ *  E--width(x)--F
+ */
+function _generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps) {
+    const {
+        segmentCount, segmentWidth, segmentHeight, segmentLength, angle, radius,
+    } = assignDefaultValues(props, cantedCurveDefaultProps);
+    const cantedCurveElementChildrenPropertyList: MapElementProps[] = [];
+    const elevation = 1;
+
+    tmp_rotationAxis.set(0, 1, 0);
+
+    const halfWidth = segmentWidth / 2;
+    const halfHeight = segmentHeight / 2;
+    const outerX = -radius - halfWidth;
+    const innerX = -radius + halfWidth;
+    const rotationAngle = calculateIsoscelesTriangleAngle(Math.abs(outerX), segmentLength);
+
+    tmp_vector_0.set(outerX, 0, 0).applyAxisAngle(tmp_rotationAxis, rotationAngle);
+    tmp_vector_1.set(innerX, 0, 0).applyAxisAngle(tmp_rotationAxis, rotationAngle);
+    const a = new Vector3(outerX, -halfHeight, 0);
+    const b = new Vector3(innerX, -halfHeight, 0);
+    const c = new Vector3().copy(b).setY(halfHeight);
+    const d = new Vector3().copy(a).setY(halfHeight);
+    const e = new Vector3(tmp_vector_0.x, -halfHeight, tmp_vector_0.z);
+    const f = new Vector3(tmp_vector_1.x, -halfHeight, tmp_vector_1.z);
+    const g = new Vector3().copy(f).setY(halfHeight);
+    const h = new Vector3().copy(e).setY(halfHeight);
+
+    tmp_object3d.position.set(-radius, 0, 0);
+    tmp_object3d.rotation.set(0, 0, 0);
+
+    for (let i = 0; i < segmentCount; i++) {
+        tmp_object3d.rotateOnAxis(tmp_rotationAxis, rotationAngle);
+
+        cantedCurveElementChildrenPropertyList.push({
+            shape: MapElementShape.convexGeometry,
+            points: [a, b, c, d, e, f, g, h].map((v) => v.toArray()),
+            position_x: tmp_object3d.position.x,
+            position_y: tmp_object3d.position.y,
+            position_z: tmp_object3d.position.z,
+            rotation_x: radToDeg(tmp_object3d.rotation.x),
+            rotation_y: radToDeg(tmp_object3d.rotation.y),
+            rotation_z: radToDeg(tmp_object3d.rotation.z),
+        });
+    }
+
+    return cantedCurveElementChildrenPropertyList;
 }
 
 function generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps) {
@@ -241,4 +308,14 @@ function assignDefaultValues<O1, O2>(props: O1, defaultProps: O2) {
         ...defaultProps,
         ...props,
     };
+}
+
+/**
+ * γ = cos⁻¹((2a²-b²) / 2a²)
+ */
+function calculateIsoscelesTriangleAngle(legLength: number, baseLength: number) {
+    const x = 2 * legLength ** 2;
+    const y = baseLength ** 2;
+
+    return Math.acos((x - y) / x);
 }

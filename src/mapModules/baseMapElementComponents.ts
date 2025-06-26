@@ -9,7 +9,7 @@ import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { MapElementProps, MapElementShape } from './mapBuilder';
 
 export function getBaseElementComponents({
-    shape, width, height, length, lengthTop, radius, radiusTop, radiusBottom, sides, offset, skew,
+    shape, width, height, length, lengthTop, radius, radiusTop, radiusBottom, sides, offset, skew, points,
 }: MapElementProps): [Shape, BufferGeometry]|[] {
     switch (shape) {
         case MapElementShape.box:
@@ -46,6 +46,16 @@ export function getBaseElementComponents({
         case MapElementShape.trapezoidalPrism: {
             // const convexShape = makeTrapezoidalPrismShape(width, height, lengthTop, length, skew);
             const geometry = makeTrapezoidalPrismGeometry(width, height, lengthTop, length, skew);
+            const obj = new Mesh(geometry);
+            const res = threeToCannon(obj, { type: ShapeType.HULL });
+
+            return [
+                res.shape,
+                geometry,
+            ];
+        }
+        case MapElementShape.convexGeometry: {
+            const geometry = makeConvexGeometry(points);
             const obj = new Mesh(geometry);
             const res = threeToCannon(obj, { type: ShapeType.HULL });
 
@@ -112,6 +122,10 @@ function makeTrapezoidalPrismGeometry(width = 2, height = 2, lengthTop = 4, leng
     const h = new Vector3(-halfLengthTop, halfHeight, halfWidth + skew);
 
     return new ConvexGeometry([a, b, c, d, e, f, g, h]);
+}
+
+function makeConvexGeometry(points: number[][]) {
+    return new ConvexGeometry(points.map((p) => new Vector3().fromArray(p)));
 }
 
 /**

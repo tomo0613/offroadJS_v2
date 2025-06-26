@@ -6,6 +6,7 @@ const prefKeys = [
     'renderShadows',
     'renderWireFrame',
     'resolutionScale',
+    'disableAudio',
     'audioVolume',
     'autoResetDelay',
     'showTelemetry',
@@ -18,6 +19,7 @@ const config = {
     renderWireFrame: false,
     resolutionScale: 1,
     audioVolume: 0.5,
+    disableAudio: false,
     showTelemetry: false,
     autoResetDelay: 2500,
     /**

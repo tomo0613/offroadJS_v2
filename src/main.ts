@@ -2,9 +2,6 @@ import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
 import WireframeRenderer from 'cannon-es-debugger';
 import Stats from 'stats.js';
 import {
-    Audio,
-    AudioListener,
-    AudioLoader,
     Clock,
     CubeTexture,
     DirectionalLight,
@@ -27,7 +24,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 /* eslint-enable import/extensions */
 
-import { CameraHandler, CameraMode } from './cameraHandler';
+import { AudioHandler } from './audio/AudioHandler';
+import { CameraHandler, CameraMode } from './CameraHandler';
 import cfg, { configListener } from './config';
 import { getCheckpointIcon3d } from './gameProgress/checkpointHandler';
 import { GameProgressEvent, GameProgressManager } from './gameProgress/gameProgressManager';
@@ -175,14 +173,8 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
     cameraHandler.camera.aspect = window.aspectRatio;
     cameraHandler.camera.updateProjectionMatrix();
 
-    const audioListener = new AudioListener();
-    cameraHandler.camera.add(audioListener);
-    const audioSource = new Audio(audioListener);
-    const audioLoader = new AudioLoader();
-    audioLoader.load('music/A Himitsu - Cease.ogg', (buffer) => {
-        audioSource.setBuffer(buffer);
-        audioSource.setLoop(true);
-    });
+    const audioHandler = new AudioHandler();
+    cameraHandler.camera.add(audioHandler.audioListener);
 
     const mapBuilder = new MapBuilder(scene, world);
 
@@ -192,9 +184,7 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
         finish: pinIcon3d as unknown as Mesh,
     });
     gameProgress.listeners.add(GameProgressEvent.start, () => {
-        if (!audioSource.isPlaying) {
-            audioSource.play();
-        }
+        audioHandler.play();
     });
     gameProgress.listeners.add(GameProgressEvent.reset, () => {
         if (colorizeShaderPass.enabled) {
@@ -203,9 +193,6 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
         if (autoResetTimeoutId) {
             window.clearTimeout(autoResetTimeoutId);
         }
-    });
-    configListener.add('audioVolume', (value) => {
-        audioSource.setVolume(value);
     });
 
     const mouseSelectHandler = new MouseSelectHandler(scene, cameraHandler.camera, renderer.domElement, mapBuilder);

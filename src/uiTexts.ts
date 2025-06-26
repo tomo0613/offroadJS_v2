@@ -48,12 +48,12 @@ const uiTexts = {
     fullscreenSwitchLabel: 'Fullscreen:',
     renderWireFrameSwitchLabel: 'Render wireFrame:',
     resolutionScaleSliderLabel: 'Resolution scale:',
-    audioEnabled: 'Audio enabled:',
     audioVolume: 'Audio volume:',
     showTelemetry: 'Show telemetry:',
     autoResetDelay: 'Auto reset delay (ms):',
     antialiasCheckboxLabel: 'Antialias:',
     renderShadowsCheckboxLabel: 'Render shadows:',
+    disableAudio: 'Disable audio:',
     applySettingsButtonLabel: 'Apply settings',
 };
 

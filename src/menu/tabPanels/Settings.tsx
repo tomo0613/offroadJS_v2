@@ -113,6 +113,7 @@ function SettingsForm() {
     const defaultFormValues = {
         antialias: config.antialias,
         renderShadows: config.renderShadows,
+        disableAudio: config.disableAudio,
     };
     const changedFormValueListRef = useRef(new Set<string>());
     const [formChanged, setFormChanged] = useState(false);
@@ -130,6 +131,12 @@ function SettingsForm() {
                 label={uiTexts.renderShadowsCheckboxLabel}
                 value="renderShadows"
                 checked={defaultFormValues.renderShadows}
+            />
+            <Checkbox
+                id="disableAudio"
+                label={uiTexts.disableAudio}
+                value="disableAudio"
+                checked={defaultFormValues.disableAudio}
             />
             <button type="button" disabled={!formChanged} onClick={applySettings}>
                 {uiTexts.applySettingsButtonLabel}

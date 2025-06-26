@@ -14,6 +14,7 @@ interface MapElementTransformPanelProps {
 
 const editablePropertiesByShape: Record<MapElementShape, (keyof MapElementProps)[]> = {
     box: ['width', 'height', 'length'],
+    convexGeometry: [],
     cylinder: ['height', 'radiusTop', 'radiusBottom', 'sides'],
     sphere: ['radius'],
     tetrahedron: ['width', 'height', 'length'],
@@ -22,6 +23,7 @@ const editablePropertiesByShape: Record<MapElementShape, (keyof MapElementProps)
     loop: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'segmentPositionOffset', 'radius'],
     slopeTransition: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'angle'],
     cantedCurve: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'radius', 'angle'],
+    cantedCurveB: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'radius'],
 };
 
 export function MapElementTransformPanel({ mapElementProps }: MapElementTransformPanelProps) {
@@ -162,6 +164,7 @@ function getDefaultPropsByShape(mapElementShape: MapElementShape): MapElementPro
         case MapElementShape.slopeTransition:
             return slopeTransitionDefaultProps;
         case MapElementShape.cantedCurve:
+        case MapElementShape.cantedCurveB:
             return cantedCurveDefaultProps;
         default:
             return {};

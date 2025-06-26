@@ -2,7 +2,7 @@ import { MathUtils } from 'three';
 // eslint-disable-next-line import/extensions
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
-import { CameraHandler } from '../cameraHandler';
+import { CameraHandler } from '../CameraHandler';
 import inputHandler from '../inputHandler';
 import { round, throttle } from '../utils';
 import { MapBuilder } from './mapBuilder';

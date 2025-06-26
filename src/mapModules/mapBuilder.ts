@@ -40,6 +40,7 @@ export enum MapElementType {
 }
 
 export enum MapElementShape {
+    convexGeometry = 'convexGeometry',
     box = 'box',
     cylinder = 'cylinder',
     sphere = 'sphere',
@@ -49,6 +50,7 @@ export enum MapElementShape {
     loop = 'loop',
     slopeTransition = 'slopeTransition',
     cantedCurve = 'cantedCurve',
+    cantedCurveB = 'cantedCurveB',
 }
 
 export interface MapElementOrientationProps {
@@ -93,6 +95,10 @@ interface PrismShapeProps extends BoxShapeProps {
     skew?: number;
 }
 
+interface ConvexGeometryShapeProps {
+    points?: [number, number, number][];
+}
+
 interface EventTriggerProps {
     event?: TriggerMapElementEvent|string;
     dataSet?: string;
@@ -112,12 +118,19 @@ export interface TriggeredEvent {
 }
 
 type MapElementId = string;
+type ConvexGeometryProps = CommonMapElementProps & ConvexGeometryShapeProps;
 type BoxProps = CommonMapElementProps & BoxShapeProps;
 type CylinderProps = CommonMapElementProps & CylinderShapeProps;
-type PrismProps = CommonMapElementProps & PrismShapeProps;
 type SphereProps = CommonMapElementProps & SphereShapeProps;
+type PrismProps = CommonMapElementProps & PrismShapeProps;
 type CompoundProps = LoopProps & SlopeTransitionProps & CantedCurveProps;
-export type MapElementProps = BoxProps & CylinderProps & SphereProps & PrismProps & EventTriggerProps & CompoundProps;
+export type MapElementProps = BoxProps
+    & CylinderProps
+    & SphereProps
+    & PrismProps
+    & EventTriggerProps
+    & ConvexGeometryProps
+    & CompoundProps;
 export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps|AnimationProps>;
 
 export interface MapData {
