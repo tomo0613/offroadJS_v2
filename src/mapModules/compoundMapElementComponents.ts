@@ -32,6 +32,8 @@ export const cantedCurveDefaultProps = {
     segmentLength: 2,
     angle: 30,
     radius: 8,
+    cant: 2,
+    elevation: 0,
 };
 export const cantedCurvePropKeys = Object
     .keys(cantedCurveDefaultProps) as (keyof typeof cantedCurveDefaultProps)[];
@@ -111,10 +113,9 @@ function generateLoopElementChildrenPropertyList(props: LoopProps) {
  */
 function _generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps) {
     const {
-        segmentCount, segmentWidth, segmentHeight, segmentLength, angle, radius,
+        segmentCount, segmentWidth, segmentHeight, segmentLength, cant, elevation, radius,
     } = assignDefaultValues(props, cantedCurveDefaultProps);
     const cantedCurveElementChildrenPropertyList: MapElementProps[] = [];
-    const elevation = 1;
 
     tmp_rotationAxis.set(0, 1, 0);
 
@@ -126,24 +127,37 @@ function _generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps
 
     tmp_vector_0.set(outerX, 0, 0).applyAxisAngle(tmp_rotationAxis, rotationAngle);
     tmp_vector_1.set(innerX, 0, 0).applyAxisAngle(tmp_rotationAxis, rotationAngle);
-    const a = new Vector3(outerX, -halfHeight, 0);
+    const a = new Vector3(outerX, -halfHeight + cant, 0);
     const b = new Vector3(innerX, -halfHeight, 0);
     const c = new Vector3().copy(b).setY(halfHeight);
-    const d = new Vector3().copy(a).setY(halfHeight);
-    const e = new Vector3(tmp_vector_0.x, -halfHeight, tmp_vector_0.z);
-    const f = new Vector3(tmp_vector_1.x, -halfHeight, tmp_vector_1.z);
-    const g = new Vector3().copy(f).setY(halfHeight);
-    const h = new Vector3().copy(e).setY(halfHeight);
+    const d = new Vector3().copy(a).setY(halfHeight + cant);
+    const e = new Vector3(tmp_vector_0.x, -halfHeight + elevation + cant, tmp_vector_0.z);
+    const f = new Vector3(tmp_vector_1.x, -halfHeight + elevation, tmp_vector_1.z);
+    const g = new Vector3().copy(f).setY(halfHeight + elevation);
+    const h = new Vector3().copy(e).setY(halfHeight + elevation + cant);
 
     tmp_object3d.position.set(-radius, 0, 0);
     tmp_object3d.rotation.set(0, 0, 0);
 
     for (let i = 0; i < segmentCount; i++) {
-        tmp_object3d.rotateOnAxis(tmp_rotationAxis, rotationAngle);
+        if (i > 0) {
+            tmp_object3d.rotateOnAxis(tmp_rotationAxis, rotationAngle);
+            tmp_object3d.translateOnAxis(tmp_rotationAxis, elevation);
+        }
 
         cantedCurveElementChildrenPropertyList.push({
             shape: MapElementShape.convexGeometry,
-            points: [a, b, c, d, e, f, g, h].map((v) => v.toArray()),
+            // points: [e, f, g, h, a, b, c, d].map((v) => v.toArray()),
+            points: [a, b, c, d, e, h].map((v) => v.toArray()),
+            position_x: tmp_object3d.position.x,
+            position_y: tmp_object3d.position.y,
+            position_z: tmp_object3d.position.z,
+            rotation_x: radToDeg(tmp_object3d.rotation.x),
+            rotation_y: radToDeg(tmp_object3d.rotation.y),
+            rotation_z: radToDeg(tmp_object3d.rotation.z),
+        }, {
+            shape: MapElementShape.convexGeometry,
+            points: [b, c, e, f, g, h].map((v) => v.toArray()),
             position_x: tmp_object3d.position.x,
             position_y: tmp_object3d.position.y,
             position_z: tmp_object3d.position.z,

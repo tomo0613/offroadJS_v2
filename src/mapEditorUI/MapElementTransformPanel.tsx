@@ -23,7 +23,7 @@ const editablePropertiesByShape: Record<MapElementShape, (keyof MapElementProps)
     loop: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'segmentPositionOffset', 'radius'],
     slopeTransition: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'angle'],
     cantedCurve: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'radius', 'angle'],
-    cantedCurveB: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'radius'],
+    cantedCurveB: ['segmentWidth', 'segmentHeight', 'segmentLength', 'segmentCount', 'radius', 'cant', 'elevation'],
 };
 
 export function MapElementTransformPanel({ mapElementProps }: MapElementTransformPanelProps) {
@@ -44,6 +44,8 @@ export function MapElementTransformPanel({ mapElementProps }: MapElementTransfor
         segmentLength = defaultProps.segmentLength,
         segmentPositionOffset = defaultProps.segmentPositionOffset,
         angle = defaultProps.angle,
+        cant = defaultProps.cant,
+        elevation = defaultProps.elevation,
     } = mapElementProps;
 
     return (
@@ -143,6 +145,18 @@ export function MapElementTransformPanel({ mapElementProps }: MapElementTransfor
                 <NumberInput
                     label={uiTexts.angleLabel} id="angle"
                     value={angle} onChange={onChange} min={0} max={180} step={1}
+                />
+            )}
+            {isPropertyEditable('cant', shape) && (
+                <NumberInput
+                    label={uiTexts.cantLabel} id="cant"
+                    value={cant} onChange={onChange} min={0} max={100} step={0.1}
+                />
+            )}
+            {isPropertyEditable('elevation', shape) && (
+                <NumberInput
+                    label={uiTexts.elevationLabel} id="elevation"
+                    value={elevation} onChange={onChange} min={0} max={10} step={0.1}
                 />
             )}
         </>

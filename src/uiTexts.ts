@@ -39,6 +39,8 @@ const uiTexts = {
     offsetLabel: 'offset:',
     skewLabel: 'skew:',
     angleLabel: 'angle:',
+    cantLabel: 'cant:',
+    elevationLabel: 'elevation:',
 
     cloneButtonLabel: 'clone',
     removeButtonLabel: 'remove',
