@@ -98,7 +98,7 @@ export default {
             shape: 'box',
             position_x: 15,
             position_y: -2,
-            position_z: -10,
+            position_z: -15,
             height: 1,
             width: 80,
             length: 80,

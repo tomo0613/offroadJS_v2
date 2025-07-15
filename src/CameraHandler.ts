@@ -159,11 +159,11 @@ export class CameraHandler {
     }
 
     updateChaseCamera(delta: number) {
-        // const cameraToTargetDistance = this.camera.position.distanceTo(this.cameraTargetPosition);
-        const { currentVehicleSpeedKmHour: speed } = this.cameraTarget.base;
-        const reverse = Math.round(-speed) < -1;
+        const { currentVehicleSpeedKmHour: vehicleSpeed } = this.cameraTarget.base;
+        const reverse = Math.round(-vehicleSpeed) < -1;
+
         // https://www.youtube.com/watch?v=UuNPHOJ_V5o&t=650s
-        const dt = 1 - cameraSpeed ** delta;
+        const dt = 1 - this.calculateCameraSpeedByDistance(this.idealChaseCameraMountPosition) ** delta;
 
         this.setIdealChaseCameraMountPosition(reverse);
         this.setIdealChaseCameraLookPosition(reverse);
@@ -188,4 +188,18 @@ export class CameraHandler {
         }
         this.cameraTarget = cameraTarget;
     }
+
+    private calculateCameraSpeedByDistance(targetPosition: Vector3) {
+        const cameraSpeedFastest = 0.001;
+        const cameraSpeedSlowest = 0.2;
+        const minDistance = 10;
+        const maxDistance = 50;
+
+        const distanceToTargetPosition = this.camera.position.distanceTo(targetPosition);
+        const clampedDistance = Math.min(Math.max(distanceToTargetPosition, minDistance), maxDistance);
+        const normalizedDistance = (clampedDistance - minDistance) / (maxDistance - minDistance);
+
+        return cameraSpeedSlowest + (cameraSpeedFastest - cameraSpeedSlowest) * normalizedDistance;
+    }
 }
+
