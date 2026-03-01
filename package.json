@@ -8,9 +8,8 @@
     "platformer",
     "html5",
     "javascript",
-    "cannon",
-    "cannon.es",
-    "cannon.js",
+    "rapier",
+    "rapier.js",
     "three",
     "three.js"
   ],
@@ -31,8 +30,7 @@
   "author": "Tomo",
   "license": "GNU GPLv3",
   "dependencies": {
-    "cannon-es": "^0.20.0",
-    "cannon-es-debugger": "^1.0.0",
+    "@dimforge/rapier3d-compat": "^0.18.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "stats.js": "^0.17.0",

@@ -1,4 +1,4 @@
-import { Body } from 'cannon-es';
+import RAPIER from '@dimforge/rapier3d-compat';
 import { Scene } from 'three';
 
 import EventListener from '../common/EventListener';
@@ -22,7 +22,7 @@ interface Goals {
     respawnCount?: number;
 }
 
-let lastCheckpointTriggerBody: Body;
+let lastCheckpointTriggerBody: RAPIER.RigidBody;
 
 const respawnTimePenalty = 5_000;
 const hud = document.createElement('aside');
@@ -60,17 +60,17 @@ export class GameProgressManager {
         this.checkpointHandler = new CheckpointHandler(scene, icon3dList);
     }
 
-    checkpointReached = (checkpointTriggerBody: Body) => {
+    checkpointReached = (checkpointTriggerBody: RAPIER.RigidBody) => {
         lastCheckpointTriggerBody = checkpointTriggerBody;
         this.checkpointsReached++;
     }
 
     respawnAtLastCheckpoint() {
         if (lastCheckpointTriggerBody) {
-            this.vehicle.chassisBody.velocity.setZero();
-            this.vehicle.chassisBody.angularVelocity.setZero();
-            this.vehicle.chassisBody.position.copy(lastCheckpointTriggerBody.position);
-            this.vehicle.chassisBody.quaternion.copy(lastCheckpointTriggerBody.quaternion);
+            this.vehicle.chassisBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            this.vehicle.chassisBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+            this.vehicle.chassisBody.setTranslation(lastCheckpointTriggerBody.translation(), true);
+            this.vehicle.chassisBody.setRotation(lastCheckpointTriggerBody.rotation(), true);
             this.respawnCount++;
             this.timer.add(respawnTimePenalty);
 

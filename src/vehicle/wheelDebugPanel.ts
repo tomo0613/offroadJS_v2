@@ -1,6 +1,5 @@
-import { RaycastVehicle } from 'cannon-es';
-
 import { round } from '../utils';
+import { VehicleWheelInfo } from './Vehicle';
 
 const wheelInfoContainerElements: HTMLDivElement[] = [];
 let initialized = false;
@@ -50,7 +49,7 @@ function init() {
     initialized = true;
 }
 
-function update(wheelInfos: RaycastVehicle['wheelInfos'], torqueDistribution: number[]) {
+function update(wheelInfos: VehicleWheelInfo[], torqueDistribution: number[]) {
     if (!initialized) {
         init();
     }

@@ -1,4 +1,4 @@
-import { Body, BODY_TYPES, ContactEquation, ContactMaterial, Material, Quaternion, Vec3, World } from 'cannon-es';
+import RAPIER from '@dimforge/rapier3d-compat';
 import {
     Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler, MathUtils, ColorRepresentation, Quaternion as _Quaternion,
 } from 'three';
@@ -6,6 +6,7 @@ import {
 import EventListener from '../common/EventListener';
 import cfg from '../config';
 import { mountEditorPanel } from '../mapEditorUI/editor';
+import { PhysicsWorld } from '../physics/rapierRuntime';
 import { ColorPicker } from '../uiComponents';
 import { noop } from '../utils';
 import { AnimationProps, defineAnimationProps } from './animatedMapElementHelper';
@@ -105,15 +106,13 @@ interface EventTriggerProps {
 }
 
 interface CollisionEvent {
-    type: typeof Body.COLLIDE_EVENT_NAME;
-    body: Body | null;
-    contact: ContactEquation | null;
-    target: Body;
+    body: RAPIER.RigidBody | null;
+    target: RAPIER.RigidBody;
 }
 
 export interface TriggeredEvent {
-    target: Body;
-    relatedTarget: Body | null;
+    target: RAPIER.RigidBody;
+    relatedTarget: RAPIER.RigidBody | null;
     dataSet?: string;
 }
 
@@ -131,7 +130,7 @@ export type MapElementProps = BoxProps
     & EventTriggerProps
     & ConvexGeometryProps
     & CompoundProps;
-export type MapElementComponentStore = Map<string, Mesh|Group|Body|VoidFnc|MapElementProps|AnimationProps>;
+export type MapElementComponentStore = Map<string, Mesh|Group|RAPIER.RigidBody|VoidFnc|MapElementProps|AnimationProps>;
 
 export interface MapData {
     meta: {
@@ -152,16 +151,14 @@ const kinematicPlatformColor = 0x9FA8BB;
 const triggerOutlieColor = 0xCD72D3;
 
 const tmp_euler = new Euler();
-
-let lowFrictionMaterial: Material;
-let generalMaterial: Material;
+const tmp_quaternion = new _Quaternion();
 let gId = 0;
 
 ColorPicker.addColorValues(defaultPlatformColor, dynamicPlatformColor, kinematicPlatformColor);
 
 export class MapBuilder {
     scene: Scene;
-    world: World;
+    world: PhysicsWorld;
     selectedMapElementId: MapElementId | undefined;
     perviousSelectedMapElementId: MapElementId;
     private mapElementComponentStore: MapElementComponentStore = new Map();
@@ -171,22 +168,9 @@ export class MapBuilder {
     editMode = false;
     onPlaceVehicle = noop as (pX: number, pY: number, pZ: number, rX: number, rY: number, rZ: number) => void;
 
-    constructor(scene: Scene, world: World) {
+    constructor(scene: Scene, world: PhysicsWorld) {
         this.scene = scene;
         this.world = world;
-
-        const contactMaterials = Object.values(world.contactMaterialTable.data).filter(isContactMaterial);
-        const materialMap = contactMaterials.reduce<Map<string, Material>>((m, cm) => {
-            const [material_1, material_2] = cm.materials;
-
-            m.set(material_1.name, material_1);
-            m.set(material_2.name, material_2);
-
-            return m;
-        }, new Map());
-
-        generalMaterial = materialMap.get('general');
-        lowFrictionMaterial = materialMap.get('lowFriction');
 
         mountEditorPanel(this);
     }
@@ -196,7 +180,7 @@ export class MapBuilder {
     }
 
     getBodyFromStore(id: MapElementId) {
-        return this.mapElementComponentStore.get(`${id}_body`) as Body;
+        return this.mapElementComponentStore.get(`${id}_body`) as RAPIER.RigidBody;
     }
 
     getMeshFromStore(id: MapElementId) {
@@ -215,7 +199,12 @@ export class MapBuilder {
         return this.mapElementComponentStore.get(`${id}_animationProps`) as AnimationProps;
     }
 
-    private addToWorld(body: Body, mesh: Mesh|Group, props: MapElementProps) {
+    private addToWorld(
+        body: RAPIER.RigidBody,
+        mesh: Mesh|Group,
+        props: MapElementProps,
+        colliderDescs: RAPIER.ColliderDesc[],
+    ) {
         const mapElementId = `${props.type || props.shape}_${gId++}`;
         const {
             type, mass = 0,
@@ -225,37 +214,28 @@ export class MapBuilder {
         } = props;
 
         const updateOrientation = () => {
-            mesh.position.copy(body.position as unknown as Vector3);
-            mesh.quaternion.copy(body.quaternion as unknown as _Quaternion);
+            copyBodyToMesh(body, mesh);
         };
 
-        body.position.set(position_x, position_y, position_z);
-        mesh.position.copy(body.position as unknown as Vector3);
+        setBodyTransform(body, position_x, position_y, position_z, rotation_x, rotation_y, rotation_z);
         mesh.name = mapElementId;
 
-        if (rotation_x || rotation_y || rotation_z) {
-            body.quaternion.setFromEuler(
-                degToRad(rotation_x),
-                degToRad(rotation_y),
-                degToRad(rotation_z),
-            );
-            mesh.quaternion.copy(body.quaternion as unknown as _Quaternion);
-        }
-        if (fixedRotation) {
-            body.fixedRotation = true;
-            body.updateMassProperties();
-        }
+        this.world.setBodyFixedRotation(body, fixedRotation);
+        this.world.setBodyColliders(body, colliderDescs);
 
-        this.world.addBody(body);
         this.scene.add(mesh);
 
         if (type === MapElementType.animated) {
             const animationProps = defineAnimationProps(body, props.dataSet);
 
-            body.type = BODY_TYPES.KINEMATIC;
+            body.setBodyType(RAPIER.RigidBodyType.KinematicVelocityBased, true);
 
             if (!animationProps.triggerStart) {
-                body.velocity.set(animationProps.velocity_x, animationProps.velocity_y, animationProps.velocity_z);
+                body.setLinvel({
+                    x: animationProps.velocity_x,
+                    y: animationProps.velocity_y,
+                    z: animationProps.velocity_z,
+                }, true);
             }
 
             this.mapElementComponentStore.set(`${mapElementId}_animationProps`, animationProps);
@@ -264,9 +244,9 @@ export class MapBuilder {
 
         if (mass || type === MapElementType.animated) {
             this.world.addEventListener('postStep', updateOrientation);
+        } else {
+            updateOrientation();
         }
-
-        body.aabbNeedsUpdate = true;
 
         this.mapElementIdStore.add(mapElementId);
         this.mapElementComponentStore.set(`${mapElementId}_mesh`, mesh);
@@ -301,7 +281,7 @@ export class MapBuilder {
 
         if (type === MapElementType.trigger) {
             const listener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
-            body.removeEventListener(Body.COLLIDE_EVENT_NAME, listener);
+            this.world.removeBodyCollisionListener(body, listener as (event: CollisionEvent) => void);
             this.mapElementComponentStore.delete(`${id}_listener`);
         }
 
@@ -358,9 +338,13 @@ export class MapBuilder {
 
     build(props: MapElementProps) {
         const meshMaterial = new MeshLambertMaterial({ color: getColorValueByProps(props) });
-        const bodyMaterial = props.lowFriction ? lowFrictionMaterial : generalMaterial;
-        const mapElementBody = new Body({ mass: props.mass, material: bodyMaterial });
+        const rbDesc = (props.mass
+            ? RAPIER.RigidBodyDesc.dynamic().setAdditionalMass(props.mass)
+            : RAPIER.RigidBodyDesc.fixed())
+            .setCanSleep(false);
+        const mapElementBody = this.world.addRigidBody(rbDesc, !!props.fixedRotation);
         let mapElementMesh: Mesh|Group;
+        const colliderDescs: RAPIER.ColliderDesc[] = [];
 
         if (compoundShapes.includes(props.shape) && !props.type) {
             props.type = MapElementType.compound;
@@ -369,7 +353,6 @@ export class MapBuilder {
         if (props.type === MapElementType.compound) {
             mapElementMesh = new Group();
             getCompoundElementChildrenPropertyList(props).forEach((childProps) => {
-                // ToDo reuse geometries|shapes ?
                 const [shape, geometry] = getBaseElementComponents(childProps);
                 const mesh = new Mesh(geometry, meshMaterial);
 
@@ -386,25 +369,30 @@ export class MapBuilder {
                 mesh.quaternion.setFromEuler(tmp_euler);
                 mesh.position.set(childProps.position_x, childProps.position_y, childProps.position_z);
                 mapElementMesh.add(mesh);
-                mapElementBody.addShape(
-                    shape,
-                    mesh.position as unknown as Vec3,
-                    mesh.quaternion as unknown as Quaternion,
-                );
+
+                shape
+                    .setTranslation(mesh.position.x, mesh.position.y, mesh.position.z)
+                    .setRotation(mesh.quaternion);
+                if (props.lowFriction) {
+                    shape.setFriction(0);
+                }
+                colliderDescs.push(shape);
             });
         } else {
             const [shape, geometry] = getBaseElementComponents(props);
-            mapElementBody.addShape(shape);
             mapElementMesh = new Mesh(geometry, meshMaterial);
 
             if (cfg.renderShadows) {
                 mapElementMesh.castShadow = true;
                 mapElementMesh.receiveShadow = true;
             }
+            if (props.lowFriction) {
+                shape.setFriction(0);
+            }
+            colliderDescs.push(shape);
         }
 
-        const mapElementId = this
-            .addToWorld(mapElementBody, mapElementMesh, props);
+        const mapElementId = this.addToWorld(mapElementBody, mapElementMesh, props, colliderDescs);
 
         if (props.type === MapElementType.trigger) {
             this.setUpEventTrigger(mapElementId, props);
@@ -426,13 +414,14 @@ export class MapBuilder {
         };
 
         if (oldListener) {
-            triggerElementBody.removeEventListener(Body.COLLIDE_EVENT_NAME, oldListener);
+            this.world.removeBodyCollisionListener(triggerElementBody, oldListener as (event: CollisionEvent) => void);
         }
 
         this.mapElementComponentStore.set(`${id}_listener`, listener);
 
-        triggerElementBody.collisionResponse = false;
-        triggerElementBody.addEventListener(Body.COLLIDE_EVENT_NAME, listener);
+        const colliders = this.world.bodyToColliders.get(triggerElementBody) || [];
+        colliders.forEach((collider) => collider.setSensor(true));
+        this.world.addBodyCollisionListener(triggerElementBody, listener);
 
         setMeshColor(triggerElementMesh, triggerOutlieColor, 0.3);
 
@@ -449,10 +438,11 @@ export class MapBuilder {
         const triggerElementMesh = this.getMeshFromStore(id) as Mesh;
 
         const listener = this.mapElementComponentStore.get(`${id}_listener`) as VoidFnc;
-        mapElementBody.removeEventListener(Body.COLLIDE_EVENT_NAME, listener);
+        this.world.removeBodyCollisionListener(mapElementBody, listener as (event: CollisionEvent) => void);
         this.mapElementComponentStore.delete(`${id}_listener`);
 
-        mapElementBody.collisionResponse = true;
+        const colliders = this.world.bodyToColliders.get(mapElementBody) || [];
+        colliders.forEach((collider) => collider.setSensor(false));
 
         setMeshColor(triggerElementMesh, defaultPlatformColor, 1);
     }
@@ -508,21 +498,16 @@ export class MapBuilder {
             } = this.getAnimationPropsFromStore(id);
 
             if (triggerStart) {
-                body.velocity.setZero();
+                body.setLinvel({ x: 0, y: 0, z: 0 }, true);
             } else {
-                body.velocity.set(velocity_x, velocity_y, velocity_z);
+                body.setLinvel({ x: velocity_x, y: velocity_y, z: velocity_z }, true);
             }
         } else {
-            body.velocity.setZero();
-            body.angularVelocity.setZero();
+            body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            body.setAngvel({ x: 0, y: 0, z: 0 }, true);
         }
 
-        body.position.set(position_x, position_y, position_z);
-        body.quaternion.setFromEuler(
-            degToRad(rotation_x),
-            degToRad(rotation_y),
-            degToRad(rotation_z),
-        );
+        setBodyTransform(body, position_x, position_y, position_z, rotation_x, rotation_y, rotation_z);
     }
 
     translate(id: MapElementId, translateProps: MapElementOrientationProps) {
@@ -538,9 +523,7 @@ export class MapBuilder {
                 rotation_x = 0, rotation_y = 0, rotation_z = 0,
             } = mapElementProps;
 
-            body.position.set(position_x, position_y, position_z);
-            body.quaternion.setFromEuler(degToRad(rotation_x), degToRad(rotation_y), degToRad(rotation_z));
-            body.aabbNeedsUpdate = true;
+            setBodyTransform(body, position_x, position_y, position_z, rotation_x, rotation_y, rotation_z);
         }
 
         mapElementUpdateMethod();
@@ -551,13 +534,9 @@ export class MapBuilder {
         const mapElementMesh = this.getMeshFromStore(id);
         const mapElementBody = this.getBodyFromStore(id);
         const mapElementProps = this.getPropsFromStore(id);
+        const colliderDescs: RAPIER.ColliderDesc[] = [];
 
         Object.assign(mapElementProps, { ...transformProps });
-
-        /*  remove current shape(s)  */
-        mapElementBody.shapes.length = 0;
-        mapElementBody.shapeOffsets.length = 0;
-        mapElementBody.shapeOrientations.length = 0;
 
         if (isCompoundMesh(mapElementMesh)) {
             const compoundElementChildrenPropertyList = getCompoundElementChildrenPropertyList(mapElementProps);
@@ -592,26 +571,31 @@ export class MapBuilder {
                 childMesh.quaternion.setFromEuler(tmp_euler);
                 childMesh.position.set(childProps.position_x, childProps.position_y, childProps.position_z);
                 childMesh.geometry = transformedGeometry;
-                mapElementBody.addShape(
-                    transformedShape,
-                    childMesh.position as unknown as Vec3,
-                    childMesh.quaternion as unknown as Quaternion,
-                );
+
+                transformedShape
+                    .setTranslation(childMesh.position.x, childMesh.position.y, childMesh.position.z)
+                    .setRotation(childMesh.quaternion);
+                if (mapElementProps.lowFriction) {
+                    transformedShape.setFriction(0);
+                }
+                colliderDescs.push(transformedShape);
             }
         } else {
             const [transformedShape, transformedGeometry] = getBaseElementComponents(mapElementProps);
 
-            mapElementBody.addShape(transformedShape);
+            if (mapElementProps.lowFriction) {
+                transformedShape.setFriction(0);
+            }
+            colliderDescs.push(transformedShape);
             mapElementMesh.geometry.dispose();
             mapElementMesh.geometry = transformedGeometry;
         }
+
+        this.world.setBodyColliders(mapElementBody, colliderDescs);
         this.listeners.dispatch(MapBuilderEvent.mapElementChange, { ...mapElementProps });
     }
 
     setAttribute(id: MapElementId, attributeProps: MapElementProps) {
-        // 'lowFriction'
-        // 'fixedRotation'
-
         const mapElementProps = this.getPropsFromStore(id);
         const mapElementBody = this.getBodyFromStore(id);
         const prevType = mapElementProps.type;
@@ -632,19 +616,24 @@ export class MapBuilder {
             }
         }
 
+        if ('fixedRotation' in attributeProps) {
+            this.world.setBodyFixedRotation(mapElementBody, !!attributeProps.fixedRotation);
+        }
+
+        if ('lowFriction' in attributeProps) {
+            const colliders = this.world.bodyToColliders.get(mapElementBody) || [];
+            colliders.forEach((collider) => collider.setFriction(attributeProps.lowFriction ? 0 : 0.001));
+        }
+
         if ('mass' in attributeProps) {
             const mapElementUpdateMethod = this.getUpdateMethodFromStore(id);
+            const nextType = attributeProps.mass > 0 ? RAPIER.RigidBodyType.Dynamic : RAPIER.RigidBodyType.Fixed;
 
-            mapElementBody.mass = attributeProps.mass;
-            mapElementBody.updateMassProperties();
-            mapElementBody.velocity.set(0, 0, 0);
-            mapElementBody.angularVelocity.set(0, 0, 0);
+            this.world.rebuildBodyAsType(mapElementBody, nextType, attributeProps.mass);
 
-            if (attributeProps.mass > 0 && mapElementBody.type === BODY_TYPES.STATIC) {
-                mapElementBody.type = BODY_TYPES.DYNAMIC;
+            if (attributeProps.mass > 0) {
                 this.world.addEventListener('postStep', mapElementUpdateMethod);
-            } else if (!attributeProps.mass && mapElementBody.type === BODY_TYPES.DYNAMIC) {
-                mapElementBody.type = BODY_TYPES.STATIC;
+            } else {
                 this.world.removeEventListener('postStep', mapElementUpdateMethod);
             }
         }
@@ -667,7 +656,6 @@ export class MapBuilder {
 
     exportMap = () => ({
         meta: {},
-        // ToDo remove default values
         elements: Array.from(this.mapElementComponentStore.entries())
             .filter(([key]) => key.endsWith('props'))
             .map(([, value]) => value),
@@ -687,7 +675,7 @@ export function setMeshColor(mesh: Mesh|Group, colorValue?: ColorRepresentation,
     if (colorValue) {
         material.color.set(colorValue);
     }
-    if (opacity) {
+    if (opacity !== undefined) {
         material.transparent = opacity < 1;
         material.opacity = opacity;
     }
@@ -711,6 +699,26 @@ function isCompoundMesh(mesh: Mesh|Group): mesh is Group {
     return !!mesh.children.length;
 }
 
-function isContactMaterial(value: unknown): value is ContactMaterial {
-    return value instanceof ContactMaterial;
+function copyBodyToMesh(body: RAPIER.RigidBody, mesh: Mesh | Group) {
+    const p = body.translation();
+    const q = body.rotation();
+
+    mesh.position.set(p.x, p.y, p.z);
+    mesh.quaternion.set(q.x, q.y, q.z, q.w);
+}
+
+function setBodyTransform(
+    body: RAPIER.RigidBody,
+    position_x: number,
+    position_y: number,
+    position_z: number,
+    rotation_x: number,
+    rotation_y: number,
+    rotation_z: number,
+) {
+    body.setTranslation({ x: position_x, y: position_y, z: position_z }, true);
+
+    tmp_euler.set(degToRad(rotation_x), degToRad(rotation_y), degToRad(rotation_z));
+    tmp_quaternion.setFromEuler(tmp_euler);
+    body.setRotation(tmp_quaternion, true);
 }

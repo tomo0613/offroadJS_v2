@@ -1,10 +1,9 @@
-import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
-import WireframeRenderer from 'cannon-es-debugger';
 import Stats from 'stats.js';
 import {
     Clock,
     CubeTexture,
     DirectionalLight,
+    Euler,
     HemisphereLight,
     MathUtils,
     Mesh,
@@ -37,6 +36,9 @@ import { MouseSelectHandler } from './mapModules/mouseSelectHandler';
 import { initTransformControls } from './mapModules/transformControls';
 import { mountMenuRoot } from './menu/menu';
 import { confirmDialog, popUpNotification } from './notificationModules/notificationManager';
+import {
+    PhysicsWorld, initPhysics,
+} from './physics/rapierRuntime';
 import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
 import { ColorizeShader } from './vfx/colorizeShader';
@@ -44,16 +46,6 @@ import { ColorizeShader } from './vfx/colorizeShader';
 const { degToRad } = MathUtils;
 
 const physicsFrameTime = 1 / cfg.physicsFrameRate;
-
-const generalMaterial = new Material('general');
-const lowFrictionMaterial = new Material('lowFriction');
-const general_to_general_cm = new ContactMaterial(generalMaterial, generalMaterial, {
-    friction: 1e-3,
-});
-const lowFriction_to_general_cm = new ContactMaterial(generalMaterial, lowFrictionMaterial, {
-    friction: 0,
-    contactEquationStiffness: 1e8,
-});
 
 if (cfg.fullscreen) {
     confirmDialog('Allow fullscreen?').then((confirmed) => {
@@ -82,6 +74,8 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
 });
 
 (async function main() {
+    await initPhysics();
+
     let paused = false;
     let cascadedShadowMap: CSM | undefined;
     const clock = new Clock();
@@ -91,21 +85,9 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
 
     scene.add(hemisphereLight);
 
-    const world = new World();
+    const world = new PhysicsWorld(cfg.world.gravity);
     const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
-    world.gravity.set(gravityX, gravityY, gravityZ);
-    world.broadphase = new SAPBroadphase(world);
-    world.defaultContactMaterial.friction = 0.001;
-    world.addContactMaterial(general_to_general_cm);
-    world.addContactMaterial(lowFriction_to_general_cm);
-
-    const wireframeRenderer = WireframeRenderer(scene, world, {
-        onInit(body, mesh) {
-            configListener.add('renderWireFrame', (renderWireFrame: boolean) => {
-                mesh.visible = renderWireFrame;
-            });
-        },
-    });
+    world.raw.gravity = { x: gravityX, y: gravityY, z: gravityZ };
 
     const renderer = new WebGLRenderer({ antialias: cfg.antialias, powerPreference: cfg.powerPreference });
     renderer.setPixelRatio(window.devicePixelRatio); // cfg.renderScale;
@@ -203,7 +185,7 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
 
     mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
         vehicle.initialPosition.set(pX, pY, pZ);
-        vehicle.initialRotation.setFromEuler(degToRad(rX), degToRad(rY), degToRad(rZ));
+        vehicle.initialRotation.setFromEuler(new Euler(degToRad(rX), degToRad(rY), degToRad(rZ)));
         vehicle.resetPosition();
     };
     mapBuilder.eventTriggerListeners.add(
@@ -237,7 +219,7 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
                     velocity_x, velocity_y, velocity_z,
                 } = mapBuilder.getAnimationPropsFromStore(animatedMapElementId);
 
-                body.velocity.set(velocity_x, velocity_y, velocity_z);
+                body.setLinvel({ x: velocity_x, y: velocity_y, z: velocity_z }, true);
             }
         },
     );
@@ -386,10 +368,6 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
 
         // update physics
         world.step(physicsFrameTime, delta);
-
-        if (cfg.renderWireFrame) {
-            wireframeRenderer.update();
-        }
 
         // colorizeShaderPass fade-in (grayscale)
         if (colorizeShaderPass.enabled && colorizeShaderPass.uniforms.opacity.value < 1) {

@@ -1,4 +1,4 @@
-import { Body } from 'cannon-es';
+import RAPIER from '@dimforge/rapier3d-compat';
 import { BoxGeometry, Mesh, MeshPhongMaterial, Scene, Vector3 } from 'three';
 
 import ObjectPool from '../common/ObjectPool';
@@ -18,8 +18,8 @@ let animationHeightOffset = 0;
 let animationLightnessOffset = 0;
 
 export class CheckpointHandler {
-    activeCheckpoints = new Set<Body>();
-    checkpointIconToElementLinks = new Map<Body, Mesh>();
+    activeCheckpoints = new Set<RAPIER.RigidBody>();
+    checkpointIconToElementLinks = new Map<RAPIER.RigidBody, Mesh>();
     checkpointIcon3dPool: ObjectPool<Mesh>;
     finishIcon3d: Mesh;
     gameProgress: GameProgressManager;
@@ -73,9 +73,9 @@ export class CheckpointHandler {
         });
     }
 
-    setActiveCheckpoint(triggerElementBody: Body) {
+    setActiveCheckpoint(triggerElementBody: RAPIER.RigidBody) {
         const icon3d = this.checkpointIcon3dPool.obtain();
-        icon3d.position.copy(triggerElementBody.position as unknown as Vector3);
+        icon3d.position.copy(triggerElementBody.translation() as unknown as Vector3);
 
         this.activeCheckpoints.add(triggerElementBody);
         this.checkpointIconToElementLinks.set(triggerElementBody, icon3d);
@@ -83,8 +83,8 @@ export class CheckpointHandler {
         this.scene.add(icon3d);
     }
 
-    setFinish(triggerElementBody: Body) {
-        this.finishIcon3d.position.copy(triggerElementBody.position as unknown as Vector3);
+    setFinish(triggerElementBody: RAPIER.RigidBody) {
+        this.finishIcon3d.position.copy(triggerElementBody.translation() as unknown as Vector3);
     }
 
     checkpointEventHandler = ({ target, relatedTarget }: TriggeredEvent) => {
