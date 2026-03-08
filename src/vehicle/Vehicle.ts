@@ -1,4 +1,4 @@
-import RAPIER from '@dimforge/rapier3d-compat';
+import RAPIER, { QueryFilterFlags } from '@dimforge/rapier3d-compat';
 import {
     Object3D, Scene, Vector3, Quaternion,
 } from 'three';
@@ -9,6 +9,8 @@ import { setMaterials } from './materials';
 import { VehicleState, initStateHandler } from './stateHandler';
 
 const translateAxis = new Vector3(0, 0, 1);
+const meshOffset_z = 0.6;
+
 const {
     torqueSplitRatio,
     maxEngineForce,
@@ -50,15 +52,12 @@ export interface VehicleWheelInfo {
     maxSuspensionForce: number;
     dampingCompression: number;
     dampingRelaxation: number;
-    frictionSlip: number;
     forwardAcceleration: number;
     sideAcceleration: number;
     rollInfluence: number;
     axleLocal: Vector3;
     directionLocal: Vector3;
     chassisConnectionPointLocal: Vector3;
-    customSlidingRotationalSpeed: number;
-    useCustomSlidingRotationalSpeed: boolean;
     steering: number;
     brake: number;
     engineForce: number;
@@ -76,9 +75,6 @@ interface VehicleBase {
 const upAxis = new Vector3(0, 1, 0);
 const wheelSteeringQuat = new Quaternion();
 const wheelRotationQuat = new Quaternion();
-const wheelLocalQuat = new Quaternion();
-const wheelWorldQuat = new Quaternion();
-const wheelConnectionPosition = new Vector3();
 
 export default class Vehicle {
     base: VehicleBase;
@@ -106,15 +102,12 @@ export default class Vehicle {
             maxSuspensionForce: wheelMaxSuspensionForce,
             dampingCompression: wheelDampingCompression,
             dampingRelaxation: wheelDampingRelaxation,
-            frictionSlip: wheelFrictionSlip,
             forwardAcceleration: wheelForwardAcceleration,
             sideAcceleration: wheelSidedAcceleration,
             rollInfluence: wheelRollInfluence,
             axleLocal: new Vector3(-1, 0, 0),
             directionLocal: new Vector3(0, -1, 0),
             chassisConnectionPointLocal: new Vector3(),
-            customSlidingRotationalSpeed: -30,
-            useCustomSlidingRotationalSpeed: true,
         };
         const height = 0.3;
         const halfTrackWidth = 0.85;
@@ -144,12 +137,20 @@ export default class Vehicle {
         };
 
         const axes = ['x', 'y', 'z'] as const;
-        Object.keys(wheelMeshes).forEach((wheelId: keyof typeof wheelMeshes) => {
-            if (wheelId.endsWith('_r')) {
+        Object.keys(wheelMeshes).forEach((wheelId: keyof typeof wheelMeshes, i) => {
+            const wheelInfo = wheelInfos[i];
+            const mesh = wheelMeshes[wheelId];
+
+            if (wheelId.endsWith('_l')) {
                 axes.forEach((axis) => {
-                    wheelMeshes[wheelId].scale[axis] *= -1;
+                    mesh.scale[axis] *= -1;
                 });
             }
+
+            chassisMesh.add(mesh);
+
+            mesh.position.copy(wheelInfo.chassisConnectionPointLocal);
+            mesh.position.z -= meshOffset_z;
         });
 
         this.wheelMeshes = [wheelMeshes.front_r, wheelMeshes.front_l, wheelMeshes.rear_r, wheelMeshes.rear_l];
@@ -163,11 +164,8 @@ export default class Vehicle {
 
         const chassisDesc = RAPIER.RigidBodyDesc.dynamic()
             .setAdditionalMass(cfg.vehicle.mass)
-            .setLinearDamping(0.15)
-            .setAngularDamping(2.5)
             .setCanSleep(false);
         this.chassisBody = this.world.addRigidBody(chassisDesc);
-        this.chassisBody.setEnabledRotations(false, true, false, true);
 
         const chassisBase = RAPIER.ColliderDesc.cuboid(0.9, 0.4, 2.1)
             .setTranslation(0, 0, 0.1)
@@ -178,8 +176,7 @@ export default class Vehicle {
         this.world.setBodyColliders(this.chassisBody, [chassisBase, chassisTop]);
 
         this.vehicleController = this.world.raw.createVehicleController(this.chassisBody);
-        this.vehicleController.indexUpAxis = 1;
-        this.vehicleController.setIndexForwardAxis = 2;
+
         for (let i = 0; i < this.base.wheelInfos.length; i++) {
             const wheelInfo = this.base.wheelInfos[i];
             this.vehicleController.addWheel(
@@ -194,7 +191,7 @@ export default class Vehicle {
             this.vehicleController.setWheelMaxSuspensionForce(i, Math.min(wheelInfo.maxSuspensionForce, 300));
             this.vehicleController.setWheelSuspensionCompression(i, wheelInfo.dampingCompression);
             this.vehicleController.setWheelSuspensionRelaxation(i, wheelInfo.dampingRelaxation);
-            this.vehicleController.setWheelFrictionSlip(i, wheelInfo.frictionSlip);
+            this.vehicleController.setWheelFrictionSlip(i, wheelFrictionSlip);
             this.vehicleController.setWheelSideFrictionStiffness(i, wheelInfo.sideAcceleration);
         }
 
@@ -205,9 +202,6 @@ export default class Vehicle {
     }
 
     addToScene(scene: Scene) {
-        this.wheelMeshes.forEach((wheelMesh) => {
-            scene.add(wheelMesh);
-        });
         scene.add(this.chassisMesh);
 
         return this;
@@ -222,13 +216,13 @@ export default class Vehicle {
 
         const { wheelInfos } = this.base;
         for (let i = 0; i < wheelInfos.length; i++) {
-            wheelInfos[i].engineForce = this.state.engineForce * torqueDistribution[i] * 0.01;
+            wheelInfos[i].engineForce = this.state.engineForce * torqueDistribution[i] * 0.01 * -1;
             this.vehicleController.setWheelEngineForce(i, wheelInfos[i].engineForce);
             this.vehicleController.setWheelBrake(i, wheelInfos[i].brake);
             this.vehicleController.setWheelSteering(i, wheelInfos[i].steering);
         }
 
-        this.vehicleController.updateVehicle(dt);
+        this.vehicleController.updateVehicle(dt, QueryFilterFlags.EXCLUDE_SENSORS);
         this.base.currentVehicleSpeedKmHour = this.vehicleController.currentVehicleSpeed() * 3.6;
     }
 
@@ -237,51 +231,36 @@ export default class Vehicle {
             return;
         }
 
-        const p = this.chassisBody.translation();
         const q = this.chassisBody.rotation();
-        const chassisPosition = new Vector3(p.x, p.y, p.z);
-        const chassisQuaternion = new Quaternion(q.x, q.y, q.z, q.w);
 
-        this.updateWheels(chassisPosition, chassisQuaternion);
+        this.updateWheels();
 
-        for (let i = 0; i < this.base.wheelInfos.length; i++) {
-            const wheelInfo = this.base.wheelInfos[i];
-            this.wheelMeshes[i].position.copy(wheelInfo.worldPosition);
-            this.wheelMeshes[i].quaternion.copy(wheelInfo.worldQuaternion);
-        }
-
-        this.chassisMesh.position.set(p.x, p.y, p.z);
+        this.chassisMesh.position.copy(this.chassisBody.translation());
         this.chassisMesh.quaternion.set(q.x, q.y, q.z, q.w);
-        this.chassisMesh.translateOnAxis(translateAxis, 0.6);
+        this.chassisMesh.translateOnAxis(translateAxis, meshOffset_z);
     }
 
-    private updateWheels(chassisPosition: Vector3, chassisQuaternion: Quaternion) {
+    private updateWheels() {
         for (let i = 0; i < this.base.wheelInfos.length; i++) {
             const wheelInfo = this.base.wheelInfos[i];
-            const connectionY = this.vehicleController.wheelChassisConnectionPointCs(i)?.y
-                ?? wheelInfo.chassisConnectionPointLocal.y;
-            const suspension = this.vehicleController.wheelSuspensionLength(i) ?? wheelInfo.suspensionRestLength;
-            const steering = this.vehicleController.wheelSteering(i) ?? wheelInfo.steering;
-            const rotation = this.vehicleController.wheelRotation(i) ?? 0;
+
+            const wheelAxleCs = this.vehicleController.wheelAxleCs(i);
+            const connectionY = this.vehicleController.wheelChassisConnectionPointCs(i).y ?? 0;
+            const suspensionLength = this.vehicleController.wheelSuspensionLength(i) ?? 0;
+            const steering = this.vehicleController.wheelSteering(i) ?? 0;
+            const rotationRad = this.vehicleController.wheelRotation(i) ?? 0;
             const sideImpulse = Math.abs(this.vehicleController.wheelSideImpulse(i) ?? 0);
 
-            wheelConnectionPosition.copy(wheelInfo.chassisConnectionPointLocal);
-            wheelConnectionPosition.y = connectionY - suspension;
-
-            wheelInfo.worldPosition
-                .copy(wheelConnectionPosition)
-                .applyQuaternion(chassisQuaternion)
-                .add(chassisPosition);
+            this.wheelMeshes[i].position.setY(connectionY - suspensionLength);
 
             wheelSteeringQuat.setFromAxisAngle(upAxis, steering);
-            wheelRotationQuat.setFromAxisAngle(wheelInfo.axleLocal, rotation);
-            wheelLocalQuat.multiplyQuaternions(wheelSteeringQuat, wheelRotationQuat);
-            wheelWorldQuat.multiplyQuaternions(chassisQuaternion, wheelLocalQuat);
-            wheelInfo.worldQuaternion.copy(wheelWorldQuat);
+            wheelRotationQuat.setFromAxisAngle(wheelAxleCs, rotationRad);
+
+            this.wheelMeshes[i].quaternion.multiplyQuaternions(wheelSteeringQuat, wheelRotationQuat);
 
             wheelInfo.steering = steering;
             wheelInfo.isInContact = this.vehicleController.wheelIsInContact(i);
-            wheelInfo.sliding = sideImpulse > wheelInfo.frictionSlip;
+            wheelInfo.sliding = sideImpulse > 1;
         }
     }
 

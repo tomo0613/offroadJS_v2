@@ -68,7 +68,7 @@ const config = {
         wheelMaxSuspensionForce: Number.MAX_VALUE,
         wheelDampingCompression: 2,
         wheelDampingRelaxation: 2,
-        wheelFrictionSlip: 1.1,
+        wheelFrictionSlip: 100,
         wheelForwardAcceleration: 1 / 2,
         wheelSidedAcceleration: 1,
         wheelRollInfluence: 0.6,

@@ -14,6 +14,7 @@ import {
 } from 'three';
 /* eslint-disable import/extensions */
 import { CSM } from 'three/addons/csm/CSM.js';
+import { RapierHelper } from 'three/addons/helpers/RapierHelper.js';
 import { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { SVGResult } from 'three/addons/loaders/SVGLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -88,6 +89,24 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
     const world = new PhysicsWorld(cfg.world.gravity);
     const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
     world.raw.gravity = { x: gravityX, y: gravityY, z: gravityZ };
+
+    let physicsWireFrameRenderer = cfg.renderWireFrame ? new RapierHelper(world.raw) : null;
+
+    if (physicsWireFrameRenderer) {
+        scene.add(physicsWireFrameRenderer);
+    }
+
+    configListener.add('renderWireFrame', () => {
+        if (physicsWireFrameRenderer) {
+            scene.remove(physicsWireFrameRenderer);
+
+            physicsWireFrameRenderer.dispose();
+        } else {
+            physicsWireFrameRenderer = new RapierHelper(world.raw);
+
+            scene.add(physicsWireFrameRenderer);
+        }
+    });
 
     const renderer = new WebGLRenderer({ antialias: cfg.antialias, powerPreference: cfg.powerPreference });
     renderer.setPixelRatio(window.devicePixelRatio); // cfg.renderScale;
@@ -359,6 +378,10 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
         gameProgress.updateHUD();
 
         gameProgress.checkpointHandler.updateVisuals(delta);
+
+        if (physicsWireFrameRenderer) {
+            physicsWireFrameRenderer.update();
+        }
 
         if (cascadedShadowMap) {
             cascadedShadowMap.update();
