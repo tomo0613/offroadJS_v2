@@ -1,10 +1,10 @@
-import RAPIER, { QueryFilterFlags } from '@dimforge/rapier3d-compat';
+import RAPIER from '@dimforge/rapier3d-compat';
 import {
     Object3D, Scene, Vector3, Quaternion,
 } from 'three';
 
 import cfg from '../config';
-import { PhysicsWorld } from '../physics/rapierRuntime';
+import { PhysicsWorld, wheelQueryInteractionGroups } from '../physics/rapierRuntime';
 import { setMaterials } from './materials';
 import { VehicleState, initStateHandler } from './stateHandler';
 
@@ -63,8 +63,7 @@ export interface VehicleWheelInfo {
     engineForce: number;
     sliding: boolean;
     isInContact: boolean;
-    worldPosition: Vector3;
-    worldQuaternion: Quaternion;
+    rotation?: number;
 }
 
 interface VehicleBase {
@@ -222,7 +221,11 @@ export default class Vehicle {
             this.vehicleController.setWheelSteering(i, wheelInfos[i].steering);
         }
 
-        this.vehicleController.updateVehicle(dt, QueryFilterFlags.EXCLUDE_SENSORS);
+        this.vehicleController.updateVehicle(
+            dt,
+            undefined,
+            wheelQueryInteractionGroups,
+        );
         this.base.currentVehicleSpeedKmHour = this.vehicleController.currentVehicleSpeed() * 3.6;
     }
 
@@ -245,19 +248,20 @@ export default class Vehicle {
             const wheelInfo = this.base.wheelInfos[i];
 
             const wheelAxleCs = this.vehicleController.wheelAxleCs(i);
+            const wheelRotation = this.vehicleController.wheelRotation(i);
             const connectionY = this.vehicleController.wheelChassisConnectionPointCs(i).y ?? 0;
             const suspensionLength = this.vehicleController.wheelSuspensionLength(i) ?? 0;
             const steering = this.vehicleController.wheelSteering(i) ?? 0;
-            const rotationRad = this.vehicleController.wheelRotation(i) ?? 0;
             const sideImpulse = Math.abs(this.vehicleController.wheelSideImpulse(i) ?? 0);
 
             this.wheelMeshes[i].position.setY(connectionY - suspensionLength);
 
             wheelSteeringQuat.setFromAxisAngle(upAxis, steering);
-            wheelRotationQuat.setFromAxisAngle(wheelAxleCs, rotationRad);
+            wheelRotationQuat.setFromAxisAngle(wheelInfo.axleLocal, wheelRotation);
 
             this.wheelMeshes[i].quaternion.multiplyQuaternions(wheelSteeringQuat, wheelRotationQuat);
 
+            wheelInfo.rotation = wheelRotation;
             wheelInfo.steering = steering;
             wheelInfo.isInContact = this.vehicleController.wheelIsInContact(i);
             wheelInfo.sliding = sideImpulse > 1;
@@ -371,7 +375,5 @@ function createWheelInfo(
         engineForce: 0,
         sliding: false,
         isInContact: true,
-        worldPosition: new Vector3(),
-        worldQuaternion: new Quaternion(),
     };
 }

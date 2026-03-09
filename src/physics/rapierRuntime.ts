@@ -7,6 +7,29 @@ type CollisionListener = (event: { target: RAPIER.RigidBody; body: RAPIER.RigidB
 
 const fixedRotationState = new WeakMap<RAPIER.RigidBody, boolean>();
 
+const allGroupBits = 0xFFFF;
+
+export const CollisionGroupBits = {
+    solid: 0b0001,
+    sensor: 0b0010,
+} as const;
+
+export function createInteractionGroups(memberships: number, filter: number) {
+    // eslint-disable-next-line no-bitwise
+    const membershipsMask = memberships & allGroupBits;
+    // eslint-disable-next-line no-bitwise
+    const filterMask = filter & allGroupBits;
+
+    return membershipsMask * 0x10000 + filterMask;
+}
+
+export const defaultInteractionGroups = createInteractionGroups(allGroupBits, allGroupBits);
+export const sensorInteractionGroups = createInteractionGroups(CollisionGroupBits.sensor, allGroupBits);
+export const wheelQueryInteractionGroups = createInteractionGroups(
+    CollisionGroupBits.solid,
+    CollisionGroupBits.solid,
+);
+
 export async function initPhysics() {
     await RAPIER.init();
 }

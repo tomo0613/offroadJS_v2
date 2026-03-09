@@ -1,12 +1,16 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import {
-    Group, Mesh, MeshLambertMaterial, Scene, Vector3, Euler, MathUtils, ColorRepresentation, Quaternion as _Quaternion,
+    Group, Mesh, MeshLambertMaterial, Scene, Euler, MathUtils, ColorRepresentation, Quaternion as _Quaternion,
 } from 'three';
 
 import EventListener from '../common/EventListener';
 import cfg from '../config';
 import { mountEditorPanel } from '../mapEditorUI/editor';
-import { PhysicsWorld } from '../physics/rapierRuntime';
+import {
+    defaultInteractionGroups,
+    PhysicsWorld,
+    sensorInteractionGroups,
+} from '../physics/rapierRuntime';
 import { ColorPicker } from '../uiComponents';
 import { noop } from '../utils';
 import { AnimationProps, defineAnimationProps } from './animatedMapElementHelper';
@@ -420,7 +424,10 @@ export class MapBuilder {
         this.mapElementComponentStore.set(`${id}_listener`, listener);
 
         const colliders = this.world.bodyToColliders.get(triggerElementBody) || [];
-        colliders.forEach((collider) => collider.setSensor(true));
+        colliders.forEach((collider) => {
+            collider.setSensor(true);
+            collider.setCollisionGroups(sensorInteractionGroups);
+        });
         this.world.addBodyCollisionListener(triggerElementBody, listener);
 
         setMeshColor(triggerElementMesh, triggerOutlieColor, 0.3);
@@ -442,7 +449,10 @@ export class MapBuilder {
         this.mapElementComponentStore.delete(`${id}_listener`);
 
         const colliders = this.world.bodyToColliders.get(mapElementBody) || [];
-        colliders.forEach((collider) => collider.setSensor(false));
+        colliders.forEach((collider) => {
+            collider.setSensor(false);
+            collider.setCollisionGroups(defaultInteractionGroups);
+        });
 
         setMeshColor(triggerElementMesh, defaultPlatformColor, 1);
     }
