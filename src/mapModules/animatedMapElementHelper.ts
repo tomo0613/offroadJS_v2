@@ -1,14 +1,18 @@
-import { Body, Vec3 } from 'cannon-es';
+import RAPIER from '@dimforge/rapier3d-compat';
+import { Vector3 } from 'three';
 
-const tmp_direction = new Vec3();
+const tmp_direction = new Vector3();
+// scratch copy of a body's Rapier translation, so three.js Vector3 methods (e.g. distanceTo)
+// can be used on it — body.translation() returns a bare { x, y, z }, not a three.js Vector3.
+const tmp_position = new Vector3();
 
 export type AnimationProps = ReturnType<typeof defineAnimationProps>;
 
-export function defineAnimationProps(body: Body, dataSet: string) {
-    const initialVelocity = new Vec3();
-    const inverseVelocity = new Vec3();
-    const startPosition = new Vec3();
-    const endPosition = new Vec3();
+export function defineAnimationProps(body: RAPIER.RigidBody, dataSet: string) {
+    const initialVelocity = new Vector3();
+    const inverseVelocity = new Vector3();
+    const startPosition = new Vector3();
+    const endPosition = new Vector3();
     const {
         movement: { x = 0, y = 0, z = 0 },
         speed = 1,
@@ -18,14 +22,12 @@ export function defineAnimationProps(body: Body, dataSet: string) {
     } = JSON.parse(dataSet);
     const movementPrecision = speed * 0.05;
 
-    startPosition.copy(body.position);
-    endPosition.set(x, y, z);
-    endPosition.vadd(body.position, endPosition);
+    startPosition.copy(body.translation() as unknown as Vector3);
+    endPosition.set(x, y, z).add(startPosition);
 
-    endPosition.vsub(startPosition, tmp_direction);
-    tmp_direction.normalize();
-    tmp_direction.scale(speed, initialVelocity);
-    initialVelocity.negate(inverseVelocity);
+    tmp_direction.copy(endPosition).sub(startPosition).normalize().multiplyScalar(speed);
+    initialVelocity.copy(tmp_direction);
+    inverseVelocity.copy(initialVelocity).negate();
 
     return {
         triggerStart,
@@ -36,40 +38,42 @@ export function defineAnimationProps(body: Body, dataSet: string) {
     };
 
     function movementHandler() {
-        if (body.position.almostEquals(endPosition, movementPrecision) && isMovingTowards(endPosition)) {
+        const currentPosition = tmp_position.copy(body.translation() as unknown as Vector3);
+        if (currentPosition.distanceTo(endPosition) <= movementPrecision && isMovingTowards(endPosition)) {
             if (alternate) {
                 if (alternateDelay) {
-                    body.velocity.setZero();
+                    body.setLinvel({ x: 0, y: 0, z: 0 }, true);
                     window.setTimeout(startMovingTowardsStartPosition, alternateDelay * 1000);
                 } else {
                     startMovingTowardsStartPosition();
                 }
             } else {
-                body.velocity.setZero();
+                body.setLinvel({ x: 0, y: 0, z: 0 }, true);
             }
-            body.position.copy(endPosition);
-        } else if (body.position.almostEquals(startPosition, movementPrecision) && isMovingTowards(startPosition)) {
+            body.setTranslation(endPosition, true);
+        } else if (currentPosition.distanceTo(startPosition) <= movementPrecision && isMovingTowards(startPosition)) {
             if (alternateDelay) {
-                body.velocity.setZero();
+                body.setLinvel({ x: 0, y: 0, z: 0 }, true);
                 window.setTimeout(startMovingTowardsEndPosition, alternateDelay * 1000);
             } else {
                 startMovingTowardsEndPosition();
             }
-            body.position.copy(startPosition);
+            body.setTranslation(startPosition, true);
         }
     }
 
     function startMovingTowardsStartPosition() {
-        body.velocity.copy(inverseVelocity);
+        body.setLinvel(inverseVelocity, true);
     }
 
     function startMovingTowardsEndPosition() {
-        body.velocity.copy(initialVelocity);
+        body.setLinvel(initialVelocity, true);
     }
 
-    function isMovingTowards(targetPosition: Vec3) {
-        targetPosition.vsub(body.position, tmp_direction);
+    function isMovingTowards(targetPosition: Vector3) {
+        const velocity = body.linvel() as unknown as Vector3;
+        tmp_direction.copy(targetPosition).sub(body.translation() as unknown as Vector3);
 
-        return tmp_direction.dot(body.velocity) > 0;
+        return tmp_direction.dot(velocity) > 0;
     }
 }

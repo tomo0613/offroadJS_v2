@@ -46,14 +46,20 @@ const config = {
             z: 27,
         },
         mountOffset_v3: [0, 4, 9],
-        mountOffsetReverse_v3: [5, 4, -9],
         lookOffset_v3: [0, 1, -5],
     },
     vehicle: {
         mass: 30,
         steeringSpeed: 0.02,
         maxSteeringAngle: 0.7,
-        maxBrakeForce: 22,
+        // hand-brake engagement only — its magnitude is unused: the controller's wheel brake grips
+        // almost instantly regardless of force, so we model a sliding locked wheel ourselves instead.
+        maxBrakeForce: 1,
+        // rear lateral grip while hand-braking (lower = looser / easier to kick the tail out)
+        handbrakeFrictionSlip: 0.4,
+        // kinetic-friction coefficient of the locked, sliding rear wheels — sets the straight-line
+        // skid deceleration (lower = longer slide). Applied as a custom drag in Vehicle.beforeStep.
+        handbrakeKineticFriction: 0.6,
         maxEngineForce: 220,
         torqueSplitRatio: [50, 50],
         cameraMountPosition: {

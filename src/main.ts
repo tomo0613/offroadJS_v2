@@ -1,11 +1,14 @@
-import { ContactMaterial, Material, SAPBroadphase, World } from 'cannon-es';
-import WireframeRenderer from 'cannon-es-debugger';
 import Stats from 'stats.js';
 import {
+    BufferAttribute,
+    BufferGeometry,
     Clock,
     CubeTexture,
     DirectionalLight,
+    Euler,
     HemisphereLight,
+    LineBasicMaterial,
+    LineSegments,
     MathUtils,
     Mesh,
     SRGBColorSpace,
@@ -37,6 +40,7 @@ import { MouseSelectHandler } from './mapModules/mouseSelectHandler';
 import { initTransformControls } from './mapModules/transformControls';
 import { mountMenuRoot } from './menu/menu';
 import { confirmDialog, popUpNotification } from './notificationModules/notificationManager';
+import { PhysicsWorld, initPhysics } from './physics/rapierRuntime';
 import * as utils from './utils';
 import Vehicle from './vehicle/Vehicle';
 import { ColorizeShader } from './vfx/colorizeShader';
@@ -44,16 +48,6 @@ import { ColorizeShader } from './vfx/colorizeShader';
 const { degToRad } = MathUtils;
 
 const physicsFrameTime = 1 / cfg.physicsFrameRate;
-
-const generalMaterial = new Material('general');
-const lowFrictionMaterial = new Material('lowFriction');
-const general_to_general_cm = new ContactMaterial(generalMaterial, generalMaterial, {
-    friction: 1e-3,
-});
-const lowFriction_to_general_cm = new ContactMaterial(generalMaterial, lowFrictionMaterial, {
-    friction: 0,
-    contactEquationStiffness: 1e8,
-});
 
 if (cfg.fullscreen) {
     confirmDialog('Allow fullscreen?').then((confirmed) => {
@@ -67,21 +61,23 @@ if (cfg.fullscreen) {
 
 const stats = new Stats();
 const telemetryPanel = document.getElementById('telemetryPanel');
-telemetryPanel.appendChild(stats.dom);
+telemetryPanel?.appendChild(stats.dom);
 
 if (!cfg.showTelemetry) {
-    telemetryPanel.classList.add('hidden');
+    telemetryPanel?.classList.add('hidden');
 }
 
 configListener.add('showTelemetry', (showTelemetry: boolean) => {
     if (showTelemetry) {
-        telemetryPanel.classList.remove('hidden');
+        telemetryPanel?.classList.remove('hidden');
     } else {
-        telemetryPanel.classList.add('hidden');
+        telemetryPanel?.classList.add('hidden');
     }
 });
 
 (async function main() {
+    await initPhysics();
+
     let paused = false;
     let cascadedShadowMap: CSM | undefined;
     const clock = new Clock();
@@ -91,20 +87,24 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
 
     scene.add(hemisphereLight);
 
-    const world = new World();
-    const { x: gravityX, y: gravityY, z: gravityZ } = cfg.world.gravity;
-    world.gravity.set(gravityX, gravityY, gravityZ);
-    world.broadphase = new SAPBroadphase(world);
-    world.defaultContactMaterial.friction = 0.001;
-    world.addContactMaterial(general_to_general_cm);
-    world.addContactMaterial(lowFriction_to_general_cm);
+    const world = new PhysicsWorld(cfg.world.gravity);
 
-    const wireframeRenderer = WireframeRenderer(scene, world, {
-        onInit(body, mesh) {
-            configListener.add('renderWireFrame', (renderWireFrame: boolean) => {
-                mesh.visible = renderWireFrame;
-            });
-        },
+    // Rapier collider debug outlines, fed from world.debugRender() (replaces cannon-es-debugger).
+    // Hand-rolled rather than three's RapierHelper addon, whose bundled @types/three rapier version
+    // is incompatible with the installed @dimforge/rapier3d-compat.
+    const physicsWireFrame = new LineSegments(new BufferGeometry(), new LineBasicMaterial({ vertexColors: true }));
+    physicsWireFrame.frustumCulled = false;
+    physicsWireFrame.visible = cfg.renderWireFrame;
+    scene.add(physicsWireFrame);
+
+    function updatePhysicsWireFrame() {
+        const { vertices, colors } = world.raw.debugRender();
+        physicsWireFrame.geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+        physicsWireFrame.geometry.setAttribute('color', new BufferAttribute(colors, 4));
+    }
+
+    configListener.add('renderWireFrame', (renderWireFrame: boolean) => {
+        physicsWireFrame.visible = renderWireFrame;
     });
 
     const renderer = new WebGLRenderer({ antialias: cfg.antialias, powerPreference: cfg.powerPreference });
@@ -203,12 +203,12 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
 
     mapBuilder.onPlaceVehicle = (pX = 0, pY = 0, pZ = 0, rX = 0, rY = 0, rZ = 0) => {
         vehicle.initialPosition.set(pX, pY, pZ);
-        vehicle.initialRotation.setFromEuler(degToRad(rX), degToRad(rY), degToRad(rZ));
+        vehicle.initialRotation.setFromEuler(new Euler(degToRad(rX), degToRad(rY), degToRad(rZ)));
         vehicle.resetPosition();
     };
     mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.setCameraPosition,
-        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+        ({ relatedTarget, dataSet = '' }: TriggeredEvent) => {
             if (relatedTarget === vehicle.chassisBody) {
                 const [x, y, z] = dataSet.split(',');
                 cameraHandler.cameraPosition.set(Number(x), Number(y), Number(z));
@@ -217,7 +217,7 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
     );
     mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.setCameraMode,
-        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+        ({ relatedTarget, dataSet = '' }: TriggeredEvent) => {
             if (relatedTarget === vehicle.chassisBody) {
                 const [cameraMode, x, y, z] = dataSet.split(',');
                 cameraHandler.cameraMode = cameraMode as CameraMode;
@@ -229,7 +229,7 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
     );
     mapBuilder.eventTriggerListeners.add(
         TriggerMapElementEvent.startAnimation,
-        ({ relatedTarget, dataSet }: TriggeredEvent) => {
+        ({ relatedTarget, dataSet = '' }: TriggeredEvent) => {
             if (relatedTarget === vehicle.chassisBody) {
                 const animatedMapElementId = dataSet;
                 const body = mapBuilder.getBodyFromStore(animatedMapElementId);
@@ -237,7 +237,7 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
                     velocity_x, velocity_y, velocity_z,
                 } = mapBuilder.getAnimationPropsFromStore(animatedMapElementId);
 
-                body.velocity.set(velocity_x, velocity_y, velocity_z);
+                body.setLinvel({ x: velocity_x, y: velocity_y, z: velocity_z }, true);
             }
         },
     );
@@ -388,7 +388,7 @@ configListener.add('showTelemetry', (showTelemetry: boolean) => {
         world.step(physicsFrameTime, delta);
 
         if (cfg.renderWireFrame) {
-            wireframeRenderer.update();
+            updatePhysicsWireFrame();
         }
 
         // colorizeShaderPass fade-in (grayscale)

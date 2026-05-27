@@ -24,9 +24,19 @@ const cameraModeList = [
 const xAxis = new Vector3(0, 1, 0);
 const cameraSpeed = 0.2;
 const chaseCameraMountOffset = new Vector3(...cfg.camera.mountOffset_v3);
-const chaseCameraMountOffsetReverse = new Vector3(...cfg.camera.mountOffsetReverse_v3);
 const chaseCameraLookOffset = new Vector3(...cfg.camera.lookOffset_v3);
 // const chaseCameraMinDistance = chaseCameraMountOffset.distanceTo(new Vector3(0, 0, 0));
+
+// chase-camera reverse "swing": orbit the camera around the car's up axis so it ends up looking
+// in the travel direction when reversing. Driven by the signed forward speed (m/s) with a deadzone
+// for hysteresis; the angle is eased toward its target so the camera lags/swings around smoothly.
+const chaseUpAxis = new Vector3(0, 1, 0);
+const chaseLocalForward = new Vector3(0, 0, -1); // car front in its local frame
+const chaseReverseSwingTargetAngle = Math.PI;
+const chaseReverseSpeedThreshold = -1; // below this -> reversing
+const chaseForwardSpeedThreshold = 0.5; // above this -> driving forward
+const chaseReverseSwingSmoothing = 0.1; // smaller = snappier swing
+const tmp_forward = new Vector3();
 
 export class CameraHandler {
     domElement: HTMLElement;
@@ -38,6 +48,8 @@ export class CameraHandler {
     private idealChaseCameraLookPosition = new Vector3();
     private idealChaseCameraMountPosition = new Vector3();
     private actualChaseCameraLookPosition = new Vector3();
+    private chaseReverseSwing = 0; // current orbit angle (rad): 0 = behind, PI = swung to front
+    private chaseReverseSwingTarget = 0;
     update = noop as (delta: number) => void;
 
     constructor(domElement: HTMLElement) {
@@ -84,9 +96,13 @@ export class CameraHandler {
                 popUpNotification('Camera mode is set to: "cinematic"');
                 break;
             case CameraMode.chase:
-                // if (!this.cameraTarget?.chassisMesh) {
-                //     return;
-                // }
+                // start behind the car and snap straight to the ideal pose (no swing-in from elsewhere)
+                this.chaseReverseSwing = 0;
+                this.chaseReverseSwingTarget = 0;
+                this.setIdealChaseCameraMountPosition();
+                this.setIdealChaseCameraLookPosition();
+                this.camera.position.copy(this.idealChaseCameraMountPosition);
+                this.actualChaseCameraLookPosition.copy(this.idealChaseCameraLookPosition);
                 this.update = this.updateChaseCamera;
 
                 popUpNotification('Camera mode is set to: "chase"');
@@ -121,15 +137,13 @@ export class CameraHandler {
         this.camera.rotateOnAxis(xAxis, angle);
     }
 
-    setIdealChaseCameraMountPosition(reverse: boolean) {
-        if (reverse) {
-            this.idealChaseCameraMountPosition.copy(chaseCameraMountOffsetReverse);
-        } else {
-            this.idealChaseCameraMountPosition.copy(chaseCameraMountOffset);
-        }
-
-        this.idealChaseCameraMountPosition.applyQuaternion(this.cameraTarget.chassisMesh.quaternion);
-        this.idealChaseCameraMountPosition.add(this.cameraTargetPosition);
+    setIdealChaseCameraMountPosition() {
+        // place the camera behind & above the car (rear = local +z), orbited by the reverse swing
+        this.idealChaseCameraMountPosition
+            .copy(chaseCameraMountOffset)
+            .applyAxisAngle(chaseUpAxis, this.chaseReverseSwing)
+            .applyQuaternion(this.cameraTarget.chassisMesh.quaternion)
+            .add(this.cameraTargetPosition);
 
         // do not let camera below target
         if (this.idealChaseCameraMountPosition.y < this.cameraTargetPosition.y) {
@@ -137,15 +151,30 @@ export class CameraHandler {
         }
     }
 
-    setIdealChaseCameraLookPosition(reverse: boolean) {
-        this.idealChaseCameraLookPosition.copy(chaseCameraLookOffset);
+    setIdealChaseCameraLookPosition() {
+        // look at a point ahead of the car (local -z = front), orbited by the same reverse swing
+        this.idealChaseCameraLookPosition
+            .copy(chaseCameraLookOffset)
+            .applyAxisAngle(chaseUpAxis, this.chaseReverseSwing)
+            .applyQuaternion(this.cameraTarget.chassisMesh.quaternion)
+            .add(this.cameraTargetPosition);
+    }
 
-        if (reverse) {
-            this.idealChaseCameraLookPosition.z *= -1;
-        }
+    private updateReverseSwing(delta: number) {
+        // signed speed along the car's forward axis: negative = reversing
+        const velocity = this.cameraTarget.chassisBody.linvel();
+        tmp_forward.copy(chaseLocalForward).applyQuaternion(this.cameraTarget.chassisMesh.quaternion);
+        const forwardSpeed = velocity.x * tmp_forward.x + velocity.y * tmp_forward.y + velocity.z * tmp_forward.z;
 
-        this.idealChaseCameraLookPosition.applyQuaternion(this.cameraTarget.chassisMesh.quaternion);
-        this.idealChaseCameraLookPosition.add(this.cameraTargetPosition);
+        if (forwardSpeed < chaseReverseSpeedThreshold) {
+            this.chaseReverseSwingTarget = chaseReverseSwingTargetAngle;
+        } else if (forwardSpeed > chaseForwardSpeedThreshold) {
+            this.chaseReverseSwingTarget = 0;
+        } // else: within the deadzone -> hold the current target (hysteresis)
+
+        // frame-rate independent easing -> the camera lags/swings around smoothly
+        const t = 1 - chaseReverseSwingSmoothing ** delta;
+        this.chaseReverseSwing += (this.chaseReverseSwingTarget - this.chaseReverseSwing) * t;
     }
 
     updateDynamicCamera(delta: number) {
@@ -159,14 +188,13 @@ export class CameraHandler {
     }
 
     updateChaseCamera(delta: number) {
-        const { currentVehicleSpeedKmHour: vehicleSpeed } = this.cameraTarget.base;
-        const reverse = Math.round(-vehicleSpeed) < -1;
+        this.updateReverseSwing(delta);
+        this.setIdealChaseCameraMountPosition();
+        this.setIdealChaseCameraLookPosition();
 
+        // distance-based damping: snap quicker when far behind (after a turn), drift when close
         // https://www.youtube.com/watch?v=UuNPHOJ_V5o&t=650s
         const dt = 1 - this.calculateCameraSpeedByDistance(this.idealChaseCameraMountPosition) ** delta;
-
-        this.setIdealChaseCameraMountPosition(reverse);
-        this.setIdealChaseCameraLookPosition(reverse);
 
         this.camera.position.lerp(this.idealChaseCameraMountPosition, dt);
         this.actualChaseCameraLookPosition.lerp(this.idealChaseCameraLookPosition, dt);

@@ -1,16 +1,16 @@
-import { Body, Box, Cylinder, Quaternion, RaycastVehicle, Transform, Vec3, World } from 'cannon-es';
-import { Object3D, Scene, Vector3, Quaternion as _Quaternion } from 'three';
+import RAPIER from '@dimforge/rapier3d-compat';
+import {
+    Object3D, Scene, Vector3, Quaternion,
+} from 'three';
 
 import cfg from '../config';
+import { PhysicsWorld, wheelQueryInteractionGroups } from '../physics/rapierRuntime';
 import { setMaterials } from './materials';
 import { VehicleState, initStateHandler } from './stateHandler';
 
 const translateAxis = new Vector3(0, 0, 1);
+const meshOffset_z = 0.6;
 
-let tmp_transform: Transform;
-let tmp_wheelBody: Body;
-
-const { renderWireFrame } = cfg;
 const {
     torqueSplitRatio,
     maxEngineForce,
@@ -25,11 +25,14 @@ const {
     wheelDampingCompression,
     wheelDampingRelaxation,
     wheelFrictionSlip,
+    handbrakeFrictionSlip,
+    handbrakeKineticFriction,
     wheelForwardAcceleration,
     wheelSidedAcceleration,
     wheelRollInfluence,
 } = cfg.vehicle;
 
+const gravity = Math.abs(cfg.world.gravity.y);
 const brakeLightBrightness = 0.1;
 
 const frontRightWheelIndex = 0;
@@ -44,35 +47,55 @@ const defaultTorqueDistribution = [
 ];
 const torqueDistribution = [...defaultTorqueDistribution];
 
+export interface VehicleWheelInfo {
+    radius: number;
+    suspensionRestLength: number;
+    suspensionStiffness: number;
+    maxSuspensionTravel: number;
+    maxSuspensionForce: number;
+    dampingCompression: number;
+    dampingRelaxation: number;
+    forwardAcceleration: number;
+    sideAcceleration: number;
+    rollInfluence: number;
+    axleLocal: Vector3;
+    directionLocal: Vector3;
+    chassisConnectionPointLocal: Vector3;
+    steering: number;
+    brake: number;
+    engineForce: number;
+    sliding: boolean;
+    isInContact: boolean;
+    rotation?: number;
+}
+
+interface VehicleBase {
+    wheelInfos: VehicleWheelInfo[];
+    currentVehicleSpeedKmHour: number;
+}
+
+const upAxis = new Vector3(0, 1, 0);
+const wheelSteeringQuat = new Quaternion();
+const wheelRotationQuat = new Quaternion();
+
 export default class Vehicle {
-    base: RaycastVehicle;
-    chassisBody: Body;
+    base: VehicleBase;
+    chassisBody: RAPIER.RigidBody;
+    vehicleController: RAPIER.DynamicRayCastVehicleController;
     chassisMesh: Object3D;
-    wheelBodies: Body[];
     wheelMeshes: Object3D[];
     state: VehicleState;
-    initialPosition = new Vec3();
+    initialPosition = new Vector3();
     initialRotation = new Quaternion();
     currentSteeringAngle = 0;
     trackWidth = 0;
     wheelBase = 0;
     materials: ReturnType<typeof setMaterials>;
+    private world: PhysicsWorld;
 
     constructor(chassisMesh: Object3D, wheelMesh: Object3D) {
-        const chassisBaseShape = new Box(new Vec3(0.9, 0.4, 2.1));
-        const chassisTopShape = new Box(new Vec3(0.9, 0.4, 1.2));
+        const wheelInfos: VehicleWheelInfo[] = [];
 
-        this.chassisBody = new Body({ mass: cfg.vehicle.mass });
-        this.chassisBody
-            .addShape(chassisBaseShape, new Vec3(0, 0, 0.1))
-            .addShape(chassisTopShape, new Vec3(0, 0.8, 0.8));
-
-        this.base = new RaycastVehicle({
-            chassisBody: this.chassisBody,
-            indexForwardAxis: 2,
-            indexRightAxis: 0,
-            indexUpAxis: 1,
-        });
         const wheelConfig = {
             radius: wheelRadius,
             suspensionRestLength: wheelSuspensionRestLength,
@@ -81,48 +104,31 @@ export default class Vehicle {
             maxSuspensionForce: wheelMaxSuspensionForce,
             dampingCompression: wheelDampingCompression,
             dampingRelaxation: wheelDampingRelaxation,
-            frictionSlip: wheelFrictionSlip,
             forwardAcceleration: wheelForwardAcceleration,
             sideAcceleration: wheelSidedAcceleration,
             rollInfluence: wheelRollInfluence,
-            axleLocal: new Vec3(-1, 0, 0),
-            directionLocal: new Vec3(0, -1, 0),
-            chassisConnectionPointLocal: new Vec3(),
-            customSlidingRotationalSpeed: -30,
-            useCustomSlidingRotationalSpeed: true,
+            axleLocal: new Vector3(-1, 0, 0),
+            directionLocal: new Vector3(0, -1, 0),
+            chassisConnectionPointLocal: new Vector3(),
         };
         const height = 0.3;
         const halfTrackWidth = 0.85;
         this.trackWidth = halfTrackWidth * 2;
         this.wheelBase = 1.2 + 1.4;
-        // front right
-        wheelConfig.chassisConnectionPointLocal.set(halfTrackWidth, -height, -1.2);
-        this.base.addWheel(wheelConfig);
-        // front left
-        wheelConfig.chassisConnectionPointLocal.set(-halfTrackWidth, -height, -1.2);
-        this.base.addWheel(wheelConfig);
-        // rear right
-        wheelConfig.chassisConnectionPointLocal.set(halfTrackWidth, -height, 1.4);
-        this.base.addWheel(wheelConfig);
-        // rear left
-        wheelConfig.chassisConnectionPointLocal.set(-halfTrackWidth, -height, 1.4);
-        this.base.addWheel(wheelConfig);
 
-        if (renderWireFrame) {
-            const wheelOrientation = new Quaternion();
-            wheelOrientation.setFromAxisAngle(Vec3.UNIT_Z, Math.PI / 2);
+        wheelConfig.chassisConnectionPointLocal = new Vector3(halfTrackWidth, -height, -1.2);
+        wheelInfos.push(createWheelInfo(wheelConfig));
+        wheelConfig.chassisConnectionPointLocal = new Vector3(-halfTrackWidth, -height, -1.2);
+        wheelInfos.push(createWheelInfo(wheelConfig));
+        wheelConfig.chassisConnectionPointLocal = new Vector3(halfTrackWidth, -height, 1.4);
+        wheelInfos.push(createWheelInfo(wheelConfig));
+        wheelConfig.chassisConnectionPointLocal = new Vector3(-halfTrackWidth, -height, 1.4);
+        wheelInfos.push(createWheelInfo(wheelConfig));
 
-            this.wheelBodies = this.base.wheelInfos.map((wheel) => {
-                const wheelShape = new Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 8);
-                const wheelBody = new Body({
-                    type: Body.KINEMATIC,
-                    collisionFilterGroup: 0, // turn off collisions
-                });
-                wheelBody.addShape(wheelShape, Vec3.ZERO, wheelOrientation);
-
-                return wheelBody;
-            });
-        }
+        this.base = {
+            wheelInfos,
+            currentVehicleSpeedKmHour: 0,
+        };
 
         this.materials = setMaterials(wheelMesh, chassisMesh);
         const wheelMeshes = {
@@ -131,118 +137,197 @@ export default class Vehicle {
             rear_r: wheelMesh.clone(),
             rear_l: wheelMesh.clone(),
         };
-        // mirror meshes suffixed with '_r'
+
         const axes = ['x', 'y', 'z'] as const;
-        Object.keys(wheelMeshes).forEach((wheelId: keyof typeof wheelMeshes) => {
-            if (wheelId.endsWith('_r')) {
+        Object.keys(wheelMeshes).forEach((wheelId: keyof typeof wheelMeshes, i) => {
+            const wheelInfo = wheelInfos[i];
+            const mesh = wheelMeshes[wheelId];
+
+            if (wheelId.endsWith('_l')) {
                 axes.forEach((axis) => {
-                    wheelMeshes[wheelId].scale[axis] *= -1;
+                    mesh.scale[axis] *= -1;
                 });
             }
+
+            chassisMesh.add(mesh);
+
+            mesh.position.copy(wheelInfo.chassisConnectionPointLocal);
+            mesh.position.z -= meshOffset_z;
         });
-        this.wheelMeshes = [wheelMeshes.front_l, wheelMeshes.front_r, wheelMeshes.rear_l, wheelMeshes.rear_r];
+
+        this.wheelMeshes = [wheelMeshes.front_r, wheelMeshes.front_l, wheelMeshes.rear_r, wheelMeshes.rear_l];
         this.chassisMesh = chassisMesh;
 
         this.state = initStateHandler(this);
     }
 
-    addToWorld(world: World) {
-        this.base.addToWorld(world);
-        if (renderWireFrame) {
-            this.wheelBodies.forEach(world.addBody, world);
+    addToWorld(world: PhysicsWorld) {
+        this.world = world;
+
+        const chassisDesc = RAPIER.RigidBodyDesc.dynamic()
+            .setAdditionalMass(cfg.vehicle.mass)
+            .setCanSleep(false);
+        this.chassisBody = this.world.addRigidBody(chassisDesc);
+
+        const chassisBase = RAPIER.ColliderDesc.cuboid(0.9, 0.4, 2.1)
+            .setTranslation(0, 0, 0.1)
+            .setFriction(0.001);
+        const chassisTop = RAPIER.ColliderDesc.cuboid(0.9, 0.4, 1.2)
+            .setTranslation(0, 0.8, 0.8)
+            .setFriction(0.001);
+        this.world.setBodyColliders(this.chassisBody, [chassisBase, chassisTop]);
+
+        this.vehicleController = this.world.raw.createVehicleController(this.chassisBody);
+
+        for (let i = 0; i < this.base.wheelInfos.length; i++) {
+            const wheelInfo = this.base.wheelInfos[i];
+            this.vehicleController.addWheel(
+                wheelInfo.chassisConnectionPointLocal,
+                wheelInfo.directionLocal,
+                wheelInfo.axleLocal,
+                wheelInfo.suspensionRestLength,
+                wheelInfo.radius,
+            );
+            this.vehicleController.setWheelSuspensionStiffness(i, wheelInfo.suspensionStiffness);
+            this.vehicleController.setWheelMaxSuspensionTravel(i, wheelInfo.maxSuspensionTravel);
+            // cannon-es used Number.MAX_VALUE (no clamp); use a large finite ceiling to avoid
+            // float32 overflow while keeping the suspension effectively unclamped.
+            this.vehicleController.setWheelMaxSuspensionForce(i, Math.min(wheelInfo.maxSuspensionForce, 1e5));
+            this.vehicleController.setWheelSuspensionCompression(i, wheelInfo.dampingCompression);
+            this.vehicleController.setWheelSuspensionRelaxation(i, wheelInfo.dampingRelaxation);
+            this.vehicleController.setWheelFrictionSlip(i, wheelFrictionSlip);
+            this.vehicleController.setWheelSideFrictionStiffness(i, wheelInfo.sideAcceleration);
         }
 
-        world.addEventListener('postStep', this.update);
+        this.world.addEventListener('preStep', this.beforeStep);
+        this.world.addEventListener('postStep', this.update);
 
         return this;
     }
 
     addToScene(scene: Scene) {
-        this.wheelMeshes.forEach((wheelMesh) => {
-            scene.add(wheelMesh);
-        });
         scene.add(this.chassisMesh);
 
         return this;
     }
 
-    private update = () => {
-        this.steerWheels();
-        // ToDo implement torque vectoring
-        this.applyWheelSlipReduction();
-
-        for (let i = 0; i < this.base.wheelInfos.length; i++) {
-            this.base.applyEngineForce(this.state.engineForce * torqueDistribution[i] * 0.01, i);
-            this.base.updateWheelTransform(i);
-
-            tmp_transform = this.base.wheelInfos[i].worldTransform;
-            this.wheelMeshes[i].position.copy(tmp_transform.position as unknown as Vector3);
-            this.wheelMeshes[i].quaternion.copy(tmp_transform.quaternion as unknown as _Quaternion);
-
-            if (renderWireFrame) {
-                tmp_wheelBody = this.wheelBodies[i];
-
-                tmp_wheelBody.position.copy(tmp_transform.position);
-                tmp_wheelBody.quaternion.copy(tmp_transform.quaternion);
-
-                this.wheelMeshes[i].position.copy(tmp_wheelBody.position as unknown as Vector3);
-                this.wheelMeshes[i].quaternion.copy(tmp_wheelBody.quaternion as unknown as _Quaternion);
-            }
+    private beforeStep = (dt = 1 / 60) => {
+        if (!this.chassisBody || !this.vehicleController) {
+            return;
         }
 
-        this.chassisMesh.position.copy(this.chassisBody.position as unknown as Vector3);
-        this.chassisMesh.quaternion.copy(this.chassisBody.quaternion as unknown as _Quaternion);
-        this.chassisMesh.translateOnAxis(translateAxis, 0.6);
+        this.steerWheels();
+
+        const { wheelInfos } = this.base;
+        let handbraking = false;
+        for (let i = 0; i < wheelInfos.length; i++) {
+            const wheelHandbraking = wheelInfos[i].brake > 0;
+            handbraking = handbraking || wheelHandbraking;
+            // a hand-braked wheel must have zero engine force (the controller ignores brake while a
+            // wheel has engine force), and we don't use the controller's wheel brake at all (it
+            // grips ~instantly regardless of force); instead the wheels roll free + lose grip and
+            // applyHandbrakeSkid() models the locked, sliding wheel as friction-limited drag.
+            wheelInfos[i].engineForce = wheelHandbraking
+                ? 0
+                : this.state.engineForce * torqueDistribution[i] * 0.01 * -1;
+            this.vehicleController.setWheelEngineForce(i, wheelInfos[i].engineForce);
+            this.vehicleController.setWheelBrake(i, 0);
+            const frictionSlip = wheelHandbraking ? handbrakeFrictionSlip : wheelFrictionSlip;
+            this.vehicleController.setWheelFrictionSlip(i, frictionSlip);
+            this.vehicleController.setWheelSteering(i, wheelInfos[i].steering);
+        }
+
+        this.vehicleController.updateVehicle(
+            dt,
+            undefined,
+            wheelQueryInteractionGroups,
+        );
+
+        if (handbraking) {
+            this.applyHandbrakeSkid(dt);
+        }
+
+        this.base.currentVehicleSpeedKmHour = this.vehicleController.currentVehicleSpeed() * 3.6;
+    }
+
+    /**
+     * Models the locked, sliding rear wheels of the hand-brake: a kinetic-friction drag (μ·N)
+     * opposing the chassis' horizontal velocity. Unlike the controller's wheel brake (which grips
+     * almost instantly), this gives a friction-limited skid — the car keeps sliding and decelerates
+     * at a constant rate set by `handbrakeKineticFriction`, symmetric forwards and in reverse.
+     */
+    private applyHandbrakeSkid = (dt: number) => {
+        let contacts = 0;
+        rearWheelIndices.forEach((i) => {
+            if (this.vehicleController.wheelIsInContact(i)) {
+                contacts++;
+            }
+        });
+        if (!contacts) {
+            return;
+        }
+
+        const velocity = this.chassisBody.linvel();
+        const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
+        if (horizontalSpeed < 0.05) {
+            return;
+        }
+
+        const mass = this.chassisBody.mass();
+        const normalForcePerWheel = mass * gravity / 4;
+        const frictionImpulse = handbrakeKineticFriction * normalForcePerWheel * contacts * dt;
+        const maxImpulse = mass * horizontalSpeed; // never push the car backwards past a stop
+        const scale = -Math.min(frictionImpulse, maxImpulse) / horizontalSpeed;
+
+        this.chassisBody.applyImpulse({ x: velocity.x * scale, y: 0, z: velocity.z * scale }, true);
+    }
+
+    private update = () => {
+        if (!this.chassisBody || !this.vehicleController) {
+            return;
+        }
+
+        const q = this.chassisBody.rotation();
+
+        this.updateWheels();
+
+        this.chassisMesh.position.copy(this.chassisBody.translation());
+        this.chassisMesh.quaternion.set(q.x, q.y, q.z, q.w);
+        this.chassisMesh.translateOnAxis(translateAxis, meshOffset_z);
+    }
+
+    private updateWheels() {
+        for (let i = 0; i < this.base.wheelInfos.length; i++) {
+            const wheelInfo = this.base.wheelInfos[i];
+
+            const wheelRotation = this.vehicleController.wheelRotation(i);
+            const connectionY = this.vehicleController.wheelChassisConnectionPointCs(i).y ?? 0;
+            const suspensionLength = this.vehicleController.wheelSuspensionLength(i) ?? 0;
+            const steering = this.vehicleController.wheelSteering(i) ?? 0;
+            const sideImpulse = Math.abs(this.vehicleController.wheelSideImpulse(i) ?? 0);
+
+            this.wheelMeshes[i].position.setY(connectionY - suspensionLength);
+
+            wheelSteeringQuat.setFromAxisAngle(upAxis, steering);
+            wheelRotationQuat.setFromAxisAngle(wheelInfo.axleLocal, wheelRotation);
+
+            this.wheelMeshes[i].quaternion.multiplyQuaternions(wheelSteeringQuat, wheelRotationQuat);
+
+            wheelInfo.rotation = wheelRotation;
+            wheelInfo.steering = steering;
+            wheelInfo.isInContact = this.vehicleController.wheelIsInContact(i);
+            wheelInfo.sliding = sideImpulse > 1;
+        }
     }
 
     setEngineForceDirection(engineForceDirection: -1|0|1) {
         this.state.engineForce = maxEngineForce * engineForceDirection;
 
         if (engineForceDirection === -1) {
-            // reverse
             this.state.engineForce *= 0.9;
             this.materials.tailLightMaterial.emissive.setHSL(0, 0, brakeLightBrightness);
         } else {
             this.materials.tailLightMaterial.emissive.setHSL(0, 0, 0);
-        }
-    }
-
-    private applyWheelSlipReduction = () => {
-        const frontLeftWheelHasGrip = this.wheelHasGrip(frontLeftWheelIndex);
-        const frontRightWheelHasGrip = this.wheelHasGrip(frontRightWheelIndex);
-        const rearLeftWheelHasGrip = this.wheelHasGrip(rearLeftWheelIndex);
-        const rearRightWheelHasGrip = this.wheelHasGrip(rearRightWheelIndex);
-
-        if (frontLeftWheelHasGrip && !rearLeftWheelHasGrip && torqueDistribution[rearLeftWheelIndex] > 1) {
-            torqueDistribution[frontLeftWheelIndex] += 1;
-            torqueDistribution[rearLeftWheelIndex] -= 1;
-        } else if (!frontLeftWheelHasGrip && rearLeftWheelHasGrip && torqueDistribution[frontLeftWheelIndex] > 1) {
-            torqueDistribution[frontLeftWheelIndex] -= 1;
-            torqueDistribution[rearLeftWheelIndex] += 1;
-        } else {
-            const diffSign = Math.sign(
-                torqueDistribution[frontLeftWheelIndex] - defaultTorqueDistribution[frontLeftWheelIndex],
-            );
-            if (diffSign) {
-                torqueDistribution[frontLeftWheelIndex] -= diffSign * 1;
-                torqueDistribution[rearLeftWheelIndex] += diffSign * 1;
-            }
-        }
-
-        if (frontRightWheelHasGrip && !rearRightWheelHasGrip && torqueDistribution[rearRightWheelIndex] > 1) {
-            torqueDistribution[frontRightWheelIndex] += 1;
-            torqueDistribution[rearRightWheelIndex] -= 1;
-        } else if (!frontRightWheelHasGrip && rearRightWheelHasGrip && torqueDistribution[frontRightWheelIndex] > 1) {
-            torqueDistribution[frontRightWheelIndex] -= 1;
-            torqueDistribution[rearRightWheelIndex] += 1;
-        } else {
-            const diffSign = Math.sign(
-                torqueDistribution[frontRightWheelIndex] - defaultTorqueDistribution[frontRightWheelIndex],
-            );
-            if (diffSign) {
-                torqueDistribution[frontRightWheelIndex] -= diffSign * 1;
-                torqueDistribution[rearRightWheelIndex] += diffSign * 1;
-            }
         }
     }
 
@@ -252,7 +337,7 @@ export default class Vehicle {
     }
 
     private brakeWheel = (wheelIndex: number) => {
-        this.base.setBrake(this.state.brakeForce, wheelIndex);
+        this.base.wheelInfos[wheelIndex].brake = this.state.brakeForce;
     }
 
     setSteeringDirection(steeringDirection: -1|0|1) {
@@ -265,10 +350,8 @@ export default class Vehicle {
         let steeringAngle = 0;
 
         if (currentSteeringAngle < targetSteeringAngle) {
-            // steer left
             steeringAngle = Math.min(targetSteeringAngle, currentSteeringAngle + steeringSpeed);
         } else if (currentSteeringAngle > targetSteeringAngle) {
-            // steer right
             steeringAngle = Math.max(targetSteeringAngle, currentSteeringAngle - steeringSpeed);
         } else {
             return;
@@ -288,19 +371,61 @@ export default class Vehicle {
         const steeringAngleRight = Math.atan(
             (wheelBase_x2 * steeringAngle_sin) / (wheelBase_x2 * steeringAngle_cos + trackWidth * steeringAngle_sin),
         );
-        this.base.setSteeringValue(steeringAngleLeft, frontLeftWheelIndex);
-        this.base.setSteeringValue(steeringAngleRight, frontRightWheelIndex);
+        this.base.wheelInfos[frontLeftWheelIndex].steering = steeringAngleLeft;
+        this.base.wheelInfos[frontRightWheelIndex].steering = steeringAngleRight;
         this.currentSteeringAngle = steeringAngle;
     }
 
     resetPosition() {
-        this.chassisBody.position.copy(this.initialPosition);
-        this.chassisBody.quaternion.copy(this.initialRotation);
-        this.chassisBody.velocity.setZero();
-        this.chassisBody.angularVelocity.setZero();
+        if (!this.chassisBody) {
+            return;
+        }
+
+        this.chassisBody.setTranslation(this.initialPosition, true);
+        this.chassisBody.setRotation(this.initialRotation, true);
+        this.chassisBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        this.chassisBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
+
+        this.currentSteeringAngle = 0;
+        this.state.engineForce = 0;
+        this.state.brakeForce = 0;
+        this.state.steeringAngle = 0;
+
+        this.base.wheelInfos.forEach((wheelInfo) => {
+            wheelInfo.engineForce = 0;
+            wheelInfo.brake = 0;
+            wheelInfo.steering = 0;
+        });
+
+        if (this.vehicleController) {
+            for (let i = 0; i < this.base.wheelInfos.length; i++) {
+                this.vehicleController.setWheelEngineForce(i, 0);
+                this.vehicleController.setWheelBrake(i, 0);
+                this.vehicleController.setWheelSteering(i, 0);
+            }
+        }
     }
 
     wheelHasGrip = (wheelIndex: number) => (
         this.base.wheelInfos[wheelIndex].isInContact && !this.base.wheelInfos[wheelIndex].sliding
     )
+}
+
+function createWheelInfo(
+    config: Omit<
+    VehicleWheelInfo,
+    'steering' | 'brake' | 'engineForce' | 'sliding' | 'isInContact' | 'worldPosition' | 'worldQuaternion'
+    >,
+): VehicleWheelInfo {
+    return {
+        ...config,
+        axleLocal: config.axleLocal.clone(),
+        directionLocal: config.directionLocal.clone(),
+        chassisConnectionPointLocal: config.chassisConnectionPointLocal.clone(),
+        steering: 0,
+        brake: 0,
+        engineForce: 0,
+        sliding: false,
+        isInContact: true,
+    };
 }
