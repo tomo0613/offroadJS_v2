@@ -93,24 +93,6 @@ function generateLoopElementChildrenPropertyList(props: LoopProps) {
     return loopElementChildrenPropertyList;
 }
 
-// const a = new Vector3(-halfWidth, -halfHeight, -halfLength);
-// const b = new Vector3(halfWidth, -halfHeight, -halfLength + overlap);
-// const b = new Vector3(halfWidth, -halfHeight, -halfLength);
-// const c = new Vector3().copy(b).setY(halfHeight);
-// const d = new Vector3().copy(a).setY(halfHeight);
-// const e = new Vector3(-halfWidth, -halfHeight, halfLength);
-// const f = new Vector3(halfWidth, -halfHeight, halfLength);
-// const g = new Vector3().copy(f).setY(halfHeight);
-// const h = new Vector3().copy(e).setY(halfHeight);
-/**
- *    D------C.
- *   /|      | `.
- *  H-+------+---G
- *  | |      |   |
- *  | A------B.  height(y)
- *  |length(-z)`.|
- *  E--width(x)--F
- */
 function _generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps) {
     const {
         segmentCount, segmentWidth, segmentHeight, segmentLength, cant, elevation, radius,
@@ -124,6 +106,8 @@ function _generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps
     const outerX = -radius - halfWidth;
     const innerX = -radius + halfWidth;
     const rotationAngle = calculateIsoscelesTriangleAngle(Math.abs(outerX), segmentLength);
+    const totalAngle = rotationAngle * (segmentCount - 1);
+    const startAngle = -totalAngle / 2;
 
     tmp_vector_0.set(outerX, 0, 0).applyAxisAngle(tmp_rotationAxis, rotationAngle);
     tmp_vector_1.set(innerX, 0, 0).applyAxisAngle(tmp_rotationAxis, rotationAngle);
@@ -137,7 +121,10 @@ function _generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps
     const h = new Vector3().copy(e).setY(halfHeight + elevation + cant);
 
     tmp_object3d.position.set(-radius, 0, 0);
-    tmp_object3d.rotation.set(0, 0, 0);
+    tmp_object3d.setRotationFromAxisAngle(
+        tmp_rotationAxis,
+        startAngle,
+    );
 
     for (let i = 0; i < segmentCount; i++) {
         if (i > 0) {
@@ -147,7 +134,6 @@ function _generateCantedCurveElementChildrenPropertyList(props: CantedCurveProps
 
         cantedCurveElementChildrenPropertyList.push({
             shape: MapElementShape.convexGeometry,
-            // points: [e, f, g, h, a, b, c, d].map((v) => v.toArray()),
             points: [a, b, c, d, e, h].map((v) => v.toArray()),
             position_x: tmp_object3d.position.x,
             position_y: tmp_object3d.position.y,

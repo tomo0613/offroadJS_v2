@@ -167,7 +167,7 @@ export class MapBuilder {
     scene: Scene;
     world: PhysicsWorld;
     selectedMapElementId: MapElementId | undefined;
-    perviousSelectedMapElementId: MapElementId;
+    perviousSelectedMapElementId: MapElementId | undefined;
     private mapElementComponentStore: MapElementComponentStore = new Map();
     private mapElementIdStore = new Set<string>();
     listeners = new EventListener<MapBuilderEvent>();
